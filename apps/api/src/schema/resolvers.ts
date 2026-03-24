@@ -1,7 +1,13 @@
 import { requireRole } from '../auth'
 import { PrismaClient, LaptopStatus, ReservationStatus } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
+})
 
 // Toegestane statusovergangen
 const allowedTransitions: Record<string, LaptopStatus[]> = {
