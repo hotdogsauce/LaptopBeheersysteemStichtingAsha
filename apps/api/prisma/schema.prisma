@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LaptopStatus {
+  AVAILABLE
+  RESERVED
+  IN_USE
+  IN_CONTROL
+  DEFECT
+  OUT_OF_SERVICE
+  MISSING
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  HELPDESK
+}
+
+enum ReservationStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  role         UserRole
+  reservations Reservation[] @relation("requester")
+  approvals    Reservation[] @relation("approver")
+}
+
+model Laptop {
+  id            String        @id @default(uuid())
+  status        LaptopStatus  @default(AVAILABLE)
+  merk_type     String
+  specificaties String?
+  heeft_vga     Boolean       @default(false)
+  heeft_hdmi    Boolean       @default(false)
+  reservations  Reservation[] @relation("ReservationLaptops")
+}
+
+model Activity {
+  id                     String        @id @default(uuid())
+  title                  String
+  start_datum_tijd       DateTime
+  eind_datum_tijd        DateTime
+  omschrijving           String?
+  locatie                String?
+  software_benodigdheden String?
+  reservations           Reservation[]
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  status          ReservationStatus @default(REQUESTED)
+  startDate       DateTime
+  endDate         DateTime
+  rejectionReason String?
+  aanvraag_datum  DateTime          @default(now())
+  requester       User              @relation("requester", fields: [requesterId], references: [id])
+  requesterId     String
+  approver        User?             @relation("approver", fields: [approverId], references: [id])
+  approverId      String?
+  activity        Activity          @relation(fields: [activityId], references: [id])
+  activityId      String
+  laptops         Laptop[]          @relation("ReservationLaptops")
+}
