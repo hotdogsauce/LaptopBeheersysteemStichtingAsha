@@ -1,4 +1,4 @@
-bm-- CreateEnum
+-- CreateEnumgit add .
 CREATE TYPE "LaptopStatus" AS ENUM ('AVAILABLE', 'RESERVED', 'IN_USE', 'IN_CONTROL', 'DEFECT', 'OUT_OF_SERVICE', 'MISSING');
 
 -- CreateEnum
