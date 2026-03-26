@@ -8,7 +8,7 @@
   "start": "tsx src/index.ts"
 },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
