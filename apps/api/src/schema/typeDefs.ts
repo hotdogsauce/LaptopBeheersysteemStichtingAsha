@@ -64,6 +64,8 @@ export const typeDefs = `
     myReservations(userId: ID!): [Reservation!]!
     reservationById(id: ID!): Reservation
     pendingReservations: [Reservation!]!
+    users: [User!]!
+    activities: [Activity!]!
   }
 
   type Mutation {

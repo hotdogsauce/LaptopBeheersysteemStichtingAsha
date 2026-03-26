@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+interface User {
+  id: string
+  name: string
+  role: string
+}
+
 interface Reservation {
   id: string
   status: string
@@ -13,24 +19,39 @@ interface Reservation {
 
 const API = 'https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql'
 
+function gql(query: string, variables?: Record<string, unknown>, userId?: string) {
+  return fetch(API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(userId ? { 'x-user-id': userId } : {}),
+    },
+    body: JSON.stringify({ query, variables }),
+  }).then(r => r.json())
+}
+
 export default function Reserveringen() {
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedUserId, setSelectedUserId] = useState('')
   const [reserveringen, setReserveringen] = useState<Reservation[]>([])
-  const [userId, setUserId] = useState('')
   const [reden, setReden] = useState<Record<string, string>>({})
   const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
 
+  const adminUsers = users.filter(u => u.role === 'ADMIN')
+
   useEffect(() => {
-    if (!userId) return
-    fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({
-        query: `query { pendingReservations { id status startDate endDate rejectionReason requester { name } activity { title } } }`
-      })
-    })
-      .then(r => r.json())
-      .then(data => setReserveringen(data.data?.pendingReservations || []))
-  }, [userId])
+    gql(`query { users { id name role } }`)
+      .then(data => setUsers(data.data?.users || []))
+  }, [])
+
+  useEffect(() => {
+    if (!selectedUserId) return
+    gql(
+      `query { pendingReservations { id status startDate endDate rejectionReason requester { name } activity { title } } }`,
+      undefined,
+      selectedUserId
+    ).then(data => setReserveringen(data.data?.pendingReservations || []))
+  }, [selectedUserId])
 
   async function beoordeel(reservationId: string, approve: boolean) {
     const reason = reden[reservationId]
@@ -38,17 +59,13 @@ export default function Reserveringen() {
       setBericht({ text: 'Vul een reden in bij afwijzing.', type: 'fout' })
       return
     }
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-      body: JSON.stringify({
-        query: `mutation($id: ID!, $adminId: ID!, $approve: Boolean!, $reason: String) {
-          reviewReservation(reservationId: $id, adminId: $adminId, approve: $approve, reason: $reason) { id status }
-        }`,
-        variables: { id: reservationId, adminId: userId, approve, reason: reason || null }
-      })
-    })
-    const data = await res.json()
+    const data = await gql(
+      `mutation($id: ID!, $adminId: ID!, $approve: Boolean!, $reason: String) {
+        reviewReservation(reservationId: $id, adminId: $adminId, approve: $approve, reason: $reason) { id status }
+      }`,
+      { id: reservationId, adminId: selectedUserId, approve, reason: reason || null },
+      selectedUserId
+    )
     if (data.errors) {
       setBericht({ text: data.errors[0].message, type: 'fout' })
     } else {
@@ -70,19 +87,25 @@ export default function Reserveringen() {
         </div>
         <Link href="/"
           className="text-sm border border-slate-700 hover:border-slate-400 px-4 py-2 rounded transition-colors">
-          ← Laptops
+          ← Overzicht
         </Link>
       </header>
 
       <main className="max-w-3xl mx-auto px-8 py-10">
-        <div className="mb-10">
-          <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">Admin gebruiker ID</label>
-          <input
+
+        {/* Gebruiker selecteren (alleen ADMINs) */}
+        <div className="mb-8">
+          <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">Ingelogd als beheerder</label>
+          <select
             className="bg-slate-900 border border-slate-700 focus:border-slate-400 outline-none rounded px-4 py-3 w-full text-sm transition-colors"
-            placeholder="Plak hier je admin ID..."
-            value={userId}
-            onChange={e => setUserId(e.target.value)}
-          />
+            value={selectedUserId}
+            onChange={e => { setSelectedUserId(e.target.value); setBericht(null) }}
+          >
+            <option value="">— Selecteer jouw account —</option>
+            {adminUsers.map(u => (
+              <option key={u.id} value={u.id}>{u.name} (Beheerder)</option>
+            ))}
+          </select>
         </div>
 
         {bericht && (
@@ -95,14 +118,14 @@ export default function Reserveringen() {
           </div>
         )}
 
-        {!userId && (
+        {!selectedUserId && (
           <div className="text-center py-20 text-slate-600">
             <p className="text-4xl mb-3">📋</p>
-            <p className="text-sm">Vul een admin ID in om aanvragen te zien</p>
+            <p className="text-sm">Selecteer een beheerder om aanvragen te zien</p>
           </div>
         )}
 
-        {userId && reserveringen.length === 0 && (
+        {selectedUserId && reserveringen.length === 0 && (
           <div className="text-center py-20 text-slate-600">
             <p className="text-4xl mb-3">✓</p>
             <p className="text-sm">Geen openstaande aanvragen</p>

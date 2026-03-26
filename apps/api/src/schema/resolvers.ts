@@ -47,6 +47,8 @@ export const resolvers = {
         where: { status: ReservationStatus.REQUESTED },
         include: { activity: true, requester: true, approver: true, laptops: true }
       }),
+    users: () => prisma.user.findMany(),
+    activities: () => prisma.activity.findMany(),
   },
 
   
