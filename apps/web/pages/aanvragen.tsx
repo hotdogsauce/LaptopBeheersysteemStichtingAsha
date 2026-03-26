@@ -50,10 +50,10 @@ function gql(query: string, variables?: Record<string, unknown>, userId?: string
   }).then(r => r.json())
 }
 
-// Minimale startdatum: vandaag + 2 dagen
+// Minimale startdatum: vandaag + 3 dagen (business rule: eigenaar kiest minimaal 3 dagen vooruit)
 function minStartDatum() {
   const d = new Date()
-  d.setDate(d.getDate() + 2)
+  d.setDate(d.getDate() + 3)
   return d.toISOString().split('T')[0]
 }
 
@@ -248,7 +248,7 @@ export default function Aanvragen() {
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-600">Reserveringen moeten minimaal 2 dagen van tevoren worden aangevraagd.</p>
+                <p className="text-xs text-slate-600">Startdatum moet minimaal 3 dagen in de toekomst liggen.</p>
 
                 <button
                   onClick={doeAanvraag}
