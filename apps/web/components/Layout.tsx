@@ -44,8 +44,8 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
 
       {/* Ghost navbar */}
       <nav style={{
-        height: 52,
-        borderBottom: '1px solid var(--border)',
+        height: 56,
+        borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -120,31 +120,30 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
 
         {/* Whisper sidebar */}
         <aside style={{
-          width: 188,
-          borderRight: '1px solid var(--border-subtle)',
-          padding: '32px 0',
+          width: 200,
+          padding: '44px 0 44px 36px',
           flexShrink: 0,
           background: 'var(--white)',
         }}>
           {selectedUser ? (
             <>
-              <div style={{ padding: '0 20px', marginBottom: 24 }}>
+              <div style={{ marginBottom: 32 }}>
                 <p className="section-label">{roleLabel[selectedUser.role] || selectedUser.role}</p>
                 <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)', margin: 0 }}>{selectedUser.name}</p>
               </div>
-              <nav>
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {navItems.map(item => {
                   const isActive = router.pathname === item.href
                   return (
                     <Link key={item.href} href={item.href} style={{
                       display: 'block',
-                      padding: '8px 20px',
+                      padding: '6px 0',
                       fontSize: 13,
                       color: isActive ? 'var(--black)' : 'var(--grey)',
                       fontWeight: isActive ? 600 : 400,
-                      borderRight: isActive ? '2px solid var(--black)' : '2px solid transparent',
                       textDecoration: 'none',
                       transition: 'color 0.12s',
+                      letterSpacing: isActive ? '-0.01em' : 'normal',
                     }}>
                       {item.label}
                     </Link>
@@ -152,15 +151,11 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                 })}
               </nav>
             </>
-          ) : (
-            <div style={{ padding: '0 20px' }}>
-              <p className="section-label">Geen gebruiker</p>
-            </div>
-          )}
+          ) : null}
         </aside>
 
         {/* Main content */}
-        <main style={{ flex: 1, padding: '40px 48px', minWidth: 0 }}>
+        <main style={{ flex: 1, padding: '48px 56px 80px', minWidth: 0, maxWidth: 860 }}>
           {(title || subtitle) && (
             <div className="page-header">
               {title && <h1>{title}</h1>}
