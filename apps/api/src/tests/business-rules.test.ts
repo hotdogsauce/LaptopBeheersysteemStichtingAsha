@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient, UserRole, LaptopStatus, ReservationStatus } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -95,6 +95,14 @@ it('BR-05: Ongeldige status wordt niet geaccepteerd door Prisma', async () => {
   const validStatuses = Object.values(LaptopStatus)
   const input = 'kapot'
   expect(validStatuses.includes(input as LaptopStatus)).toBe(false)
+})
+
+afterAll(async () => {
+  await prisma.reservation.deleteMany({ where: { requesterId: ownerId } })
+  await prisma.laptop.delete({ where: { id: laptopId } })
+  await prisma.activity.delete({ where: { id: activityId } })
+  await prisma.user.deleteMany({ where: { id: { in: [adminId, ownerId, helpdeskId] } } })
+  await prisma.$disconnect()
 })
 
 // BR-06: Conflicterende reservering
