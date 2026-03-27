@@ -149,19 +149,20 @@ export default function Home() {
             Laptopbeheer
           </h1>
         </div>
-        <div className="flex gap-3">
-          {selectedUser?.role === 'OWNER' && (
-            <Link href="/aanvragen"
-              className="text-sm border border-slate-700 hover:border-slate-400 px-4 py-2 rounded transition-colors">
-              Mijn aanvragen →
-            </Link>
-          )}
-          {(selectedUser?.role === 'ADMIN' || selectedUser?.role === 'HELPDESK') && (
-            <Link href="/reserveringen"
-              className="text-sm border border-slate-700 hover:border-slate-400 px-4 py-2 rounded transition-colors">
-              Reserveringen →
-            </Link>
-          )}
+        <div className="flex gap-2 flex-wrap justify-end">
+          {selectedUser?.role === 'OWNER' && (<>
+            <Link href="/aanvragen" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Aanvragen</Link>
+            <Link href="/software" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Software</Link>
+          </>)}
+          {selectedUser?.role === 'ADMIN' && (<>
+            <Link href="/reserveringen" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Reserveringen</Link>
+            <Link href="/beheer" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Beheer</Link>
+            <Link href="/software" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Software</Link>
+          </>)}
+          {selectedUser?.role === 'HELPDESK' && (<>
+            <Link href="/storingen" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Storingen</Link>
+            <Link href="/controle" className="text-sm border border-slate-700 hover:border-slate-400 px-3 py-2 rounded transition-colors">Controle</Link>
+          </>)}
         </div>
       </header>
 

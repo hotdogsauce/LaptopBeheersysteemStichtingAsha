@@ -31,27 +31,42 @@ enum ReservationStatus {
   COMPLETED
 }
 
+enum SoftwareRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id           String        @id @default(uuid())
-  name         String
-  email        String        @unique
-  role         UserRole
-  reservations Reservation[] @relation("requester")
-  approvals    Reservation[] @relation("approver")
+  id                String            @id @default(uuid())
+  name              String
+  email             String            @unique
+  role              UserRole
+  reservations      Reservation[]     @relation("requester")
+  approvals         Reservation[]     @relation("approver")
+  reportedIssues    Issue[]           @relation("IssueReporter")
+  resolvedIssues    Issue[]           @relation("IssueResolver")
+  checklistReports  ChecklistReport[] @relation("ChecklistSubmitter")
+  decommissions     DecommissionLog[] @relation("DecommissionUser")
+  softwareRequests  SoftwareRequest[] @relation("SoftwareRequester")
+  softwareApprovals SoftwareRequest[] @relation("SoftwareApprover")
 }
 
 model Laptop {
-  id            String        @id @default(uuid())
-  status        LaptopStatus  @default(AVAILABLE)
+  id            String           @id @default(uuid())
+  status        LaptopStatus     @default(AVAILABLE)
   merk_type     String
   specificaties String?
-  heeft_vga     Boolean       @default(false)
-  heeft_hdmi    Boolean       @default(false)
-  reservations  Reservation[] @relation("ReservationLaptops")
+  heeft_vga     Boolean          @default(false)
+  heeft_hdmi    Boolean          @default(false)
+  reservations  Reservation[]    @relation("ReservationLaptops")
+  issues        Issue[]
+  checklists    ChecklistReport[]
+  decommission  DecommissionLog?
 }
 
 model Activity {
-  id                     String        @id @default(uuid())
+  id                     String            @id @default(uuid())
   title                  String
   start_datum_tijd       DateTime
   eind_datum_tijd        DateTime
@@ -59,6 +74,7 @@ model Activity {
   locatie                String?
   software_benodigdheden String?
   reservations           Reservation[]
+  softwareRequests       SoftwareRequest[]
 }
 
 model Reservation {
@@ -75,4 +91,59 @@ model Reservation {
   activity        Activity          @relation(fields: [activityId], references: [id])
   activityId      String
   laptops         Laptop[]          @relation("ReservationLaptops")
+}
+
+model Issue {
+  id           String    @id @default(uuid())
+  laptop       Laptop    @relation(fields: [laptopId], references: [id])
+  laptopId     String
+  reportedBy   User      @relation("IssueReporter", fields: [reportedById], references: [id])
+  reportedById String
+  description  String
+  resolvedBy   User?     @relation("IssueResolver", fields: [resolvedById], references: [id])
+  resolvedById String?
+  solution     String?
+  resolved     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+}
+
+model ChecklistReport {
+  id            String   @id @default(uuid())
+  laptop        Laptop   @relation(fields: [laptopId], references: [id])
+  laptopId      String
+  submittedBy   User     @relation("ChecklistSubmitter", fields: [submittedById], references: [id])
+  submittedById String
+  geenSchade    Boolean
+  geenBestanden Boolean
+  schoongemaakt Boolean
+  accuOk        Boolean
+  updatesOk     Boolean
+  passed        Boolean
+  createdAt     DateTime @default(now())
+}
+
+model DecommissionLog {
+  id       String   @id @default(uuid())
+  laptop   Laptop   @relation(fields: [laptopId], references: [id])
+  laptopId String   @unique
+  doneBy   User     @relation("DecommissionUser", fields: [doneById], references: [id])
+  doneById String
+  reden    String
+  datum    DateTime @default(now())
+}
+
+model SoftwareRequest {
+  id              String                @id @default(uuid())
+  title           String
+  beschrijving    String?
+  status          SoftwareRequestStatus @default(REQUESTED)
+  requester       User                  @relation("SoftwareRequester", fields: [requesterId], references: [id])
+  requesterId     String
+  approver        User?                 @relation("SoftwareApprover", fields: [approverId], references: [id])
+  approverId      String?
+  activity        Activity              @relation(fields: [activityId], references: [id])
+  activityId      String
+  rejectionReason String?
+  createdAt       DateTime              @default(now())
 }
