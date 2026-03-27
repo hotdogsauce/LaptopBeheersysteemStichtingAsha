@@ -34,7 +34,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, title, subtitle }: LayoutProps) {
-  const { users, selectedUserId, setSelectedUserId, selectedUser } = useUser()
+  const { users, selectedUserId, setSelectedUserId, selectedUser, theme, toggleTheme } = useUser()
   const router = useRouter()
 
   const navItems = selectedUser ? (navByRole[selectedUser.role] || []) : []
@@ -59,6 +59,36 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           ASHA
         </span>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Schakel naar donker' : 'Schakel naar licht'}
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              border: '1px solid var(--border)',
+              background: 'var(--white)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'border-color 0.15s',
+              padding: 0,
+            }}
+          >
+            <span style={{
+              display: 'block',
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: theme === 'dark' ? 'var(--black)' : 'transparent',
+              border: '1.5px solid var(--black)',
+              transition: 'background 0.15s',
+            }} />
+          </button>
+
         <select
           className="input"
           style={{ width: 210, padding: '5px 32px 5px 10px', fontSize: 13, height: 34 }}
@@ -82,6 +112,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             ))}
           </optgroup>
         </select>
+        </div>
       </nav>
 
       {/* Page body */}
