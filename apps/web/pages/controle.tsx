@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Layout from '../components/Layout'
+import { useUser, gql } from '../context/UserContext'
 
-interface User { id: string; name: string; role: string }
 interface Laptop { id: string; merk_type: string; status: string; specificaties: string }
 interface ChecklistReport {
   id: string
   passed: boolean
   createdAt: string
-  geenSchade: boolean
-  geenBestanden: boolean
-  schoongemaakt: boolean
-  accuOk: boolean
-  updatesOk: boolean
   submittedBy: { name: string }
 }
 
@@ -23,19 +18,8 @@ const CHECKLIST_ITEMS: { key: string; label: string; beschrijving: string }[] = 
   { key: 'updatesOk',     label: 'Software up-to-date',     beschrijving: 'OS en vereiste software zijn bijgewerkt' },
 ]
 
-const API = 'https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql'
-
-function gql(query: string, variables?: Record<string, unknown>, userId?: string) {
-  return fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(userId ? { 'x-user-id': userId } : {}) },
-    body: JSON.stringify({ query, variables }),
-  }).then(r => r.json())
-}
-
 export default function Controle() {
-  const [users, setUsers] = useState<User[]>([])
-  const [selectedUserId, setSelectedUserId] = useState('')
+  const { selectedUserId, selectedUser } = useUser()
   const [inControlLaptops, setInControlLaptops] = useState<Laptop[]>([])
   const [selectedLaptopId, setSelectedLaptopId] = useState('')
   const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({
@@ -44,17 +28,12 @@ export default function Controle() {
   const [checklistHistory, setChecklistHistory] = useState<ChecklistReport[]>([])
   const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
 
-  const helpdeskUsers = users.filter(u => u.role === 'HELPDESK')
   const allChecked = Object.values(checklistItems).every(v => v)
+  const checkedCount = Object.values(checklistItems).filter(Boolean).length
 
   useEffect(() => {
-    gql(`query { users { id name role } }`)
-      .then(data => setUsers(data.data?.users || []))
-  }, [])
-
-  useEffect(() => {
-    if (!selectedUserId) return
-    gql(`query { laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }`, undefined, selectedUserId)
+    if (!selectedUserId || selectedUser?.role !== 'HELPDESK') return
+    gql('{ laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }', undefined, selectedUserId)
       .then(data => setInControlLaptops(data.data?.laptopsByStatus || []))
   }, [selectedUserId])
 
@@ -62,7 +41,7 @@ export default function Controle() {
     if (!selectedLaptopId || !selectedUserId) return
     setChecklistItems({ geenSchade: false, geenBestanden: false, schoongemaakt: false, accuOk: false, updatesOk: false })
     gql(
-      `query($laptopId: ID!) { checklistsByLaptop(laptopId: $laptopId) { id passed createdAt geenSchade geenBestanden schoongemaakt accuOk updatesOk submittedBy { name } } }`,
+      `query($laptopId: ID!) { checklistsByLaptop(laptopId: $laptopId) { id passed createdAt submittedBy { name } } }`,
       { laptopId: selectedLaptopId },
       selectedUserId
     ).then(data => setChecklistHistory(data.data?.checklistsByLaptop || []))
@@ -84,122 +63,130 @@ export default function Controle() {
       const { passed, laptop } = data.data.submitChecklist
       setBericht({
         text: passed
-          ? `✓ Checklist geslaagd! ${laptop.merk_type} is weer BESCHIKBAAR.`
-          : `✗ Checklist niet geslaagd. ${laptop.merk_type} → DEFECT (storing aanmelden aanbevolen).`,
+          ? `Checklist geslaagd. ${laptop.merk_type} is weer beschikbaar.`
+          : `Checklist niet geslaagd. ${laptop.merk_type} → DEFECT.`,
         type: passed ? 'ok' : 'fout'
       })
       setSelectedLaptopId('')
-      gql(`query { laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }`, undefined, selectedUserId)
+      gql('{ laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }', undefined, selectedUserId)
         .then(d => setInControlLaptops(d.data?.laptopsByStatus || []))
     }
   }
 
   return (
-    <div style={{ fontFamily: "'DM Mono', monospace" }} className="min-h-screen bg-slate-950 text-slate-100">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');`}</style>
+    <Layout title="Controle na gebruik" subtitle="Controleer laptops die zijn ingeleverd">
 
-      <header className="border-b border-slate-800 px-8 py-5 flex justify-between items-center">
-        <div>
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Stichting Asha</p>
-          <h1 style={{ fontFamily: "'Syne', sans-serif" }} className="text-2xl font-extrabold tracking-tight">Controle na gebruik</h1>
+      {!selectedUserId && (
+        <div className="empty">
+          <div className="empty-icon">✓</div>
+          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
         </div>
-        <Link href="/" className="text-sm border border-slate-700 hover:border-slate-400 px-4 py-2 rounded transition-colors">← Overzicht</Link>
-      </header>
+      )}
 
-      <main className="max-w-3xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">Ingelogd als helpdesk</label>
-          <select
-            className="bg-slate-900 border border-slate-700 focus:border-slate-400 outline-none rounded px-4 py-3 w-full text-sm transition-colors"
-            value={selectedUserId}
-            onChange={e => { setSelectedUserId(e.target.value); setSelectedLaptopId(''); setBericht(null) }}>
-            <option value="">— Selecteer jouw account —</option>
-            {helpdeskUsers.map(u => <option key={u.id} value={u.id}>{u.name} (Helpdesk)</option>)}
-          </select>
+      {selectedUserId && selectedUser?.role !== 'HELPDESK' && (
+        <div className="alert alert-error">
+          Deze pagina is alleen toegankelijk voor helpdeskmedewerkers.
         </div>
+      )}
 
-        {bericht && (
-          <div className={`mb-6 px-4 py-3 rounded text-sm border ${bericht.type === 'ok' ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-red-950 border-red-800 text-red-400'}`}>
-            {bericht.text}
-          </div>
-        )}
-
-        {selectedUserId && (
-          <>
-            <div className="mb-6">
-              <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">Laptop selecteren (IN_CONTROL)</label>
-              {inControlLaptops.length === 0 ? (
-                <p className="text-slate-600 text-sm">Geen laptops in controle.</p>
-              ) : (
-                <div className="grid gap-2">
-                  {inControlLaptops.map(l => (
-                    <button
-                      key={l.id}
-                      onClick={() => setSelectedLaptopId(l.id)}
-                      className={`text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
-                        selectedLaptopId === l.id
-                          ? 'bg-violet-950 border-violet-600 text-violet-200'
-                          : 'bg-slate-900 border-slate-800 hover:border-slate-600'
-                      }`}>
-                      <span className="font-medium">{l.merk_type}</span>
-                      {l.specificaties && <span className="text-slate-500 ml-2 text-xs">{l.specificaties}</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
+      {selectedUserId && selectedUser?.role === 'HELPDESK' && (
+        <>
+          {bericht && (
+            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
+              {bericht.text}
             </div>
+          )}
 
-            {selectedLaptopId && (
-              <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
-                <h2 style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-base mb-5">Controlelijst</h2>
-                <div className="grid gap-3 mb-6">
-                  {CHECKLIST_ITEMS.map(item => (
-                    <label key={item.key} className="flex items-start gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={checklistItems[item.key] || false}
-                        onChange={e => setChecklistItems(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                        className="mt-0.5 accent-emerald-500 w-4 h-4 shrink-0"
-                      />
-                      <div>
-                        <p className="text-sm font-medium group-hover:text-slate-200 transition-colors">{item.label}</p>
-                        <p className="text-xs text-slate-500">{item.beschrijving}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4">
+          <div style={{ marginBottom: 28 }}>
+            <label className="label">Laptop selecteren (in controle)</label>
+            {inControlLaptops.length === 0 ? (
+              <div className="empty" style={{ padding: '32px 0' }}>
+                <p className="empty-text">Geen laptops in controlestatus.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: 6 }}>
+                {inControlLaptops.map(l => (
                   <button
-                    onClick={indienen}
-                    className={`text-sm px-4 py-2 rounded transition-colors text-white ${
-                      allChecked ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-700 hover:bg-amber-600'
-                    }`}>
-                    {allChecked ? 'Indienen — alles OK' : 'Indienen — bevindingen'}
+                    key={l.id}
+                    onClick={() => setSelectedLaptopId(l.id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: '12px 16px',
+                      borderRadius: 'var(--radius)',
+                      border: selectedLaptopId === l.id ? '1px solid var(--black)' : '1px solid var(--border)',
+                      background: selectedLaptopId === l.id ? 'var(--black)' : 'var(--white)',
+                      color: selectedLaptopId === l.id ? 'var(--white)' : 'var(--black)',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontFamily: 'var(--font)',
+                      fontWeight: selectedLaptopId === l.id ? 500 : 400,
+                      transition: 'all 0.12s',
+                    }}
+                  >
+                    {l.merk_type}
+                    {l.specificaties && (
+                      <span style={{ fontSize: 12, opacity: 0.6, marginLeft: 8 }}>{l.specificaties}</span>
+                    )}
                   </button>
-                  <p className="text-xs text-slate-500">
-                    {Object.values(checklistItems).filter(Boolean).length}/5 items afgevinkt
-                  </p>
-                </div>
+                ))}
               </div>
             )}
+          </div>
 
-            {checklistHistory.length > 0 && (
-              <div className="mt-8">
-                <h2 style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-sm mb-3 text-slate-400">
-                  Eerdere controles voor deze laptop
-                </h2>
-                <div className="grid gap-2">
-                  {checklistHistory.map(r => (
-                    <div key={r.id} className={`rounded-lg px-4 py-3 border text-xs ${r.passed ? 'bg-emerald-950 border-emerald-900 text-emerald-400' : 'bg-red-950 border-red-900 text-red-400'}`}>
-                      {r.passed ? '✓ Geslaagd' : '✗ Niet geslaagd'} — {new Date(r.createdAt).toLocaleDateString('nl-NL')} — {r.submittedBy.name}
+          {selectedLaptopId && (
+            <div className="card" style={{ marginBottom: 32 }}>
+              <h2 style={{ marginBottom: 20 }}>Controlelijst</h2>
+              <div style={{ display: 'grid', gap: 16, marginBottom: 24 }}>
+                {CHECKLIST_ITEMS.map(item => (
+                  <label
+                    key={item.key}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checklistItems[item.key] || false}
+                      onChange={e => setChecklistItems(prev => ({ ...prev, [item.key]: e.target.checked }))}
+                      style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <div>
+                      <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{item.label}</p>
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>{item.beschrijving}</p>
                     </div>
-                  ))}
-                </div>
+                  </label>
+                ))}
               </div>
-            )}
-          </>
-        )}
-      </main>
-    </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <button
+                  className={`btn ${allChecked ? 'btn-primary' : 'btn-danger'}`}
+                  onClick={indienen}
+                >
+                  {allChecked ? 'Indienen — alles OK' : 'Indienen — bevindingen'}
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--grey)' }}>
+                  {checkedCount}/5 items afgevinkt
+                </span>
+              </div>
+            </div>
+          )}
+
+          {checklistHistory.length > 0 && (
+            <div>
+              <p className="section-label" style={{ marginBottom: 10 }}>Eerdere controles</p>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {checklistHistory.map(r => (
+                  <div
+                    key={r.id}
+                    className={r.passed ? 'alert alert-ok' : 'alert alert-error'}
+                    style={{ marginBottom: 0, fontSize: 12 }}
+                  >
+                    {r.passed ? 'Geslaagd' : 'Niet geslaagd'} — {new Date(r.createdAt).toLocaleDateString('nl-NL')} — {r.submittedBy.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </Layout>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import Layout from '../components/Layout'
+import { useUser, gql } from '../context/UserContext'
 
-interface User { id: string; name: string; role: string }
 interface Laptop {
   id: string
   merk_type: string
@@ -11,53 +11,35 @@ interface Laptop {
   heeft_hdmi: boolean
 }
 
-const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
-  AVAILABLE:      { label: 'Beschikbaar',    color: 'text-emerald-400', dot: 'bg-emerald-400' },
-  RESERVED:       { label: 'Gereserveerd',   color: 'text-amber-400',   dot: 'bg-amber-400' },
-  IN_USE:         { label: 'In gebruik',     color: 'text-blue-400',    dot: 'bg-blue-400' },
-  IN_CONTROL:     { label: 'In controle',    color: 'text-violet-400',  dot: 'bg-violet-400' },
-  DEFECT:         { label: 'Defect',         color: 'text-red-400',     dot: 'bg-red-400' },
-  OUT_OF_SERVICE: { label: 'Buiten gebruik', color: 'text-slate-400',   dot: 'bg-slate-400' },
-  MISSING:        { label: 'Vermist',        color: 'text-orange-400',  dot: 'bg-orange-400' },
+const statusLabel: Record<string, string> = {
+  AVAILABLE: 'Beschikbaar', RESERVED: 'Gereserveerd', IN_USE: 'In gebruik',
+  IN_CONTROL: 'In controle', DEFECT: 'Defect', OUT_OF_SERVICE: 'Buiten gebruik', MISSING: 'Vermist',
 }
 
-// Statussen die NIET uit beheer genomen mogen worden
+const statusBadge: Record<string, string> = {
+  AVAILABLE: 'badge-available', RESERVED: 'badge-reserved', IN_USE: 'badge-in-use',
+  IN_CONTROL: 'badge-in-control', DEFECT: 'badge-defect', OUT_OF_SERVICE: 'badge-oos', MISSING: 'badge-missing',
+}
+
 const GEBLOKKEERD = ['RESERVED', 'IN_USE']
 
-const API = 'https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql'
-
-function gql(query: string, variables?: Record<string, unknown>, userId?: string) {
-  return fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(userId ? { 'x-user-id': userId } : {}) },
-    body: JSON.stringify({ query, variables }),
-  }).then(r => r.json())
-}
-
 export default function Beheer() {
-  const [users, setUsers] = useState<User[]>([])
-  const [selectedUserId, setSelectedUserId] = useState('')
+  const { selectedUserId, selectedUser } = useUser()
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
   const [decommissionId, setDecommissionId] = useState('')
   const [reden, setReden] = useState('')
 
-  const adminUsers = users.filter(u => u.role === 'ADMIN')
-  const actiefLaptops = laptops.filter(l => !['OUT_OF_SERVICE'].includes(l.status))
+  const actiefLaptops = laptops.filter(l => l.status !== 'OUT_OF_SERVICE')
   const uitBeheerLaptops = laptops.filter(l => l.status === 'OUT_OF_SERVICE')
 
   useEffect(() => {
-    gql(`query { users { id name role } }`)
-      .then(data => setUsers(data.data?.users || []))
-  }, [])
-
-  useEffect(() => {
-    if (!selectedUserId) return
+    if (!selectedUserId || selectedUser?.role !== 'ADMIN') return
     herlaadLaptops()
   }, [selectedUserId])
 
   function herlaadLaptops() {
-    gql(`query { laptops { id merk_type status specificaties heeft_vga heeft_hdmi } }`, undefined, selectedUserId)
+    gql('{ laptops { id merk_type status specificaties heeft_vga heeft_hdmi } }', undefined, selectedUserId)
       .then(data => setLaptops(data.data?.laptops || []))
   }
 
@@ -80,119 +62,115 @@ export default function Beheer() {
   }
 
   return (
-    <div style={{ fontFamily: "'DM Mono', monospace" }} className="min-h-screen bg-slate-950 text-slate-100">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');`}</style>
+    <Layout title="Laptop beheer" subtitle="Laptops uit beheer nemen">
 
-      <header className="border-b border-slate-800 px-8 py-5 flex justify-between items-center">
-        <div>
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Stichting Asha</p>
-          <h1 style={{ fontFamily: "'Syne', sans-serif" }} className="text-2xl font-extrabold tracking-tight">Laptop beheer</h1>
+      {!selectedUserId && (
+        <div className="empty">
+          <div className="empty-icon">🖥</div>
+          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
         </div>
-        <Link href="/" className="text-sm border border-slate-700 hover:border-slate-400 px-4 py-2 rounded transition-colors">← Overzicht</Link>
-      </header>
+      )}
 
-      <main className="max-w-4xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">Ingelogd als beheerder</label>
-          <select
-            className="bg-slate-900 border border-slate-700 focus:border-slate-400 outline-none rounded px-4 py-3 w-full text-sm transition-colors"
-            value={selectedUserId}
-            onChange={e => { setSelectedUserId(e.target.value); setBericht(null); setDecommissionId('') }}>
-            <option value="">— Selecteer jouw account —</option>
-            {adminUsers.map(u => <option key={u.id} value={u.id}>{u.name} (Beheerder)</option>)}
-          </select>
+      {selectedUserId && selectedUser?.role !== 'ADMIN' && (
+        <div className="alert alert-error">
+          Deze pagina is alleen toegankelijk voor beheerders.
         </div>
+      )}
 
-        {bericht && (
-          <div className={`mb-6 px-4 py-3 rounded text-sm border ${bericht.type === 'ok' ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-red-950 border-red-800 text-red-400'}`}>
-            {bericht.text}
-          </div>
-        )}
+      {selectedUserId && selectedUser?.role === 'ADMIN' && (
+        <>
+          {bericht && (
+            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
+              {bericht.text}
+            </div>
+          )}
 
-        {!selectedUserId ? (
-          <div className="text-center py-16 text-slate-600 text-sm">Selecteer een beheerder om verder te gaan.</div>
-        ) : (
-          <>
-            {/* Actieve laptops */}
-            <div className="mb-10">
-              <h2 style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-base mb-4">
-                Actieve laptops <span className="text-slate-500 font-normal text-sm">({actiefLaptops.length})</span>
-              </h2>
-              <div className="grid gap-2">
-                {actiefLaptops.map(laptop => {
-                  const s = statusConfig[laptop.status] || { label: laptop.status, color: 'text-slate-400', dot: 'bg-slate-400' }
-                  const geblokkeerd = GEBLOKKEERD.includes(laptop.status)
-                  const isOpen = decommissionId === laptop.id
-                  return (
-                    <div key={laptop.id} className="bg-slate-900 border border-slate-800 hover:border-slate-600 rounded-lg px-6 py-4 transition-colors">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-4">
-                          <span className={`w-2 h-2 rounded-full ${s.dot} shrink-0`}></span>
-                          <div>
-                            <p className="font-medium text-sm">{laptop.merk_type}</p>
-                            <p className="text-xs text-slate-500">{laptop.specificaties || '—'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs">
-                          <span className={`font-medium ${s.color}`}>{s.label}</span>
-                          {geblokkeerd ? (
-                            <span className="text-slate-600 border border-slate-800 px-2 py-1 rounded text-xs">Vergrendeld</span>
-                          ) : (
-                            <button
-                              onClick={() => { setDecommissionId(isOpen ? '' : laptop.id); setReden('') }}
-                              className="text-slate-500 hover:text-red-400 border border-slate-700 hover:border-red-800 px-2 py-1 rounded transition-colors">
-                              {isOpen ? 'Annuleren' : 'Uit beheer'}
-                            </button>
-                          )}
-                        </div>
+          <div style={{ marginBottom: 40 }}>
+            <h2 style={{ marginBottom: 16 }}>
+              Actieve laptops{' '}
+              <span style={{ fontWeight: 400, color: 'var(--grey)', fontSize: 14 }}>({actiefLaptops.length})</span>
+            </h2>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {actiefLaptops.map(laptop => {
+                const geblokkeerd = GEBLOKKEERD.includes(laptop.status)
+                const isOpen = decommissionId === laptop.id
+                return (
+                  <div key={laptop.id} className="card-row">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{laptop.merk_type}</p>
+                        <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
+                          {laptop.specificaties || '—'}
+                        </p>
                       </div>
-                      {isOpen && (
-                        <div className="mt-4 pt-4 border-t border-slate-800 grid gap-3">
-                          <div>
-                            <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Reden *</label>
-                            <input
-                              className="bg-slate-800 border border-slate-700 focus:border-slate-500 outline-none rounded px-3 py-2 w-full text-sm transition-colors"
-                              placeholder="bijv. Onherstelbaar defect, verouderd model..."
-                              value={reden}
-                              onChange={e => setReden(e.target.value)}
-                            />
-                          </div>
-                          <p className="text-xs text-slate-600">Let op: laptop wordt permanent op OUT_OF_SERVICE gezet.</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span className={`badge ${statusBadge[laptop.status] || ''}`}>
+                          {statusLabel[laptop.status] || laptop.status}
+                        </span>
+                        {geblokkeerd ? (
+                          <span style={{ fontSize: 12, color: 'var(--grey)', padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 5 }}>
+                            Vergrendeld
+                          </span>
+                        ) : (
                           <button
-                            onClick={() => uitBeheer(laptop.id)}
-                            className="bg-red-900 hover:bg-red-800 border border-red-700 text-white text-xs px-4 py-2 rounded transition-colors w-fit">
+                            className="btn btn-danger-ghost"
+                            style={{ fontSize: 12, padding: '4px 12px' }}
+                            onClick={() => { setDecommissionId(isOpen ? '' : laptop.id); setReden('') }}
+                          >
+                            {isOpen ? 'Annuleren' : 'Uit beheer'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {isOpen && (
+                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 12 }}>
+                        <div>
+                          <label className="label">Reden *</label>
+                          <input
+                            className="input"
+                            placeholder="bijv. Onherstelbaar defect, verouderd model..."
+                            value={reden}
+                            onChange={e => setReden(e.target.value)}
+                          />
+                        </div>
+                        <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>
+                          Let op: laptop wordt permanent op buiten gebruik gezet.
+                        </p>
+                        <div>
+                          <button className="btn btn-danger" onClick={() => uitBeheer(laptop.id)}>
                             Bevestig: uit beheer nemen
                           </button>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {uitBeheerLaptops.length > 0 && (
+            <div>
+              <p className="section-label" style={{ marginBottom: 10 }}>
+                Uit beheer genomen ({uitBeheerLaptops.length})
+              </p>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {uitBeheerLaptops.map(laptop => (
+                  <div
+                    key={laptop.id}
+                    className="card-row"
+                    style={{ opacity: 0.45, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <p style={{ margin: 0, fontSize: 14, color: 'var(--grey)' }}>{laptop.merk_type}</p>
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>Buiten gebruik</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Uit beheer genomen laptops */}
-            {uitBeheerLaptops.length > 0 && (
-              <div>
-                <h2 style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-base mb-4 text-slate-500">
-                  Uit beheer genomen <span className="font-normal text-sm">({uitBeheerLaptops.length})</span>
-                </h2>
-                <div className="grid gap-2">
-                  {uitBeheerLaptops.map(laptop => (
-                    <div key={laptop.id} className="bg-slate-950 border border-slate-800 rounded-lg px-6 py-3 flex justify-between items-center opacity-60">
-                      <div className="flex items-center gap-4">
-                        <span className="w-2 h-2 rounded-full bg-slate-600 shrink-0"></span>
-                        <p className="text-sm text-slate-500">{laptop.merk_type}</p>
-                      </div>
-                      <span className="text-xs text-slate-600">Buiten gebruik</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-    </div>
+          )}
+        </>
+      )}
+    </Layout>
   )
 }

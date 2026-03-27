@@ -1,26 +1,182 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
+/* ─── Design tokens ──────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --white:   #FFFFFF;
+  --black:   #000000;
+  --red:     #8b0000;
+  --red-dim: #6b0000;
+  --grey:    #7d7d7d;
+  --yellow:  #FFCA1A;
+  --border:  #EBEBEB;
+  --border-subtle: #F3F3F3;
+  --bg-soft: #F8F8F8;
+  --bg-card: linear-gradient(155deg, #FFFFFF 0%, #F7F7F7 100%);
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.03);
+  --radius: 7px;
+  --font: 'DM Sans', system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ─── Reset ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { -webkit-font-smoothing: antialiased; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--white);
+  color: var(--black);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ─── Typography ─────────────────────────────────────── */
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; margin: 0 0 4px; }
+h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; margin: 0 0 4px; }
+h3 { font-size: 15px; font-weight: 600; margin: 0; }
+
+/* ─── Shared components ──────────────────────────────── */
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin-bottom: 6px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+.card-row {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 16px 20px;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  font-family: var(--font);
+  font-size: 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  outline: none;
+  color: var(--black);
+  transition: border-color 0.15s;
+}
+.input:focus { border-color: var(--black); }
+.input::placeholder { color: #BCBCBC; }
+
+textarea.input { resize: vertical; min-height: 72px; }
+
+select.input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237d7d7d' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-primary { background: var(--black); color: var(--white); border-color: var(--black); }
+.btn-primary:hover:not(:disabled) { background: #222; }
+
+.btn-danger { background: var(--red); color: var(--white); border-color: var(--red); }
+.btn-danger:hover:not(:disabled) { background: var(--red-dim); }
+
+.btn-ghost { background: var(--white); color: var(--black); border-color: var(--border); }
+.btn-ghost:hover:not(:disabled) { border-color: #bbb; }
+
+.btn-danger-ghost { background: var(--white); color: var(--red); border-color: #e8c0c0; }
+.btn-danger-ghost:hover:not(:disabled) { background: var(--red); color: var(--white); border-color: var(--red); }
+
+/* ─── Badges ─────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 99px;
+  border: 1px solid;
+}
+
+.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+.badge-available  { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+.badge-reserved   { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+.badge-in-use     { color: #1d4ed8; border-color: #bfdbfe; background: #eff6ff; }
+.badge-in-control { color: var(--grey); border-color: var(--border); background: var(--bg-soft); }
+.badge-defect     { color: var(--red); border-color: #fecaca; background: #fef2f2; }
+.badge-oos        { color: var(--grey); border-color: var(--border); background: var(--bg-soft); }
+.badge-missing    { color: #ea580c; border-color: #fed7aa; background: #fff7ed; }
+.badge-pending    { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+.badge-approved   { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+.badge-rejected   { color: var(--red); border-color: #fecaca; background: #fef2f2; }
+
+/* ─── Alerts ─────────────────────────────────────────── */
+.alert {
+  padding: 11px 16px;
+  border-radius: 5px;
+  font-size: 13px;
+  border: 1px solid;
+  margin-bottom: 20px;
+}
+.alert-ok    { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
+.alert-error { color: var(--red); background: #fef2f2; border-color: #fecaca; }
+
+/* ─── Empty state ────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 60px 0;
+  color: #C8C8C8;
+}
+.empty-icon { font-size: 32px; margin-bottom: 10px; }
+.empty-text { font-size: 13px; }
+
+/* ─── Divider ────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border-subtle); margin: 28px 0; }
+
+/* ─── Page title row ─────────────────────────────────── */
+.page-header { margin-bottom: 32px; }
+.page-header p { color: var(--grey); font-size: 13px; margin: 4px 0 0; }
+
+/* ─── Section label ──────────────────────────────────── */
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #BCBCBC;
+  margin: 0 0 10px;
 }

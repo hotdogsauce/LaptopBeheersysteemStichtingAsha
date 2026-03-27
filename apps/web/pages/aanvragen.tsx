@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-
-interface User {
-  id: string
-  name: string
-  role: string
-}
+import Layout from '../components/Layout'
+import { useUser, gql } from '../context/UserContext'
 
 interface Activity {
   id: string
@@ -23,34 +18,22 @@ interface Reservation {
   laptops: { id: string; merk_type: string }[]
 }
 
-const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  REQUESTED:  { label: 'In afwachting', color: 'text-amber-400',   bg: 'bg-amber-950',  border: 'border-amber-800' },
-  APPROVED:   { label: 'Goedgekeurd',   color: 'text-emerald-400', bg: 'bg-emerald-950', border: 'border-emerald-800' },
-  REJECTED:   { label: 'Afgewezen',     color: 'text-red-400',     bg: 'bg-red-950',     border: 'border-red-800' },
-  CANCELLED:  { label: 'Geannuleerd',   color: 'text-slate-400',   bg: 'bg-slate-900',   border: 'border-slate-700' },
-  COMPLETED:  { label: 'Afgerond',      color: 'text-blue-400',    bg: 'bg-blue-950',    border: 'border-blue-800' },
+const statusBadge: Record<string, string> = {
+  REQUESTED:  'badge-pending',
+  APPROVED:   'badge-approved',
+  REJECTED:   'badge-rejected',
+  CANCELLED:  'badge-oos',
+  COMPLETED:  'badge-in-use',
 }
 
-const roleLabel: Record<string, string> = {
-  ADMIN: 'Beheerder',
-  OWNER: 'Eigenaar activiteit',
-  HELPDESK: 'Helpdesk',
+const statusLabel: Record<string, string> = {
+  REQUESTED:  'In afwachting',
+  APPROVED:   'Goedgekeurd',
+  REJECTED:   'Afgewezen',
+  CANCELLED:  'Geannuleerd',
+  COMPLETED:  'Afgerond',
 }
 
-const API = 'https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql'
-
-function gql(query: string, variables?: Record<string, unknown>, userId?: string) {
-  return fetch(API, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(userId ? { 'x-user-id': userId } : {}),
-    },
-    body: JSON.stringify({ query, variables }),
-  }).then(r => r.json())
-}
-
-// Minimale startdatum: vandaag + 3 dagen (business rule: eigenaar kiest minimaal 3 dagen vooruit)
 function minStartDatum() {
   const d = new Date()
   d.setDate(d.getDate() + 3)
@@ -58,43 +41,26 @@ function minStartDatum() {
 }
 
 export default function Aanvragen() {
-  const [users, setUsers] = useState<User[]>([])
-  const [selectedUserId, setSelectedUserId] = useState('')
+  const { selectedUserId, selectedUser } = useUser()
   const [activities, setActivities] = useState<Activity[]>([])
   const [myReservations, setMyReservations] = useState<Reservation[]>([])
   const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
 
-  // Formuliervelden
   const [activityId, setActivityId] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  const selectedUser = users.find(u => u.id === selectedUserId)
-  const ownerUsers = users.filter(u => u.role === 'OWNER')
-
   useEffect(() => {
-    gql(`query { users { id name role } activities { id title software_benodigdheden } }`)
-      .then(data => {
-        setUsers(data.data?.users || [])
-        setActivities(data.data?.activities || [])
-      })
+    gql('{ activities { id title software_benodigdheden } }')
+      .then(data => setActivities(data.data?.activities || []))
   }, [])
 
   useEffect(() => {
-    if (!selectedUserId) return
-    gql(
-      `query($userId: ID!) { myReservations(userId: $userId) {
-        id status startDate endDate rejectionReason
-        activity { title }
-        laptops { id merk_type }
-      } }`,
-      { userId: selectedUserId },
-      selectedUserId
-    ).then(data => setMyReservations(data.data?.myReservations || []))
+    if (!selectedUserId || selectedUser?.role !== 'OWNER') return
+    herlaadAanvragen()
   }, [selectedUserId])
 
   function herlaadAanvragen() {
-    if (!selectedUserId) return
     gql(
       `query($userId: ID!) { myReservations(userId: $userId) {
         id status startDate endDate rejectionReason
@@ -109,7 +75,7 @@ export default function Aanvragen() {
   async function doeAanvraag() {
     if (!activityId) { setBericht({ text: 'Selecteer een activiteit.', type: 'fout' }); return }
     if (!startDate) { setBericht({ text: 'Vul een startdatum in.', type: 'fout' }); return }
-    if (!endDate)   { setBericht({ text: 'Vul een einddatum in.', type: 'fout' }); return }
+    if (!endDate) { setBericht({ text: 'Vul een einddatum in.', type: 'fout' }); return }
 
     const data = await gql(
       `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!) {
@@ -120,7 +86,6 @@ export default function Aanvragen() {
       { userId: selectedUserId, activityId, startDate, endDate },
       selectedUserId
     )
-
     if (data.errors) {
       setBericht({ text: data.errors[0].message, type: 'fout' })
     } else {
@@ -147,168 +112,129 @@ export default function Aanvragen() {
   }
 
   return (
-    <div style={{ fontFamily: "'DM Mono', monospace" }} className="min-h-screen bg-slate-950 text-slate-100">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');`}</style>
+    <Layout title="Laptops aanvragen" subtitle="Dien een reserveringsaanvraag in voor jouw activiteit">
 
-      <header className="border-b border-slate-800 px-8 py-5 flex justify-between items-center">
-        <div>
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Stichting Asha</p>
-          <h1 style={{ fontFamily: "'Syne', sans-serif" }} className="text-2xl font-extrabold tracking-tight">
-            Laptops aanvragen
-          </h1>
+      {!selectedUserId && (
+        <div className="empty">
+          <div className="empty-icon">📋</div>
+          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
         </div>
-        <Link href="/"
-          className="text-sm border border-slate-700 hover:border-slate-400 px-4 py-2 rounded transition-colors">
-          ← Overzicht
-        </Link>
-      </header>
+      )}
 
-      <main className="max-w-3xl mx-auto px-8 py-10">
+      {selectedUserId && selectedUser?.role !== 'OWNER' && (
+        <div className="alert alert-error">
+          Deze pagina is alleen toegankelijk voor eigenaren van activiteiten.
+        </div>
+      )}
 
-        {/* Gebruiker selecteren (alleen OWNERs) */}
-        <div className="mb-8">
-          <label className="block text-xs text-slate-500 uppercase tracking-widest mb-2">Ingelogd als eigenaar</label>
-          <select
-            className="bg-slate-900 border border-slate-700 focus:border-slate-400 outline-none rounded px-4 py-3 w-full text-sm transition-colors"
-            value={selectedUserId}
-            onChange={e => { setSelectedUserId(e.target.value); setBericht(null) }}
-          >
-            <option value="">— Selecteer jouw account —</option>
-            {ownerUsers.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({roleLabel[u.role] || u.role})
-              </option>
-            ))}
-          </select>
-          {selectedUser && selectedUser.role !== 'OWNER' && (
-            <p className="text-xs text-amber-400 mt-2">Alleen eigenaren kunnen laptops aanvragen.</p>
+      {selectedUserId && selectedUser?.role === 'OWNER' && (
+        <>
+          {bericht && (
+            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
+              {bericht.text}
+            </div>
           )}
-        </div>
 
-        {bericht && (
-          <div className={`mb-6 px-4 py-3 rounded text-sm border ${
-            bericht.type === 'ok'
-              ? 'bg-emerald-950 border-emerald-800 text-emerald-400'
-              : 'bg-red-950 border-red-800 text-red-400'
-          }`}>
-            {bericht.text}
-          </div>
-        )}
+          <div className="card" style={{ marginBottom: 32 }}>
+            <h2 style={{ marginBottom: 20 }}>Nieuwe aanvraag</h2>
 
-        {!selectedUserId && (
-          <div className="text-center py-16 text-slate-600">
-            <p className="text-4xl mb-3">📋</p>
-            <p className="text-sm">Selecteer je account om een aanvraag te doen</p>
-          </div>
-        )}
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div>
+                <label className="label">Activiteit *</label>
+                <select className="input" value={activityId} onChange={e => setActivityId(e.target.value)}>
+                  <option value="">— Selecteer activiteit —</option>
+                  {activities.map(a => (
+                    <option key={a.id} value={a.id}>{a.title}</option>
+                  ))}
+                </select>
+              </div>
 
-        {selectedUserId && selectedUser?.role === 'OWNER' && (
-          <>
-            {/* Aanvraagformulier */}
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 mb-8">
-              <h2 style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-base mb-5">
-                Nieuwe aanvraag
-              </h2>
-
-              <div className="grid gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Activiteit *</label>
-                  <select
-                    className="bg-slate-800 border border-slate-700 focus:border-slate-500 outline-none rounded px-3 py-2 w-full text-sm transition-colors"
-                    value={activityId}
-                    onChange={e => setActivityId(e.target.value)}
-                  >
-                    <option value="">— Selecteer activiteit —</option>
-                    {activities.map(a => (
-                      <option key={a.id} value={a.id}>{a.title}</option>
-                    ))}
-                  </select>
+                  <label className="label">Startdatum *</label>
+                  <input
+                    type="date"
+                    className="input"
+                    min={minStartDatum()}
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Startdatum *</label>
-                    <input
-                      type="date"
-                      min={minStartDatum()}
-                      className="bg-slate-800 border border-slate-700 focus:border-slate-500 outline-none rounded px-3 py-2 w-full text-sm transition-colors"
-                      value={startDate}
-                      onChange={e => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 uppercase tracking-widest mb-1">Einddatum *</label>
-                    <input
-                      type="date"
-                      min={startDate || minStartDatum()}
-                      className="bg-slate-800 border border-slate-700 focus:border-slate-500 outline-none rounded px-3 py-2 w-full text-sm transition-colors"
-                      value={endDate}
-                      onChange={e => setEndDate(e.target.value)}
-                    />
-                  </div>
+                <div>
+                  <label className="label">Einddatum *</label>
+                  <input
+                    type="date"
+                    className="input"
+                    min={startDate || minStartDatum()}
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                  />
                 </div>
+              </div>
 
-                <p className="text-xs text-slate-600">Startdatum moet minimaal 3 dagen in de toekomst liggen.</p>
+              <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>
+                Startdatum moet minimaal 3 dagen in de toekomst liggen.
+              </p>
 
-                <button
-                  onClick={doeAanvraag}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-4 py-2 rounded transition-colors w-fit">
+              <div>
+                <button className="btn btn-primary" onClick={doeAanvraag}>
                   Aanvraag indienen
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Mijn aanvragen */}
-            <h2 style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-base mb-4">
-              Mijn aanvragen <span className="text-slate-500 font-normal text-sm">({myReservations.length})</span>
-            </h2>
+          <h2 style={{ marginBottom: 16 }}>
+            Mijn aanvragen{' '}
+            <span style={{ fontWeight: 400, color: 'var(--grey)', fontSize: 14 }}>({myReservations.length})</span>
+          </h2>
 
-            {myReservations.length === 0 && (
-              <div className="text-center py-12 text-slate-600 text-sm">Nog geen aanvragen ingediend.</div>
-            )}
-
-            <div className="grid gap-3">
-              {myReservations.map(r => {
-                const s = statusConfig[r.status] || { label: r.status, color: 'text-slate-400', bg: 'bg-slate-900', border: 'border-slate-700' }
-                return (
-                  <div key={r.id} className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p style={{ fontFamily: "'Syne', sans-serif" }} className="font-bold text-sm">
-                          {r.activity.title}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {new Date(r.startDate).toLocaleDateString('nl-NL')} → {new Date(r.endDate).toLocaleDateString('nl-NL')}
-                        </p>
-                        {r.laptops.length > 0 && (
-                          <p className="text-xs text-slate-500 mt-1">
-                            Laptops: {r.laptops.map(l => l.merk_type).join(', ')}
-                          </p>
-                        )}
-                        {r.rejectionReason && (
-                          <p className="text-xs text-red-400 mt-1">Reden: {r.rejectionReason}</p>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className={`text-xs ${s.bg} ${s.color} ${s.border} border px-3 py-1 rounded-full`}>
-                          {s.label}
-                        </span>
-                        {(r.status === 'REQUESTED' || r.status === 'APPROVED') && (
-                          <button
-                            onClick={() => annuleer(r.id)}
-                            className="text-xs text-slate-500 hover:text-red-400 transition-colors">
-                            Annuleren
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+          {myReservations.length === 0 && (
+            <div className="empty" style={{ padding: '40px 0' }}>
+              <p className="empty-text">Nog geen aanvragen ingediend.</p>
             </div>
-          </>
-        )}
-      </main>
-    </div>
+          )}
+
+          <div style={{ display: 'grid', gap: 8 }}>
+            {myReservations.map(r => (
+              <div key={r.id} className="card-row">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{r.activity.title}</p>
+                    <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0' }}>
+                      {new Date(r.startDate).toLocaleDateString('nl-NL')} → {new Date(r.endDate).toLocaleDateString('nl-NL')}
+                    </p>
+                    {r.laptops.length > 0 && (
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
+                        Laptops: {r.laptops.map(l => l.merk_type).join(', ')}
+                      </p>
+                    )}
+                    {r.rejectionReason && (
+                      <p style={{ fontSize: 12, color: 'var(--red)', margin: '4px 0 0' }}>
+                        Reden: {r.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    <span className={`badge ${statusBadge[r.status] || ''}`}>
+                      {statusLabel[r.status] || r.status}
+                    </span>
+                    {(r.status === 'REQUESTED' || r.status === 'APPROVED') && (
+                      <button
+                        className="btn btn-danger-ghost"
+                        style={{ fontSize: 12, padding: '3px 10px' }}
+                        onClick={() => annuleer(r.id)}
+                      >
+                        Annuleren
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Layout>
   )
 }
