@@ -1,5 +1,5 @@
 import { requireRole } from '../auth'
-import { PrismaClient, LaptopStatus, ReservationStatus } from '@prisma/client'
+import { PrismaClient, LaptopStatus, ReservationStatus, SoftwareRequestStatus } from '@prisma/client'
 
 const prisma = new PrismaClient({
   datasources: {
@@ -19,6 +19,19 @@ const allowedTransitions: Record<string, LaptopStatus[]> = {
   OUT_OF_SERVICE: [],
   MISSING:        [],
 }
+
+// Statussen waarbij een storing NIET gemeld kan worden
+const issueBlockedStatuses: LaptopStatus[] = [
+  LaptopStatus.DEFECT,
+  LaptopStatus.OUT_OF_SERVICE,
+  LaptopStatus.MISSING,
+]
+
+// Statussen waarbij een laptop NIET uit beheer genomen mag worden
+const decommissionBlockedStatuses: LaptopStatus[] = [
+  LaptopStatus.RESERVED,
+  LaptopStatus.IN_USE,
+]
 
 function checkTransition(current: LaptopStatus, next: LaptopStatus) {
   if (!allowedTransitions[current].includes(next)) {
@@ -49,16 +62,64 @@ export const resolvers = {
       }),
     users: () => prisma.user.findMany(),
     activities: () => prisma.activity.findMany(),
+
+    // UC-02 Storing
+    openIssues: () =>
+      prisma.issue.findMany({
+        where: { resolved: false },
+        include: { laptop: true, reportedBy: true, resolvedBy: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+    issuesByLaptop: (_: any, { laptopId }: { laptopId: string }) =>
+      prisma.issue.findMany({
+        where: { laptopId },
+        include: { laptop: true, reportedBy: true, resolvedBy: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+
+    // UC-04 Checklist
+    checklistsByLaptop: (_: any, { laptopId }: { laptopId: string }) =>
+      prisma.checklistReport.findMany({
+        where: { laptopId },
+        include: { laptop: true, submittedBy: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+
+    // UC-03 Uit beheer
+    decommissionedLaptops: () =>
+      prisma.laptop.findMany({
+        where: { decommission: { isNot: null } },
+        include: { decommission: { include: { doneBy: true } } }
+      }),
+    decommissionLog: (_: any, { laptopId }: { laptopId: string }) =>
+      prisma.decommissionLog.findUnique({
+        where: { laptopId },
+        include: { laptop: true, doneBy: true }
+      }),
+
+    // UC-05 Software aanvraag
+    pendingSoftwareRequests: () =>
+      prisma.softwareRequest.findMany({
+        where: { status: SoftwareRequestStatus.REQUESTED },
+        include: { requester: true, approver: true, activity: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+    mySoftwareRequests: (_: any, { userId }: { userId: string }) =>
+      prisma.softwareRequest.findMany({
+        where: { requesterId: userId },
+        include: { requester: true, approver: true, activity: true },
+        orderBy: { createdAt: 'desc' }
+      }),
   },
 
-  
- Mutation: {
+  Mutation: {
+    // Sprint 4
     createLaptop: (_: any, args: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'HELPDESK')
       return prisma.laptop.create({ data: args })
     },
 
-   requestReservation: async (_: any, { userId, activityId, startDate, endDate }: any, { user }: any) => {
+    requestReservation: async (_: any, { userId, activityId, startDate, endDate }: any, { user }: any) => {
       requireRole(user, 'OWNER')
       const start = new Date(startDate)
       const now = new Date()
@@ -71,7 +132,7 @@ export const resolvers = {
       })
     },
 
-  reviewReservation: async (_: any, { reservationId, adminId, approve, reason }: any, { user }: any) => {
+    reviewReservation: async (_: any, { reservationId, adminId, approve, reason }: any, { user }: any) => {
       requireRole(user, 'ADMIN')
       const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } })
       if (!reservation) throw new Error('Reservering niet gevonden.')
@@ -88,7 +149,6 @@ export const resolvers = {
       })
     },
 
- 
     assignLaptopsToReservation: async (_: any, { reservationId, laptopIds }: any, { user }: any) => {
       requireRole(user, 'HELPDESK')
       const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } })
@@ -104,7 +164,7 @@ export const resolvers = {
       })
     },
 
-     cancelReservation: async (_: any, { reservationId, userId }: any, { user }: any) => {
+    cancelReservation: async (_: any, { reservationId, userId }: any, { user }: any) => {
       requireRole(user, 'OWNER')
       const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } })
       if (!reservation) throw new Error('Reservering niet gevonden.')
@@ -117,13 +177,106 @@ export const resolvers = {
       })
     },
 
-   processReturn: async (_: any, { laptopId, status, maintenanceLog }: any, { user }: any) => {
+    processReturn: async (_: any, { laptopId, status, maintenanceLog }: any, { user }: any) => {
       requireRole(user, 'HELPDESK')
       const laptop = await prisma.laptop.findUnique({ where: { id: laptopId } })
       if (!laptop) throw new Error('Laptop niet gevonden.')
       if (status === 'DEFECT' && !maintenanceLog) throw new Error('maintenanceLog is verplicht bij status DEFECT.')
       checkTransition(laptop.status, status as LaptopStatus)
       return prisma.laptop.update({ where: { id: laptopId }, data: { status } })
+    },
+
+    // UC-02: Storing melden en oplossen
+    reportIssue: async (_: any, { laptopId, description }: any, { user }: any) => {
+      requireRole(user, 'HELPDESK')
+      if (!description?.trim()) throw new Error('Omschrijving van de storing is verplicht.')
+      const laptop = await prisma.laptop.findUnique({ where: { id: laptopId } })
+      if (!laptop) throw new Error('Laptop niet gevonden.')
+      if (issueBlockedStatuses.includes(laptop.status)) {
+        throw new Error(`Storing kan niet worden gemeld op een laptop met status ${laptop.status}.`)
+      }
+      await prisma.laptop.update({ where: { id: laptopId }, data: { status: LaptopStatus.DEFECT } })
+      return prisma.issue.create({
+        data: { laptopId, reportedById: user.id, description },
+        include: { laptop: true, reportedBy: true, resolvedBy: true }
+      })
+    },
+
+    resolveIssue: async (_: any, { issueId, solution }: any, { user }: any) => {
+      requireRole(user, 'HELPDESK')
+      if (!solution?.trim()) throw new Error('Oplossing is verplicht bij het afsluiten van een storing.')
+      const issue = await prisma.issue.findUnique({ where: { id: issueId } })
+      if (!issue) throw new Error('Storing niet gevonden.')
+      if (issue.resolved) throw new Error('Deze storing is al opgelost.')
+      await prisma.laptop.update({ where: { id: issue.laptopId }, data: { status: LaptopStatus.IN_CONTROL } })
+      return prisma.issue.update({
+        where: { id: issueId },
+        data: { resolved: true, solution, resolvedById: user.id, resolvedAt: new Date() },
+        include: { laptop: true, reportedBy: true, resolvedBy: true }
+      })
+    },
+
+    // UC-04: Controle na gebruik (checklist)
+    submitChecklist: async (_: any, args: any, { user }: any) => {
+      requireRole(user, 'HELPDESK')
+      const { laptopId, geenSchade, geenBestanden, schoongemaakt, accuOk, updatesOk } = args
+      const laptop = await prisma.laptop.findUnique({ where: { id: laptopId } })
+      if (!laptop) throw new Error('Laptop niet gevonden.')
+      if (laptop.status !== LaptopStatus.IN_CONTROL) {
+        throw new Error('Checklist kan alleen worden ingediend voor een laptop met status IN_CONTROL.')
+      }
+      const passed = geenSchade && geenBestanden && schoongemaakt && accuOk && updatesOk
+      const newStatus = passed ? LaptopStatus.AVAILABLE : LaptopStatus.DEFECT
+      await prisma.laptop.update({ where: { id: laptopId }, data: { status: newStatus } })
+      return prisma.checklistReport.create({
+        data: { laptopId, submittedById: user.id, geenSchade, geenBestanden, schoongemaakt, accuOk, updatesOk, passed },
+        include: { laptop: true, submittedBy: true }
+      })
+    },
+
+    // UC-03: Laptop uit beheer nemen
+    decommissionLaptop: async (_: any, { laptopId, reden }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      if (!reden?.trim()) throw new Error('Reden voor uit beheer nemen is verplicht.')
+      const laptop = await prisma.laptop.findUnique({ where: { id: laptopId }, include: { decommission: true } })
+      if (!laptop) throw new Error('Laptop niet gevonden.')
+      if (laptop.decommission) throw new Error('Deze laptop is al uit beheer genomen.')
+      if (decommissionBlockedStatuses.includes(laptop.status)) {
+        throw new Error(`Laptop met status ${laptop.status} kan niet uit beheer worden genomen.`)
+      }
+      await prisma.decommissionLog.create({ data: { laptopId, doneById: user.id, reden } })
+      return prisma.laptop.update({ where: { id: laptopId }, data: { status: LaptopStatus.OUT_OF_SERVICE } })
+    },
+
+    // UC-05: Software aanvraag
+    requestSoftware: async (_: any, { userId, activityId, title, beschrijving }: any, { user }: any) => {
+      requireRole(user, 'OWNER')
+      if (!title?.trim()) throw new Error('Titel van de softwareaanvraag is verplicht.')
+      const activity = await prisma.activity.findUnique({ where: { id: activityId } })
+      if (!activity) throw new Error('Activiteit niet gevonden.')
+      const diffDays = (activity.start_datum_tijd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      if (diffDays < 2) throw new Error('Softwareaanvraag moet minimaal 2 dagen voor de activiteit worden ingediend.')
+      return prisma.softwareRequest.create({
+        data: { requesterId: userId, activityId, title, beschrijving: beschrijving ?? null },
+        include: { requester: true, approver: true, activity: true }
+      })
+    },
+
+    reviewSoftwareRequest: async (_: any, { requestId, adminId, approve, reason }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      const request = await prisma.softwareRequest.findUnique({ where: { id: requestId } })
+      if (!request) throw new Error('Softwareaanvraag niet gevonden.')
+      if (request.status !== SoftwareRequestStatus.REQUESTED) throw new Error('Alleen aanvragen met status REQUESTED kunnen worden beoordeeld.')
+      if (!approve && !reason) throw new Error('Een reden is verplicht bij afwijzing van een softwareaanvraag.')
+      return prisma.softwareRequest.update({
+        where: { id: requestId },
+        data: {
+          status: approve ? SoftwareRequestStatus.APPROVED : SoftwareRequestStatus.REJECTED,
+          approverId: adminId,
+          rejectionReason: reason ?? null,
+        },
+        include: { requester: true, approver: true, activity: true }
+      })
     },
   },
 
@@ -132,5 +285,27 @@ export const resolvers = {
     requester: (parent: any) => prisma.user.findUnique({ where: { id: parent.requesterId } }),
     approver: (parent: any) => parent.approverId ? prisma.user.findUnique({ where: { id: parent.approverId } }) : null,
     laptops: (parent: any) => prisma.laptop.findMany({ where: { reservations: { some: { id: parent.id } } } }),
-  }
+  },
+
+  Issue: {
+    laptop: (parent: any) => prisma.laptop.findUnique({ where: { id: parent.laptopId } }),
+    reportedBy: (parent: any) => prisma.user.findUnique({ where: { id: parent.reportedById } }),
+    resolvedBy: (parent: any) => parent.resolvedById ? prisma.user.findUnique({ where: { id: parent.resolvedById } }) : null,
+  },
+
+  ChecklistReport: {
+    laptop: (parent: any) => prisma.laptop.findUnique({ where: { id: parent.laptopId } }),
+    submittedBy: (parent: any) => prisma.user.findUnique({ where: { id: parent.submittedById } }),
+  },
+
+  DecommissionLog: {
+    laptop: (parent: any) => prisma.laptop.findUnique({ where: { id: parent.laptopId } }),
+    doneBy: (parent: any) => prisma.user.findUnique({ where: { id: parent.doneById } }),
+  },
+
+  SoftwareRequest: {
+    requester: (parent: any) => prisma.user.findUnique({ where: { id: parent.requesterId } }),
+    approver: (parent: any) => parent.approverId ? prisma.user.findUnique({ where: { id: parent.approverId } }) : null,
+    activity: (parent: any) => prisma.activity.findUnique({ where: { id: parent.activityId } }),
+  },
 }
