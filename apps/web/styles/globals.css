@@ -80,13 +80,13 @@ body {
   color: var(--black);
   font-family: var(--font);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.7;
   min-height: 100vh;
 }
 
 /* ─── Typography ─────────────────────────────────────── */
-h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; margin: 0 0 4px; }
-h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.2px; margin: 0 0 4px; }
+h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.6px; margin: 0 0 4px; line-height: 1.2; }
+h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; margin: 0 0 4px; }
 h3 { font-size: 15px; font-weight: 600; margin: 0; }
 
 /* ─── Shared components ──────────────────────────────── */
@@ -206,14 +206,16 @@ select.input:focus { border-color: var(--black); }
 
 /* ─── Alerts ─────────────────────────────────────────── */
 .alert {
-  padding: 12px 0;
+  padding: 10px 14px;
   font-size: 13px;
   border: none;
   border-left: 2px solid;
-  padding-left: 14px;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
   background: transparent;
   border-radius: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
 .alert-ok    { color: #15803d; border-color: #86efac; }
 .alert-error { color: var(--red); border-color: var(--red); }
@@ -231,8 +233,8 @@ select.input:focus { border-color: var(--black); }
 .divider { border: none; border-top: 1px solid var(--border-subtle); margin: 28px 0; }
 
 /* ─── Page title row ─────────────────────────────────── */
-.page-header { margin-bottom: 48px; }
-.page-header p { color: var(--grey); font-size: 13px; margin: 6px 0 0; }
+.page-header { margin-bottom: 56px; }
+.page-header p { color: var(--grey); font-size: 13px; margin: 8px 0 0; font-weight: 300; letter-spacing: 0.01em; }
 
 /* ─── Section label ──────────────────────────────────── */
 .section-label {

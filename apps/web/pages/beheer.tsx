@@ -62,7 +62,10 @@ export default function Beheer() {
   }
 
   return (
-    <Layout title="Laptop beheer" subtitle="Laptops uit beheer nemen">
+    <Layout
+      title="Laptop beheer"
+      subtitle="Laptops uit beheer nemen"
+    >
 
       {!selectedUserId && (
         <div className="empty">
@@ -86,7 +89,8 @@ export default function Beheer() {
           )}
 
           <div style={{ marginBottom: 40 }}>
-            <h2 style={{ marginBottom: 16 }}>
+            <h2 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <img src="/icons/cogwheel.png" alt="" width={20} height={20} style={{ opacity: 0.7, flexShrink: 0 }} />
               Actieve laptops{' '}
               <span style={{ fontWeight: 400, color: 'var(--grey)', fontSize: 14 }}>({actiefLaptops.length})</span>
             </h2>

@@ -148,7 +148,10 @@ export default function Storingen() {
             </div>
           </div>
 
-          <h2 style={{ marginBottom: 16 }}>
+          <h2 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+            {openIssues.length > 0 && (
+              <img src="/icons/warning.png" alt="" width={20} height={20} style={{ opacity: 0.85, flexShrink: 0 }} />
+            )}
             Open storingen{' '}
             <span style={{ fontWeight: 400, color: 'var(--grey)', fontSize: 14 }}>({openIssues.length})</span>
           </h2>
