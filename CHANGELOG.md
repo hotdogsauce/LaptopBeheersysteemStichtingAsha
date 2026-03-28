@@ -5,6 +5,24 @@ Format gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/).
 
 ---
 
+## [1.0.0] - 2026-03-28
+
+### Eindoplevering
+
+#### Acceptatie & overdracht
+- `Acceptatietestformulier-Sprint8.md` — 5 UAT-scenario's voor product owner
+- `Opleverdossier.md` — index van alle opgeleverde documenten
+- `Gebruikershandleiding.md` — volledige handleiding per rol (Eigenaar, Helpdesk, Beheerder)
+- `Architectuuroverzicht.md` — stack, datamodel, Docker, AI-integratie, security, CI/CD
+- `Release-notes-v1.0.0.md` — niet-technische releasenotes voor de organisatie
+- `Reflectieverslag.md` — template voor persoonlijke reflectie
+
+### Geen functionele wijzigingen
+Sprint 8 bevat uitsluitend documentatie en formele oplevering.
+Alle 69 tests blijven groen.
+
+---
+
 ## [0.4.0] - 2026-03-28
 
 ### Toegevoegd
