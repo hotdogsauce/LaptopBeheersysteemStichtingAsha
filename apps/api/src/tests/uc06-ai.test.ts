@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { PrismaClient, UserRole, LaptopStatus } from '@prisma/client'
 
-// Mock Anthropic SDK — no real API calls in tests
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: class MockAnthropic {
-    messages = {
-      create: vi.fn().mockResolvedValue({
-        content: [{ type: 'text', text: 'Gemockt AI antwoord voor testdoeleinden.' }],
-      })
+// Mock Groq SDK — no real API calls in tests
+vi.mock('groq-sdk', () => ({
+  default: class MockGroq {
+    chat = {
+      completions: {
+        create: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: 'Gemockt AI antwoord voor testdoeleinden.' } }],
+        }),
+      },
     }
   },
 }))

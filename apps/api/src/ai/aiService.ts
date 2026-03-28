@@ -1,11 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk'
+import Groq from 'groq-sdk'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient({
   datasources: { db: { url: process.env.DATABASE_URL } }
 })
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 const SYSTEM_PROMPT = `Je bent een hulpassistent voor het laptopbeheersysteem van Stichting Asha.
 
@@ -77,11 +77,11 @@ async function fetchContext(userId: string, role: string): Promise<string> {
 export async function askAI(userId: string, role: string, question: string): Promise<string> {
   const context = await fetchContext(userId, role)
 
-  const message = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
     max_tokens: 1024,
-    system: SYSTEM_PROMPT,
     messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
       {
         role: 'user',
         content: `Contextdata (actuele systeemdata voor jouw rol):\n${context}\n\nVraag: ${question}`,
@@ -89,7 +89,7 @@ export async function askAI(userId: string, role: string, question: string): Pro
     ],
   })
 
-  const block = message.content[0]
-  if (block.type !== 'text') throw new Error('Onverwacht antwoordtype van AI.')
-  return block.text
+  const text = completion.choices[0]?.message?.content
+  if (!text) throw new Error('Geen antwoord ontvangen van AI.')
+  return text
 }
