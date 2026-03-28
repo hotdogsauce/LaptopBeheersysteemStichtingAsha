@@ -5,6 +5,35 @@ Format gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/).
 
 ---
 
+## [0.3.0] - 2026-03-28
+
+### Toegevoegd
+
+#### UC-06: AI ondersteuning
+- `askAI(question: String!): String!` mutation — alle rollen kunnen vragen stellen in natuurlijke taal
+- `apps/api/src/ai/aiService.ts` — rolgebaseerde contextophaling via Prisma + Claude API aanroep
+  - ADMIN: alle laptops, openstaande reserveringen, open storingen, openstaande softwareaanvragen
+  - OWNER: eigen reserveringen + beschikbare activiteiten
+  - HELPDESK: open storingen + IN_CONTROL laptops
+- Systeemsinstruct verbiedt de AI expliciet beslissingen te nemen of data te wijzigen
+- Inputvalidatie: lege vraag geblokkeerd, maximaal 500 tekens
+- Frontend pagina: `/ai` (ADMIN, OWNER, HELPDESK) met vraagveld en antwoordweergave
+- Navigatie: "AI assistent" toegevoegd aan zijmenu voor alle drie rollen
+- 11 nieuwe tests in `uc06-ai.test.ts` (7 business rules + 3 negatief + 4 functioneel + 2 regressie)
+- `@anthropic-ai/sdk` toegevoegd als dependency (model: claude-opus-4-6)
+- `AI-gebruikershandleiding.md` — uitleg per rol met voorbeeldvragen en beperkingen
+- `Testformulier-Sprint6.md` — 14 testcases (5 functioneel, 6 negatief, 3 regressie)
+
+### Gewijzigd
+- `typeDefs.ts` — `askAI` mutation toegevoegd onder Sprint 6
+- `resolvers.ts` — `askAI` resolver met `requireRole` + inputvalidatie + aiService call
+- `components/Layout.tsx` — "AI assistent" nav-item voor ADMIN, OWNER en HELPDESK
+
+### Testresultaat
+- 7 testbestanden, **69 tests**, 69 geslaagd, 0 mislukt
+
+---
+
 ## [0.2.0] - 2026-03-27
 
 ### Toegevoegd

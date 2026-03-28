@@ -164,5 +164,8 @@ export const typeDefs = `
     # Sprint 5 – UC-05 Software aanvraag
     requestSoftware(userId: ID!, activityId: ID!, title: String!, beschrijving: String): SoftwareRequest!
     reviewSoftwareRequest(requestId: ID!, adminId: ID!, approve: Boolean!, reason: String): SoftwareRequest!
+
+    # Sprint 6 – UC-06 AI ondersteuning
+    askAI(question: String!): String!
   }
 `

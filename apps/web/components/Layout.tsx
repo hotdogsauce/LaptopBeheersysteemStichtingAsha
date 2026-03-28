@@ -15,15 +15,18 @@ const navByRole: Record<string, { href: string; label: string }[]> = {
     { href: '/reserveringen', label: 'Reserveringen' },
     { href: '/beheer', label: 'Beheer' },
     { href: '/software', label: 'Software' },
+    { href: '/ai', label: 'AI assistent' },
   ],
   OWNER: [
     { href: '/aanvragen', label: 'Aanvragen' },
     { href: '/software', label: 'Software' },
+    { href: '/ai', label: 'AI assistent' },
   ],
   HELPDESK: [
     { href: '/', label: 'Overzicht' },
     { href: '/storingen', label: 'Storingen' },
     { href: '/controle', label: 'Controle' },
+    { href: '/ai', label: 'AI assistent' },
   ],
 }
 

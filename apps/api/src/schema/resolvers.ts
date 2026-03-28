@@ -248,6 +248,15 @@ export const resolvers = {
       return prisma.laptop.update({ where: { id: laptopId }, data: { status: LaptopStatus.OUT_OF_SERVICE } })
     },
 
+    // UC-06: AI ondersteuning
+    askAI: async (_: any, { question }: any, { user }: any) => {
+      requireRole(user, 'ADMIN', 'OWNER', 'HELPDESK')
+      if (!question?.trim()) throw new Error('Vraag mag niet leeg zijn.')
+      if (question.length > 500) throw new Error('Vraag mag maximaal 500 tekens bevatten.')
+      const { askAI } = await import('../ai/aiService.js')
+      return askAI(user.id, user.role, question)
+    },
+
     // UC-05: Software aanvraag
     requestSoftware: async (_: any, { userId, activityId, title, beschrijving }: any, { user }: any) => {
       requireRole(user, 'OWNER')

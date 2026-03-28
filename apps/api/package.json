@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
- "scripts": {
-  "test": "vitest run",
-  "start": "tsx src/index.ts"
-},
+  "scripts": {
+    "test": "vitest run",
+    "start": "tsx src/index.ts"
+  },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@graphql-tools/schema": "^10.0.31",
     "@prisma/client": "^5.22.0",
     "graphql-yoga": "^5.18.1",
