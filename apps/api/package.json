@@ -19,10 +19,10 @@
     "@prisma/client": "^5.22.0",
     "graphql-yoga": "^5.18.1",
     "groq-sdk": "^1.1.2",
-    "prisma": "^5.22.0"
+    "prisma": "^5.22.0",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
-    "tsx": "^4.21.0",
     "vitest": "^4.1.0"
   }
 }
