@@ -5,6 +5,49 @@ Format gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/).
 
 ---
 
+## [0.4.0] - 2026-03-28
+
+### Toegevoegd
+
+#### Docker
+- `apps/api/Dockerfile` — node:20-slim, non-root (`USER node`), OpenSSL, Prisma generate
+- `apps/web/Dockerfile` — multi-stage build (deps → builder → runner), non-root user `nextjs`
+- `docker-compose.yml` — volledig herschreven met security hardening:
+  - `db`: alleen intern bereikbaar (geen publieke port), healthcheck, volume persistentie
+  - `api`: `no-new-privileges`, `read_only: true`, `tmpfs /tmp`, healthcheck op `/health`
+  - `web`: `no-new-privileges`, `read_only: true`, depends on api healthcheck
+  - Twee gescheiden netwerken: `backend` (db↔api) en `frontend` (api↔web)
+- `.env.example` — template met alle vereiste variabelen
+- `apps/api/.dockerignore` en `apps/web/.dockerignore`
+
+#### CI/CD
+- `.github/workflows/ci.yml` — GitHub Actions pipeline:
+  - PostgreSQL service container voor integratietests
+  - Prisma migrate + alle 69 tests
+  - Next.js build verificatie
+  - Triggered op push/PR naar main
+
+#### Hardening
+- `apps/api/src/utils.ts` — `checkAiRateLimit` (10 req/min per user) + `logAudit` (JSON naar stdout)
+- Rate limiting toegevoegd aan `askAI` resolver
+- Audit logging voor: `reservation_reviewed`, `software_request_reviewed`, `laptop_status_changed`, `ai_question`
+- `/health` GET endpoint — controleert DB bereikbaarheid, retourneert JSON status
+- `maskedErrors: true` — geen stacktraces naar gebruikers
+- `PORT` instelbaar via environment variable
+
+#### Next.js
+- `output: 'standalone'` in `next.config.ts` voor Docker-compatibele build
+
+#### Documentatie
+- `Runbook.md` — starten, stoppen, debuggen, logs, healthcheck
+- `Deployment-guide.md` — lokaal Docker + Railway/Vercel productie
+- `Testformulier-Sprint7.md` — 19 testcases
+
+### Testresultaat
+- 7 testbestanden, **69 tests**, 69 geslaagd, 0 mislukt
+
+---
+
 ## [0.3.0] - 2026-03-28
 
 ### Toegevoegd

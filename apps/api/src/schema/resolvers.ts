@@ -1,4 +1,5 @@
 import { requireRole } from '../auth'
+import { checkAiRateLimit, logAudit } from '../utils.js'
 import { PrismaClient, LaptopStatus, ReservationStatus, SoftwareRequestStatus } from '@prisma/client'
 
 const prisma = new PrismaClient({
@@ -138,7 +139,7 @@ export const resolvers = {
       if (!reservation) throw new Error('Reservering niet gevonden.')
       if (reservation.status !== ReservationStatus.REQUESTED) throw new Error('Alleen aanvragen met status REQUESTED kunnen worden gekeurd.')
       if (!approve && !reason) throw new Error('Een reden is verplicht bij afwijzing.')
-      return prisma.reservation.update({
+      const result = await prisma.reservation.update({
         where: { id: reservationId },
         data: {
           status: approve ? ReservationStatus.APPROVED : ReservationStatus.REJECTED,
@@ -147,6 +148,8 @@ export const resolvers = {
         },
         include: { activity: true, requester: true, approver: true, laptops: true }
       })
+      logAudit('reservation_reviewed', { reservationId, adminId, approve, reason: reason ?? null })
+      return result
     },
 
     assignLaptopsToReservation: async (_: any, { reservationId, laptopIds }: any, { user }: any) => {
@@ -183,7 +186,9 @@ export const resolvers = {
       if (!laptop) throw new Error('Laptop niet gevonden.')
       if (status === 'DEFECT' && !maintenanceLog) throw new Error('maintenanceLog is verplicht bij status DEFECT.')
       checkTransition(laptop.status, status as LaptopStatus)
-      return prisma.laptop.update({ where: { id: laptopId }, data: { status } })
+      const result = await prisma.laptop.update({ where: { id: laptopId }, data: { status } })
+      logAudit('laptop_status_changed', { laptopId, from: laptop.status, to: status, userId: user.id })
+      return result
     },
 
     // UC-02: Storing melden en oplossen
@@ -253,6 +258,8 @@ export const resolvers = {
       requireRole(user, 'ADMIN', 'OWNER', 'HELPDESK')
       if (!question?.trim()) throw new Error('Vraag mag niet leeg zijn.')
       if (question.length > 500) throw new Error('Vraag mag maximaal 500 tekens bevatten.')
+      checkAiRateLimit(user.id)
+      logAudit('ai_question', { userId: user.id, role: user.role, questionLength: question.length })
       const { askAI } = await import('../ai/aiService.js')
       return askAI(user.id, user.role, question)
     },
@@ -277,7 +284,7 @@ export const resolvers = {
       if (!request) throw new Error('Softwareaanvraag niet gevonden.')
       if (request.status !== SoftwareRequestStatus.REQUESTED) throw new Error('Alleen aanvragen met status REQUESTED kunnen worden beoordeeld.')
       if (!approve && !reason) throw new Error('Een reden is verplicht bij afwijzing van een softwareaanvraag.')
-      return prisma.softwareRequest.update({
+      const result = await prisma.softwareRequest.update({
         where: { id: requestId },
         data: {
           status: approve ? SoftwareRequestStatus.APPROVED : SoftwareRequestStatus.REJECTED,
@@ -286,6 +293,8 @@ export const resolvers = {
         },
         include: { requester: true, approver: true, activity: true }
       })
+      logAudit('software_request_reviewed', { requestId, adminId, approve, reason: reason ?? null })
+      return result
     },
   },
 
