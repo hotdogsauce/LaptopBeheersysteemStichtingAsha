@@ -14,11 +14,13 @@ const navByRole: Record<string, { href: string; label: string }[]> = {
     { href: '/', label: 'Overzicht' },
     { href: '/reserveringen', label: 'Reserveringen' },
     { href: '/beheer', label: 'Beheer' },
+    { href: '/activiteiten', label: 'Activiteiten' },
     { href: '/software', label: 'Software' },
     { href: '/ai', label: 'AI assistent' },
   ],
   OWNER: [
     { href: '/aanvragen', label: 'Aanvragen' },
+    { href: '/activiteiten', label: 'Activiteiten' },
     { href: '/software', label: 'Software' },
     { href: '/ai', label: 'AI assistent' },
   ],

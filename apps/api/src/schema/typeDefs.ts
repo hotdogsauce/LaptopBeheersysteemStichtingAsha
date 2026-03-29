@@ -46,9 +46,27 @@ export const typeDefs = `
     missingAt: String
   }
 
+  type LaptopDetail {
+    id: ID!
+    merk_type: String!
+    status: LaptopStatus!
+    specificaties: String
+    heeft_vga: Boolean!
+    heeft_hdmi: Boolean!
+    missingAt: String
+    issues: [Issue!]!
+    checklists: [ChecklistReport!]!
+    reservations: [Reservation!]!
+    decommission: DecommissionLog
+  }
+
   type Activity {
     id: ID!
     title: String!
+    start_datum_tijd: String!
+    eind_datum_tijd: String!
+    omschrijving: String
+    locatie: String
     software_benodigdheden: String
   }
 
@@ -109,11 +127,19 @@ export const typeDefs = `
     createdAt: String!
   }
 
+  type AuthPayload {
+    userId: ID!
+    name: String!
+    role: UserRole!
+    email: String!
+  }
+
   type Query {
     # Sprint 4
     laptops: [Laptop!]!
     laptop(id: ID!): Laptop
     laptopsByStatus(status: LaptopStatus!): [Laptop!]!
+    laptopDetail(id: ID!): LaptopDetail
     myReservations(userId: ID!): [Reservation!]!
     reservationById(id: ID!): Reservation
     pendingReservations: [Reservation!]!
@@ -136,13 +162,6 @@ export const typeDefs = `
     mySoftwareRequests(userId: ID!): [SoftwareRequest!]!
   }
 
-  type AuthPayload {
-    userId: ID!
-    name: String!
-    role: UserRole!
-    email: String!
-  }
-
   type Mutation {
     login(email: String!, password: String!): AuthPayload
 
@@ -153,6 +172,7 @@ export const typeDefs = `
     assignLaptopsToReservation(reservationId: ID!, laptopIds: [ID!]!): Reservation
     cancelReservation(reservationId: ID!, userId: ID!): Reservation
     processReturn(laptopId: ID!, status: LaptopStatus!, maintenanceLog: String): Laptop
+    bulkStatusChange(laptopIds: [ID!]!, status: LaptopStatus!): [Laptop!]!
 
     # Sprint 5 – UC-02 Storing melden en oplossen
     reportIssue(laptopId: ID!, description: String!): Issue!
@@ -177,5 +197,9 @@ export const typeDefs = `
 
     # Sprint 6 – UC-06 AI ondersteuning
     askAI(question: String!): String!
+
+    # Uitbreidingen
+    createActivity(title: String!, start_datum_tijd: String!, eind_datum_tijd: String!, omschrijving: String, locatie: String, software_benodigdheden: String): Activity!
+    createUser(name: String!, email: String!, password: String!, role: UserRole!, adminPassword: String): User!
   }
 `

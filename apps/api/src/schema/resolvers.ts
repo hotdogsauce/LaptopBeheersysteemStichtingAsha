@@ -46,6 +46,16 @@ export const resolvers = {
     laptop: (_: any, { id }: { id: string }) => prisma.laptop.findUnique({ where: { id } }),
     laptopsByStatus: (_: any, { status }: { status: LaptopStatus }) =>
       prisma.laptop.findMany({ where: { status } }),
+    laptopDetail: (_: any, { id }: { id: string }) =>
+      prisma.laptop.findUnique({
+        where: { id },
+        include: {
+          issues: { include: { reportedBy: true, resolvedBy: true }, orderBy: { createdAt: 'desc' } },
+          checklists: { include: { submittedBy: true }, orderBy: { createdAt: 'desc' } },
+          reservations: { include: { requester: true, activity: true }, orderBy: { startDate: 'desc' } },
+          decommission: { include: { doneBy: true } },
+        }
+      }),
     myReservations: (_: any, { userId }: { userId: string }) =>
       prisma.reservation.findMany({
         where: { requesterId: userId },
@@ -127,7 +137,7 @@ export const resolvers = {
     },
 
     requestReservation: async (_: any, { userId, activityId, startDate, endDate }: any, { user }: any) => {
-      requireRole(user, 'OWNER')
+      requireRole(user, 'OWNER', 'ADMIN')
       const start = new Date(startDate)
       const now = new Date()
       const diffDays = (start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
@@ -260,6 +270,47 @@ export const resolvers = {
       }
       await prisma.decommissionLog.create({ data: { laptopId, doneById: user.id, reden } })
       return prisma.laptop.update({ where: { id: laptopId }, data: { status: LaptopStatus.OUT_OF_SERVICE } })
+    },
+
+    bulkStatusChange: async (_: any, { laptopIds, status }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      const laptops = await prisma.laptop.findMany({ where: { id: { in: laptopIds } } })
+      for (const laptop of laptops) {
+        checkTransition(laptop.status, status as LaptopStatus)
+      }
+      const data: any = { status }
+      if (status === 'MISSING') data.missingAt = new Date()
+      if (status !== 'MISSING') data.missingAt = null
+      await prisma.laptop.updateMany({ where: { id: { in: laptopIds } }, data })
+      return prisma.laptop.findMany({ where: { id: { in: laptopIds } } })
+    },
+
+    createActivity: async (_: any, args: any, { user }: any) => {
+      requireRole(user, 'OWNER', 'ADMIN')
+      const { title, start_datum_tijd, eind_datum_tijd, omschrijving, locatie, software_benodigdheden } = args
+      if (!title?.trim()) throw new Error('Titel is verplicht.')
+      const start = new Date(start_datum_tijd)
+      const eind = new Date(eind_datum_tijd)
+      if (isNaN(start.getTime())) throw new Error('Ongeldige startdatum.')
+      if (eind < start) throw new Error('Einddatum mag niet voor startdatum liggen.')
+      return prisma.activity.create({
+        data: { title, start_datum_tijd: start, eind_datum_tijd: eind, omschrijving: omschrijving ?? null, locatie: locatie ?? null, software_benodigdheden: software_benodigdheden ?? null }
+      })
+    },
+
+    createUser: async (_: any, { name, email, password, role, adminPassword }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      if (!name?.trim()) throw new Error('Naam is verplicht.')
+      if (!email?.trim()) throw new Error('E-mailadres is verplicht.')
+      if (!password?.trim()) throw new Error('Wachtwoord is verplicht.')
+      if (role === 'ADMIN') {
+        if (!adminPassword) throw new Error('Jouw wachtwoord is verplicht om een admin aan te maken.')
+        const admin = await prisma.user.findUnique({ where: { id: user.id } })
+        if (!admin || admin.password !== adminPassword) throw new Error('Wachtwoord onjuist.')
+      }
+      const existing = await prisma.user.findUnique({ where: { email } })
+      if (existing) throw new Error('Er bestaat al een account met dit e-mailadres.')
+      return prisma.user.create({ data: { name, email, password, role } })
     },
 
     // UC-06: AI ondersteuning

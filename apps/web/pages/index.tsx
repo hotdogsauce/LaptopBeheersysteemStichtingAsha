@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/router'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
@@ -197,6 +198,7 @@ function SkeletonRow() {
 export default function Home() {
   const { selectedUserId, selectedUser } = useUser()
   const { toast } = useToast()
+  const router = useRouter()
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [loading, setLoading] = useState(false)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
@@ -369,7 +371,7 @@ export default function Home() {
                   <HoverCard key={laptop.id} laptop={laptop}>
                     <div className="card-row laptop-row">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
+                        <div style={{ cursor: 'pointer' }} onClick={() => router.push(`/laptops/${laptop.id}`)}>
                           <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{laptop.merk_type}</p>
                           <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
                             {laptop.specificaties || '—'}
