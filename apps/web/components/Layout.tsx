@@ -496,38 +496,70 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         </main>
       </div>
 
-      {/* Anchor watermark — bottom left */}
+      {/* Compass rose watermark — centre of page */}
       <svg
         aria-hidden
-        viewBox="0 0 120 160"
+        viewBox="0 0 200 200"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{
           position: 'fixed',
-          bottom: -20,
-          left: 60,
-          width: 220,
-          opacity: isDark ? 0.035 : 0.045,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 420,
+          opacity: isDark ? 0.018 : 0.022,
           pointerEvents: 'none',
           userSelect: 'none',
           zIndex: 0,
           color: isDark ? '#fff' : '#000',
         }}
       >
-        {/* Ring */}
-        <circle cx="60" cy="18" r="12" stroke="currentColor" strokeWidth="7" />
-        {/* Shaft */}
-        <line x1="60" y1="30" x2="60" y2="130" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
-        {/* Crossbar */}
-        <line x1="22" y1="55" x2="98" y2="55" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
-        {/* Left arm */}
-        <path d="M60 130 Q22 130 22 105" stroke="currentColor" strokeWidth="7" fill="none" strokeLinecap="round" />
-        {/* Right arm */}
-        <path d="M60 130 Q98 130 98 105" stroke="currentColor" strokeWidth="7" fill="none" strokeLinecap="round" />
-        {/* Left cap */}
-        <circle cx="22" cy="105" r="6" fill="currentColor" />
-        {/* Right cap */}
-        <circle cx="98" cy="105" r="6" fill="currentColor" />
+        {/* Outer circle */}
+        <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="2" />
+        {/* Inner circle */}
+        <circle cx="100" cy="100" r="60" stroke="currentColor" strokeWidth="1.5" />
+        {/* Innermost circle */}
+        <circle cx="100" cy="100" r="8" stroke="currentColor" strokeWidth="2" />
+        {/* N point */}
+        <path d="M100 100 L92 42 L100 10 L108 42 Z" fill="currentColor" />
+        {/* S point */}
+        <path d="M100 100 L92 158 L100 190 L108 158 Z" fill="currentColor" opacity="0.5" />
+        {/* E point */}
+        <path d="M100 100 L158 92 L190 100 L158 108 Z" fill="currentColor" opacity="0.5" />
+        {/* W point */}
+        <path d="M100 100 L42 92 L10 100 L42 108 Z" fill="currentColor" opacity="0.5" />
+        {/* NE point */}
+        <path d="M100 100 L124 76 L141 59 L117 83 Z" fill="currentColor" opacity="0.35" />
+        {/* SW point */}
+        <path d="M100 100 L76 124 L59 141 L83 117 Z" fill="currentColor" opacity="0.35" />
+        {/* NW point */}
+        <path d="M100 100 L76 76 L59 59 L83 83 Z" fill="currentColor" opacity="0.35" />
+        {/* SE point */}
+        <path d="M100 100 L124 124 L141 141 L117 117 Z" fill="currentColor" opacity="0.35" />
+        {/* Tick marks */}
+        {Array.from({ length: 32 }).map((_, i) => {
+          const angle = (i * 360) / 32
+          const rad = (angle * Math.PI) / 180
+          const isMain = i % 8 === 0
+          const isMid = i % 4 === 0
+          const r1 = isMain ? 62 : isMid ? 63 : 64
+          const r2 = 68
+          return (
+            <line
+              key={i}
+              x1={100 + r1 * Math.sin(rad)}
+              y1={100 - r1 * Math.cos(rad)}
+              x2={100 + r2 * Math.sin(rad)}
+              y2={100 - r2 * Math.cos(rad)}
+              stroke="currentColor"
+              strokeWidth={isMain ? 2 : 1}
+              opacity={isMain ? 1 : 0.5}
+            />
+          )
+        })}
+        {/* Centre dot */}
+        <circle cx="100" cy="100" r="3" fill="currentColor" />
       </svg>
 
       {/* Floral watermark — bottom right */}
