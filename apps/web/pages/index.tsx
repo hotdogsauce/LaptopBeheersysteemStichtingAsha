@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useToast } from '../context/ToastContext'
 
 interface Laptop {
   id: string
@@ -41,11 +42,23 @@ const allowedTransitions: Record<string, string[]> = {
   MISSING:        [],
 }
 
+function SkeletonRow() {
+  return (
+    <div className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className="skeleton" style={{ width: 180, height: 14 }} />
+        <div className="skeleton" style={{ width: 120, height: 11 }} />
+      </div>
+      <div className="skeleton" style={{ width: 88, height: 22, borderRadius: 99 }} />
+    </div>
+  )
+}
+
 export default function Home() {
   const { selectedUserId, selectedUser } = useUser()
+  const { toast } = useToast()
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [loading, setLoading] = useState(false)
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [nieuwMerk, setNieuwMerk] = useState('')
@@ -70,7 +83,7 @@ export default function Home() {
   }
 
   async function maakLaptopAan() {
-    if (!nieuwMerk.trim()) { setBericht({ text: 'Merk/type is verplicht.', type: 'fout' }); return }
+    if (!nieuwMerk.trim()) { toast('Merk/type is verplicht.', 'error'); return }
     const data = await gql(
       `mutation($merk_type: String!, $specificaties: String, $heeft_vga: Boolean!, $heeft_hdmi: Boolean!) {
         createLaptop(merk_type: $merk_type, specificaties: $specificaties, heeft_vga: $heeft_vga, heeft_hdmi: $heeft_hdmi) {
@@ -81,9 +94,9 @@ export default function Home() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: `Laptop "${nieuwMerk}" aangemaakt.`, type: 'ok' })
+      toast(`Laptop "${nieuwMerk}" aangemaakt.`)
       setNieuwMerk(''); setNieuwSpec(''); setNieuwVga(false); setNieuwHdmi(false)
       setShowCreateForm(false)
       herlaadLaptops()
@@ -100,9 +113,9 @@ export default function Home() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: `Status gewijzigd naar ${statusLabel[nieuweStatus] || nieuweStatus}.`, type: 'ok' })
+      toast(`Status gewijzigd naar ${statusLabel[nieuweStatus] || nieuweStatus}.`)
       setWijzigId(null); setNieuweStatus(''); setMaintenanceLog('')
       herlaadLaptops()
     }
@@ -120,17 +133,11 @@ export default function Home() {
 
       {selectedUserId && (
         <>
-          {bericht && (
-            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-              {bericht.text}
-            </div>
-          )}
-
           {(selectedUser?.role === 'ADMIN' || selectedUser?.role === 'HELPDESK') && (
             <div style={{ marginBottom: 28 }}>
               <button
                 className="btn btn-ghost"
-                onClick={() => { setShowCreateForm(v => !v); setBericht(null) }}
+                onClick={() => setShowCreateForm(v => !v)}
               >
                 {showCreateForm ? '✕ Annuleren' : '+ Laptop toevoegen'}
               </button>
@@ -173,7 +180,11 @@ export default function Home() {
             </div>
           )}
 
-          {loading && <p style={{ color: 'var(--grey)', fontSize: 13 }}>Laden...</p>}
+          {loading && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {[1,2,3,4,5].map(i => <SkeletonRow key={i} />)}
+            </div>
+          )}
 
           {!loading && laptops.length === 0 && (
             <div className="empty">

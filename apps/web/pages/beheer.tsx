@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useToast } from '../context/ToastContext'
 
 interface Laptop {
   id: string
@@ -25,8 +26,8 @@ const GEBLOKKEERD = ['RESERVED', 'IN_USE']
 
 export default function Beheer() {
   const { selectedUserId, selectedUser } = useUser()
+  const { toast } = useToast()
   const [laptops, setLaptops] = useState<Laptop[]>([])
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
   const [decommissionId, setDecommissionId] = useState('')
   const [reden, setReden] = useState('')
 
@@ -44,7 +45,7 @@ export default function Beheer() {
   }
 
   async function uitBeheer(laptopId: string) {
-    if (!reden.trim()) { setBericht({ text: 'Reden is verplicht.', type: 'fout' }); return }
+    if (!reden.trim()) { toast('Reden is verplicht.', 'error'); return }
     const data = await gql(
       `mutation($laptopId: ID!, $reden: String!) {
         decommissionLaptop(laptopId: $laptopId, reden: $reden) { id status merk_type }
@@ -53,19 +54,16 @@ export default function Beheer() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: `${data.data.decommissionLaptop.merk_type} is uit beheer genomen.`, type: 'ok' })
+      toast(`${data.data.decommissionLaptop.merk_type} is uit beheer genomen.`)
       setDecommissionId(''); setReden('')
       herlaadLaptops()
     }
   }
 
   return (
-    <Layout
-      title="Laptop beheer"
-      subtitle="Laptops uit beheer nemen"
-    >
+    <Layout title="Laptop beheer" subtitle="Laptops uit beheer nemen">
 
       {!selectedUserId && (
         <div className="empty">
@@ -82,12 +80,6 @@ export default function Beheer() {
 
       {selectedUserId && selectedUser?.role === 'ADMIN' && (
         <>
-          {bericht && (
-            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-              {bericht.text}
-            </div>
-          )}
-
           <div style={{ marginBottom: 40 }}>
             <h2 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
               <img src="/icons/cogwheel.png" alt="" width={20} height={20} style={{ opacity: 0.7, flexShrink: 0 }} />
