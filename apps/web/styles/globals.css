@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
+/* ─── Typed custom properties (enables CSS var transitions) ── */
+@property --white        { syntax: '<color>'; inherits: true; initial-value: #FFFFFF; }
+@property --black        { syntax: '<color>'; inherits: true; initial-value: #000000; }
+@property --red          { syntax: '<color>'; inherits: true; initial-value: #8b0000; }
+@property --red-dim      { syntax: '<color>'; inherits: true; initial-value: #6b0000; }
+@property --grey         { syntax: '<color>'; inherits: true; initial-value: #7d7d7d; }
+@property --border       { syntax: '<color>'; inherits: true; initial-value: #EBEBEB; }
+@property --border-subtle{ syntax: '<color>'; inherits: true; initial-value: #F3F3F3; }
+@property --bg-soft      { syntax: '<color>'; inherits: true; initial-value: #F8F8F8; }
+
 /* ─── Design tokens ──────────────────────────────────── */
 :root {
   --white:   #FFFFFF;
