@@ -136,7 +136,16 @@ export const typeDefs = `
     mySoftwareRequests(userId: ID!): [SoftwareRequest!]!
   }
 
+  type AuthPayload {
+    userId: ID!
+    name: String!
+    role: UserRole!
+    email: String!
+  }
+
   type Mutation {
+    login(email: String!, password: String!): AuthPayload
+
     # Sprint 4
     createLaptop(merk_type: String!, specificaties: String, heeft_vga: Boolean!, heeft_hdmi: Boolean!): Laptop!
     requestReservation(userId: ID!, activityId: ID!, startDate: String!, endDate: String!): Reservation

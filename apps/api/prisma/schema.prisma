@@ -41,6 +41,7 @@ model User {
   id                String            @id @default(uuid())
   name              String
   email             String            @unique
+  password          String            @default("asha2024")
   role              UserRole
   reservations      Reservation[]     @relation("requester")
   approvals         Reservation[]     @relation("approver")

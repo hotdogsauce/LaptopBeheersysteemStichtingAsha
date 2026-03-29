@@ -13,9 +13,9 @@ async function main() {
   // Gebruikers aanmaken
   await prisma.user.createMany({
     data: [
-      { name: 'Admin Gebruiker',    email: 'admin@asha.nl',     role: UserRole.ADMIN },
-      { name: 'Eigenaar Gebruiker', email: 'eigenaar@asha.nl',  role: UserRole.OWNER },
-      { name: 'Helpdesk Gebruiker', email: 'helpdesk@asha.nl',  role: UserRole.HELPDESK },
+      { name: 'Admin Gebruiker',    email: 'admin@asha.nl',     role: UserRole.ADMIN,    password: 'admin123' },
+      { name: 'Eigenaar Gebruiker', email: 'eigenaar@asha.nl',  role: UserRole.OWNER,    password: 'eigenaar123' },
+      { name: 'Helpdesk Gebruiker', email: 'helpdesk@asha.nl',  role: UserRole.HELPDESK, password: 'helpdesk123' },
     ]
   })
 

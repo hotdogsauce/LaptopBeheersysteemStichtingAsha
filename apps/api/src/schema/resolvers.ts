@@ -114,6 +114,12 @@ export const resolvers = {
   },
 
   Mutation: {
+    login: async (_: any, { email, password }: { email: string; password: string }) => {
+      const user = await prisma.user.findUnique({ where: { email } })
+      if (!user || user.password !== password) throw new Error('E-mailadres of wachtwoord onjuist.')
+      return { userId: user.id, name: user.name, role: user.role, email: user.email }
+    },
+
     // Sprint 4
     createLaptop: (_: any, args: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'HELPDESK')

@@ -65,7 +65,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, title, subtitle }: LayoutProps) {
-  const { users, selectedUserId, setSelectedUserId, selectedUser, theme, toggleTheme } = useUser()
+  const { selectedUser, theme, toggleTheme, loggedInUser, logout } = useUser()
   const router = useRouter()
 
   const [menuOpen, setMenuOpen] = useState(false)
@@ -438,33 +438,34 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             }} />
           </button>
 
-          {/* User selector */}
-          <select
-            className="input user-select"
-            style={{
-              width: 200, padding: '5px 28px 5px 10px', fontSize: 12,
-              height: 32, letterSpacing: '0.01em',
-              border: '1px solid var(--border)', borderRadius: 20, background: 'var(--white)',
-            }}
-            value={selectedUserId}
-            onChange={e => setSelectedUserId(e.target.value)}
-          >
-            <optgroup label="Beheerder">
-              {users.filter(u => u.role === 'ADMIN').map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Eigenaar activiteit">
-              {users.filter(u => u.role === 'OWNER').map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Helpdesk">
-              {users.filter(u => u.role === 'HELPDESK').map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </optgroup>
-          </select>
+          {/* Logged-in user + logout */}
+          {loggedInUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--black)', lineHeight: 1.2 }}>
+                  {loggedInUser.name}
+                </p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)', lineHeight: 1.2 }}>
+                  {roleLabel[loggedInUser.role] || loggedInUser.role}
+                </p>
+              </div>
+              <button
+                onClick={() => { logout(); router.push('/login') }}
+                title="Uitloggen"
+                style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 0, flexShrink: 0, color: 'var(--grey)', fontSize: 13,
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--red)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--red)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--grey)' }}
+              >
+                ↩
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
