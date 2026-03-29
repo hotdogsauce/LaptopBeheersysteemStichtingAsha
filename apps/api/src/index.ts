@@ -24,3 +24,39 @@ const PORT = Number(process.env.PORT) || 4000
 server.listen(PORT, () => {
   console.log(`🚀 GraphQL server draait op poort ${PORT}`)
 })
+
+// Automatische afwijzing na 3 werkdagen zonder reactie
+function countWorkdays(from: Date, to: Date): number {
+  let count = 0
+  const cur = new Date(from)
+  while (cur < to) {
+    const day = cur.getDay()
+    if (day !== 0 && day !== 6) count++
+    cur.setDate(cur.getDate() + 1)
+  }
+  return count
+}
+
+async function autoRejectExpiredReservations() {
+  const pending = await prisma.reservation.findMany({
+    where: { status: 'REQUESTED' },
+  })
+  const now = new Date()
+  for (const r of pending) {
+    if (countWorkdays(r.aanvraag_datum, now) >= 3) {
+      await prisma.reservation.update({
+        where: { id: r.id },
+        data: {
+          status: 'REJECTED',
+          rejectionReason: 'Automatisch afgekeurd: beheerder heeft niet binnen 3 werkdagen gereageerd.',
+        },
+      })
+      console.log(`Auto-afgewezen reservering ${r.id}`)
+    }
+  }
+}
+
+// Elk uur controleren
+setInterval(autoRejectExpiredReservations, 60 * 60 * 1000)
+// Ook direct bij opstarten uitvoeren
+autoRejectExpiredReservations()
