@@ -1,23 +1,30 @@
-import { PrismaClient, UserRole, LaptopStatus } from '@prisma/client'
+import { PrismaClient, UserRole } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+const USERS = [
+  { name: 'Admin Gebruiker',    email: 'admin@asha.nl',     role: UserRole.ADMIN,    password: 'admin123' },
+  { name: 'Eigenaar Gebruiker', email: 'eigenaar@asha.nl',  role: UserRole.OWNER,    password: 'eigenaar123' },
+  { name: 'Helpdesk Gebruiker', email: 'helpdesk@asha.nl',  role: UserRole.HELPDESK, password: 'helpdesk123' },
+]
+
 async function main() {
-  // Controleer of er al data is — zo ja, overslaan (idempotent)
-  const bestaand = await prisma.user.count()
-  if (bestaand > 0) {
+  // Gebruikers altijd upserten zodat wachtwoorden correct zijn na elke deploy
+  for (const u of USERS) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: { password: u.password },
+      create: u,
+    })
+  }
+  console.log('✅ Gebruikers gesynchroniseerd.')
+
+  // Overige seed data alleen aanmaken als de DB leeg is
+  const laptopCount = await prisma.laptop.count()
+  if (laptopCount > 0) {
     console.log('✅ Seed data al aanwezig, overgeslagen.')
     return
   }
-
-  // Gebruikers aanmaken
-  await prisma.user.createMany({
-    data: [
-      { name: 'Admin Gebruiker',    email: 'admin@asha.nl',     role: UserRole.ADMIN,    password: 'admin123' },
-      { name: 'Eigenaar Gebruiker', email: 'eigenaar@asha.nl',  role: UserRole.OWNER,    password: 'eigenaar123' },
-      { name: 'Helpdesk Gebruiker', email: 'helpdesk@asha.nl',  role: UserRole.HELPDESK, password: 'helpdesk123' },
-    ]
-  })
 
   // Laptops aanmaken
   await prisma.laptop.createMany({
