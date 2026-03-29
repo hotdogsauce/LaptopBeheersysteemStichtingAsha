@@ -1,6 +1,3 @@
-process.on('uncaughtException', (err) => { console.error('CRASH uncaughtException:', err.message, err.stack); process.exit(1) })
-process.on('unhandledRejection', (reason) => { console.error('CRASH unhandledRejection:', reason); process.exit(1) })
-
 import { createServer } from 'node:http'
 import { createYoga } from 'graphql-yoga'
 import { makeExecutableSchema } from '@graphql-tools/schema'

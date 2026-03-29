@@ -1,4 +1,4 @@
-import { requireRole } from '../auth'
+import { requireRole } from '../auth.js'
 import { checkAiRateLimit, logAudit } from '../utils.js'
 import { PrismaClient, LaptopStatus, ReservationStatus, SoftwareRequestStatus } from '@prisma/client'
 

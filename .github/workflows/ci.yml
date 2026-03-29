@@ -53,6 +53,10 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/laptopbeheer_test
         run: npx prisma migrate deploy
 
+      - name: Build API
+        working-directory: apps/api
+        run: npm run build
+
       - name: Run tests
         working-directory: apps/api
         env:

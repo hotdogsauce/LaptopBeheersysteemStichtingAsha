@@ -1,4 +1,5 @@
 node_modules
+apps/api/dist
 # Keep environment variables out of version control
 .env
 apps/api/.env
