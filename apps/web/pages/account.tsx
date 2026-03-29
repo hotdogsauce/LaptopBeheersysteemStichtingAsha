@@ -83,7 +83,7 @@ export default function Account() {
             textAlign: 'left', fontFamily: 'var(--font)', padding: '14px 2px',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>Instellingen</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>Wachtwoord veranderen</span>
           <span style={{ fontSize: 12, color: 'var(--grey)', transform: section === 'settings' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
         </button>
 
@@ -101,9 +101,9 @@ export default function Account() {
         </button>
       </div>
 
-      {/* ── Instellingen ── */}
+      {/* ── Wachtwoord veranderen ── */}
       {section === 'settings' && (
-        <div className="card" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
+        <div className="card section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
           <h2 style={{ marginBottom: 4 }}>Wachtwoord wijzigen</h2>
           <div>
             <label className="label">Huidig wachtwoord</label>
@@ -125,7 +125,7 @@ export default function Account() {
 
       {/* ── Handleiding ── */}
       {section === 'manual' && (
-        <div style={{ display: 'grid', gap: 12, marginBottom: 32 }}>
+        <div className="section-enter" style={{ display: 'grid', gap: 12, marginBottom: 32 }}>
 
           {/* App toevoegen aan beginscherm */}
           <div className="card" style={{ padding: '20px 24px' }}>
@@ -154,7 +154,7 @@ export default function Account() {
               </button>
 
               {platform === 'android' && (
-                <div style={{ padding: '16px 20px', background: 'var(--bg-soft)', borderRadius: 8, display: 'grid', gap: 10 }}>
+                <div className="section-enter" style={{ padding: '16px 20px', background: 'var(--bg-soft)', borderRadius: 8, display: 'grid', gap: 10 }}>
                   {[
                     'Open de site in Chrome op je Android telefoon.',
                     'Tik op de drie puntjes (⋮) rechtsboven.',
@@ -191,7 +191,7 @@ export default function Account() {
               </button>
 
               {platform === 'ios' && (
-                <div style={{ padding: '16px 20px', background: 'var(--bg-soft)', borderRadius: 8, display: 'grid', gap: 10 }}>
+                <div className="section-enter" style={{ padding: '16px 20px', background: 'var(--bg-soft)', borderRadius: 8, display: 'grid', gap: 10 }}>
                   {[
                     'Open de site in Safari op je iPhone of iPad.',
                     'Tik op het deel-icoon (□↑) onderaan het scherm.',
