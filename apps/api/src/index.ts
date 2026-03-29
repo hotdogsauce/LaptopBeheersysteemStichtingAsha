@@ -22,6 +22,7 @@ const schema = makeExecutableSchema({ typeDefs, resolvers })
 const yoga = createYoga({
   schema,
   maskedErrors: true,
+  graphiql: true,
   context: async ({ request }) => {
     const userId = request.headers.get('x-user-id')
     const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null
@@ -29,7 +30,27 @@ const yoga = createYoga({
   }
 })
 
-const server = createServer(yoga)
+const server = createServer((req, res) => {
+  // Health check endpoint
+  if (req.method === 'GET' && req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.end('ok')
+    return
+  }
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, x-user-id',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    })
+    res.end()
+    return
+  }
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-id')
+  yoga(req, res)
+})
 
 const PORT = Number(process.env.PORT) || 4000
 console.log('INDEX: server aan het starten op port', PORT)
