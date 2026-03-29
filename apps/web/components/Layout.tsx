@@ -449,7 +449,6 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             value={selectedUserId}
             onChange={e => setSelectedUserId(e.target.value)}
           >
-            <option value="">— Selecteer gebruiker —</option>
             <optgroup label="Beheerder">
               {users.filter(u => u.role === 'ADMIN').map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
