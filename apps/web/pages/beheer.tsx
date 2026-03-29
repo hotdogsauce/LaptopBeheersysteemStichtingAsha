@@ -52,9 +52,10 @@ export default function Beheer() {
   const [bulkFilter, setBulkFilter] = useState('')
 
   // Accounts
-  const [users, setUsers] = useState<{ id: string; name: string; email: string; role: string }[]>([])
+  const [users, setUsers] = useState<{ id: string; name: string; username: string; email: string | null; role: string }[]>([])
   const [showUserForm, setShowUserForm] = useState(false)
   const [newName, setNewName] = useState('')
+  const [newUsername, setNewUsername] = useState('')
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newRole, setNewRole] = useState('OWNER')
@@ -84,7 +85,7 @@ export default function Beheer() {
   }
 
   function herlaadUsers() {
-    gql('{ users { id name email role } }', undefined, selectedUserId)
+    gql('{ users { id name username email role } }', undefined, selectedUserId)
       .then(data => setUsers(data.data?.users || []))
   }
 
@@ -119,25 +120,25 @@ export default function Beheer() {
   }
 
   async function maakAccount() {
-    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
-      toast('Naam, e-mail en wachtwoord zijn verplicht.', 'error'); return
+    if (!newName.trim() || !newUsername.trim() || !newPassword.trim()) {
+      toast('Naam, gebruikersnaam en wachtwoord zijn verplicht.', 'error'); return
     }
     if (newRole === 'ADMIN' && !adminPass.trim()) {
       toast('Vul jouw wachtwoord in om een beheerder aan te maken.', 'error'); return
     }
     setSavingUser(true)
     const data = await gql(
-      `mutation($name: String!, $email: String!, $password: String!, $role: UserRole!, $adminPassword: String) {
-        createUser(name: $name, email: $email, password: $password, role: $role, adminPassword: $adminPassword) { id name role }
+      `mutation($name: String!, $username: String!, $email: String, $password: String!, $role: UserRole!, $adminPassword: String) {
+        createUser(name: $name, username: $username, email: $email, password: $password, role: $role, adminPassword: $adminPassword) { id name role }
       }`,
-      { name: newName, email: newEmail, password: newPassword, role: newRole, adminPassword: adminPass || null },
+      { name: newName, username: newUsername, email: newEmail.trim() || null, password: newPassword, role: newRole, adminPassword: adminPass || null },
       selectedUserId
     )
     setSavingUser(false)
     if (data.errors) { toast(data.errors[0].message, 'error') }
     else {
       toast(`Account voor ${newName} aangemaakt.`)
-      setNewName(''); setNewEmail(''); setNewPassword(''); setAdminPass(''); setNewRole('OWNER')
+      setNewName(''); setNewUsername(''); setNewEmail(''); setNewPassword(''); setAdminPass(''); setNewRole('OWNER')
       setShowUserForm(false); herlaadUsers()
     }
   }
@@ -330,9 +331,13 @@ export default function Beheer() {
                         <input className="input" placeholder="Volledige naam" value={newName} onChange={e => setNewName(e.target.value)} />
                       </div>
                       <div>
-                        <label className="label">E-mailadres *</label>
-                        <input type="email" className="input" placeholder="naam@asha.nl" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
+                        <label className="label">Gebruikersnaam *</label>
+                        <input className="input" placeholder="bijv. jan_de_vries" value={newUsername} onChange={e => setNewUsername(e.target.value)} />
                       </div>
+                    </div>
+                    <div>
+                      <label className="label">E-mailadres (optioneel)</label>
+                      <input type="email" className="input" placeholder="naam@asha.nl" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div>
@@ -368,7 +373,9 @@ export default function Beheer() {
                   <div key={u.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{u.name}</p>
-                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>{u.email}</p>
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
+                        @{u.username}{u.email ? ` · ${u.email}` : ''}
+                      </p>
                     </div>
                     <span className={`badge ${roleBadge[u.role] || ''}`}>{roleLabel[u.role] || u.role}</span>
                   </div>

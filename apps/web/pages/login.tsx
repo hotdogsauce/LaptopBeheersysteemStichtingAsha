@@ -5,7 +5,7 @@ import { useUser } from '../context/UserContext'
 export default function Login() {
   const { loginWithCredentials, loggedIn, theme, toggleTheme } = useUser()
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,7 +19,7 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const err = await loginWithCredentials(email.trim(), password)
+    const err = await loginWithCredentials(login.trim(), password)
     setLoading(false)
     if (err) setError(err)
     else router.replace('/')
@@ -70,14 +70,14 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
           <div>
-            <label className="label">E-mailadres</label>
+            <label className="label">Gebruikersnaam of e-mailadres</label>
             <input
               className="input"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="jouw@asha.nl"
+              type="text"
+              autoComplete="username"
+              value={login}
+              onChange={e => setLogin(e.target.value)}
+              placeholder="gebruikersnaam"
               required
             />
           </div>

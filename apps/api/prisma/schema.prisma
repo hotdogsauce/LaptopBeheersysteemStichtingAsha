@@ -40,7 +40,8 @@ enum SoftwareRequestStatus {
 model User {
   id                String            @id @default(uuid())
   name              String
-  email             String            @unique
+  username          String            @unique
+  email             String?           @unique
   password          String            @default("asha2024")
   role              UserRole
   reservations      Reservation[]     @relation("requester")

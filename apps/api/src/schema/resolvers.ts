@@ -124,10 +124,13 @@ export const resolvers = {
   },
 
   Mutation: {
-    login: async (_: any, { email, password }: { email: string; password: string }) => {
-      const user = await prisma.user.findUnique({ where: { email } })
-      if (!user || user.password !== password) throw new Error('E-mailadres of wachtwoord onjuist.')
-      return { userId: user.id, name: user.name, role: user.role, email: user.email }
+    login: async (_: any, { login, password }: { login: string; password: string }) => {
+      // Match on username first, fall back to email
+      const user = await prisma.user.findFirst({
+        where: { OR: [{ username: login }, { email: login }] }
+      })
+      if (!user || user.password !== password) throw new Error('Gebruikersnaam/e-mail of wachtwoord onjuist.')
+      return { userId: user.id, name: user.name, role: user.role, username: user.username, email: user.email }
     },
 
     // Sprint 4
@@ -298,19 +301,23 @@ export const resolvers = {
       })
     },
 
-    createUser: async (_: any, { name, email, password, role, adminPassword }: any, { user }: any) => {
+    createUser: async (_: any, { name, username, email, password, role, adminPassword }: any, { user }: any) => {
       requireRole(user, 'ADMIN')
       if (!name?.trim()) throw new Error('Naam is verplicht.')
-      if (!email?.trim()) throw new Error('E-mailadres is verplicht.')
+      if (!username?.trim()) throw new Error('Gebruikersnaam is verplicht.')
       if (!password?.trim()) throw new Error('Wachtwoord is verplicht.')
       if (role === 'ADMIN') {
         if (!adminPassword) throw new Error('Jouw wachtwoord is verplicht om een admin aan te maken.')
         const admin = await prisma.user.findUnique({ where: { id: user.id } })
-        if (!admin || admin.password !== adminPassword) throw new Error('Wachtwoord onjuist.')
+        if (!admin || (admin as any).password !== adminPassword) throw new Error('Wachtwoord onjuist.')
       }
-      const existing = await prisma.user.findUnique({ where: { email } })
-      if (existing) throw new Error('Er bestaat al een account met dit e-mailadres.')
-      return prisma.user.create({ data: { name, email, password, role } })
+      const existingUsername = await prisma.user.findUnique({ where: { username } })
+      if (existingUsername) throw new Error('Er bestaat al een account met deze gebruikersnaam.')
+      if (email?.trim()) {
+        const existingEmail = await prisma.user.findUnique({ where: { email } })
+        if (existingEmail) throw new Error('Er bestaat al een account met dit e-mailadres.')
+      }
+      return prisma.user.create({ data: { name, username, email: email?.trim() || null, password, role } })
     },
 
     // UC-06: AI ondersteuning

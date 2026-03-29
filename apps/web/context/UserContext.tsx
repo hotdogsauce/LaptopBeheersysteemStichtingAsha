@@ -15,8 +15,8 @@ interface UserContextType {
   theme: 'light' | 'dark'
   toggleTheme: () => void
   loggedIn: boolean
-  loggedInUser: { userId: string; name: string; role: string; email: string } | null
-  loginWithCredentials: (email: string, password: string) => Promise<string | null>
+  loggedInUser: { userId: string; name: string; role: string; username: string; email: string | null } | null
+  loginWithCredentials: (login: string, password: string) => Promise<string | null>
   logout: () => void
 }
 
@@ -29,7 +29,7 @@ const UserContext = createContext<UserContextType>({
   toggleTheme: () => {},
   loggedIn: false,
   loggedInUser: null,
-  loginWithCredentials: async () => null,
+  loginWithCredentials: async (_l: string, _p: string) => null,
   logout: () => {},
 })
 
@@ -84,14 +84,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setTheme(t => t === 'light' ? 'dark' : 'light')
   }
 
-  async function loginWithCredentials(email: string, password: string): Promise<string | null> {
+  async function loginWithCredentials(login: string, password: string): Promise<string | null> {
     const data = await gql(
-      `mutation($email: String!, $password: String!) {
-        login(email: $email, password: $password) {
-          userId name role email
+      `mutation($login: String!, $password: String!) {
+        login(login: $login, password: $password) {
+          userId name role username email
         }
       }`,
-      { email, password }
+      { login, password }
     )
     if (data.errors) return data.errors[0].message
     const session = data.data.login

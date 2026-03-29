@@ -32,6 +32,7 @@ export const typeDefs = `
   type User {
     id: ID!
     name: String!
+    username: String!
     role: UserRole!
     email: String
   }
@@ -131,7 +132,8 @@ export const typeDefs = `
     userId: ID!
     name: String!
     role: UserRole!
-    email: String!
+    username: String!
+    email: String
   }
 
   type Query {
@@ -163,7 +165,7 @@ export const typeDefs = `
   }
 
   type Mutation {
-    login(email: String!, password: String!): AuthPayload
+    login(login: String!, password: String!): AuthPayload
 
     # Sprint 4
     createLaptop(merk_type: String!, specificaties: String, heeft_vga: Boolean!, heeft_hdmi: Boolean!): Laptop!
@@ -200,6 +202,6 @@ export const typeDefs = `
 
     # Uitbreidingen
     createActivity(title: String!, start_datum_tijd: String!, eind_datum_tijd: String!, omschrijving: String, locatie: String, software_benodigdheden: String): Activity!
-    createUser(name: String!, email: String!, password: String!, role: UserRole!, adminPassword: String): User!
+    createUser(name: String!, username: String!, email: String, password: String!, role: UserRole!, adminPassword: String): User!
   }
 `

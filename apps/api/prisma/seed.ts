@@ -3,17 +3,17 @@ import { PrismaClient, UserRole } from '@prisma/client'
 const prisma = new PrismaClient()
 
 const USERS = [
-  { name: 'Admin Gebruiker',    email: 'admin@asha.nl',     role: UserRole.ADMIN,    password: 'admin123' },
-  { name: 'Eigenaar Gebruiker', email: 'eigenaar@asha.nl',  role: UserRole.OWNER,    password: 'eigenaar123' },
-  { name: 'Helpdesk Gebruiker', email: 'helpdesk@asha.nl',  role: UserRole.HELPDESK, password: 'helpdesk123' },
+  { name: 'Admin Gebruiker',    username: 'admin',    email: 'admin@asha.nl',    role: UserRole.ADMIN,    password: 'admin123' },
+  { name: 'Eigenaar Gebruiker', username: 'eigenaar', email: 'eigenaar@asha.nl', role: UserRole.OWNER,    password: 'eigenaar123' },
+  { name: 'Helpdesk Gebruiker', username: 'helpdesk', email: 'helpdesk@asha.nl', role: UserRole.HELPDESK, password: 'helpdesk123' },
 ]
 
 async function main() {
-  // Gebruikers altijd upserten zodat wachtwoorden correct zijn na elke deploy
+  // Gebruikers altijd upserten zodat wachtwoorden en usernames correct zijn na elke deploy
   for (const u of USERS) {
     await prisma.user.upsert({
-      where: { email: u.email },
-      update: { password: u.password },
+      where: { username: u.username },
+      update: { password: u.password, email: u.email },
       create: u,
     })
   }
