@@ -535,15 +535,6 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         <line x1="21.5" y1="98.5" x2="27.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <line x1="98.5" y1="98.5" x2="92.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
-
-      {/* Floral watermark — bottom right */}
-      <img aria-hidden src="/imgs/metro_51.png" alt="" style={{
-        position: 'fixed', bottom: -60, right: -60, width: 420,
-        opacity: isDark ? 0.04 : 0.055,
-        filter: isDark ? 'invert(1)' : 'none',
-        mixBlendMode: isDark ? 'screen' : 'multiply',
-        pointerEvents: 'none', userSelect: 'none', zIndex: 0,
-      }} />
     </div>
   )
 }
