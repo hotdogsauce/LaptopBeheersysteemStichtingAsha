@@ -43,6 +43,7 @@ export const typeDefs = `
     specificaties: String
     heeft_vga: Boolean!
     heeft_hdmi: Boolean!
+    missingAt: String
   }
 
   type Activity {

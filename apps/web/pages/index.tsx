@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
@@ -10,6 +10,7 @@ interface Laptop {
   heeft_vga: boolean
   heeft_hdmi: boolean
   specificaties: string
+  missingAt: string | null
 }
 
 const statusLabel: Record<string, string> = {
@@ -39,7 +40,146 @@ const allowedTransitions: Record<string, string[]> = {
   IN_CONTROL:     ['AVAILABLE', 'DEFECT', 'MISSING'],
   DEFECT:         ['OUT_OF_SERVICE'],
   OUT_OF_SERVICE: [],
-  MISSING:        [],
+  MISSING:        ['OUT_OF_SERVICE'],
+}
+
+const ALL_STATUSES = ['AVAILABLE', 'RESERVED', 'IN_USE', 'IN_CONTROL', 'DEFECT', 'MISSING', 'OUT_OF_SERVICE']
+
+function countWorkdays(from: Date, to: Date): number {
+  let count = 0
+  const cur = new Date(from)
+  while (cur < to) {
+    const day = cur.getDay()
+    if (day !== 0 && day !== 6) count++
+    cur.setDate(cur.getDate() + 1)
+  }
+  return count
+}
+
+function addWorkdays(from: Date, days: number): Date {
+  const d = new Date(from)
+  let added = 0
+  while (added < days) {
+    d.setDate(d.getDate() + 1)
+    if (d.getDay() !== 0 && d.getDay() !== 6) added++
+  }
+  return d
+}
+
+function useMissingCountdown(missingAt: string | null) {
+  const [label, setLabel] = useState('')
+  const [urgent, setUrgent] = useState(false)
+
+  useEffect(() => {
+    if (!missingAt) { setLabel(''); return }
+
+    function update() {
+      const deadline = addWorkdays(new Date(missingAt!), 7)
+      const now = new Date()
+      const msLeft = deadline.getTime() - now.getTime()
+
+      if (msLeft <= 0) { setLabel('Wordt buiten gebruik gesteld…'); setUrgent(true); return }
+
+      const hoursLeft = msLeft / (1000 * 60 * 60)
+      const workdaysLeft = countWorkdays(now, deadline)
+
+      if (workdaysLeft <= 1 && hoursLeft < 24) {
+        setUrgent(true)
+        if (hoursLeft < 1) {
+          const mins = Math.ceil(msLeft / (1000 * 60))
+          setLabel(`${mins} min. resterend`)
+        } else if (hoursLeft < 4) {
+          setLabel(`${Math.ceil(hoursLeft)} uur resterend`)
+        } else {
+          setLabel(`${Math.ceil(hoursLeft)} uur resterend`)
+        }
+      } else {
+        setUrgent(false)
+        setLabel(`${workdaysLeft} werkdag${workdaysLeft === 1 ? '' : 'en'} resterend`)
+      }
+    }
+
+    update()
+    const interval = setInterval(update, 60 * 1000)
+    return () => clearInterval(interval)
+  }, [missingAt])
+
+  return { label, urgent }
+}
+
+function MissingCountdown({ missingAt }: { missingAt: string | null }) {
+  const { label, urgent } = useMissingCountdown(missingAt)
+  if (!label) return null
+  return (
+    <span style={{
+      fontSize: 11,
+      fontWeight: 600,
+      color: urgent ? 'var(--red)' : '#92400e',
+      background: urgent ? '#fef2f2' : '#fffbeb',
+      border: `1px solid ${urgent ? '#fecaca' : '#fde68a'}`,
+      borderRadius: 99,
+      padding: '2px 8px',
+      letterSpacing: 0,
+      animation: urgent ? 'pulse-urgent 1.5s ease-in-out infinite' : 'none',
+    }}>
+      ⏱ {label}
+    </span>
+  )
+}
+
+function HoverCard({ laptop, children }: { laptop: Laptop; children: React.ReactNode }) {
+  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const ref = useRef<HTMLDivElement>(null)
+
+  function handleEnter() { setVisible(true) }
+  function handleLeave() { setVisible(false) }
+  function handleMove(e: React.MouseEvent) {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+  }
+
+  const ports = [laptop.heeft_vga && 'VGA', laptop.heeft_hdmi && 'HDMI'].filter(Boolean).join(' · ')
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}
+      onMouseEnter={handleEnter} onMouseLeave={handleLeave} onMouseMove={handleMove}>
+      {children}
+      {visible && (
+        <div style={{
+          position: 'absolute',
+          left: Math.min(pos.x + 12, 260),
+          top: pos.y - 10,
+          zIndex: 50,
+          background: 'var(--white)',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          padding: '10px 14px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          pointerEvents: 'none',
+          minWidth: 180,
+          animation: 'tooltip-in 0.12s ease',
+        }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)', margin: '0 0 4px' }}>{laptop.merk_type}</p>
+          {laptop.specificaties && (
+            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>{laptop.specificaties}</p>
+          )}
+          {ports && (
+            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>Poorten: {ports}</p>
+          )}
+          <span className={`badge ${statusBadge[laptop.status] || ''}`} style={{ fontSize: 11 }}>
+            {statusLabel[laptop.status] || laptop.status}
+          </span>
+          {laptop.status === 'MISSING' && laptop.missingAt && (
+            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '6px 0 0' }}>
+              Vermist sinds {new Date(laptop.missingAt).toLocaleDateString('nl-NL')}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SkeletonRow() {
@@ -59,6 +199,7 @@ export default function Home() {
   const { toast } = useToast()
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [loading, setLoading] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [nieuwMerk, setNieuwMerk] = useState('')
@@ -70,16 +211,29 @@ export default function Home() {
   const [nieuweStatus, setNieuweStatus] = useState('')
   const [maintenanceLog, setMaintenanceLog] = useState('')
 
+  const filteredLaptops = activeFilters.length === 0
+    ? laptops
+    : laptops.filter(l => activeFilters.includes(l.status))
+
+  // Statuses that actually exist in current data
+  const presentStatuses = ALL_STATUSES.filter(s => laptops.some(l => l.status === s))
+
   useEffect(() => {
     if (!selectedUserId) { setLaptops([]); return }
     setLoading(true)
-    gql('{ laptops { id merk_type status heeft_vga heeft_hdmi specificaties } }', undefined, selectedUserId)
+    gql('{ laptops { id merk_type status heeft_vga heeft_hdmi specificaties missingAt } }', undefined, selectedUserId)
       .then(data => { setLaptops(data.data?.laptops || []); setLoading(false) })
   }, [selectedUserId])
 
   function herlaadLaptops() {
-    gql('{ laptops { id merk_type status heeft_vga heeft_hdmi specificaties } }', undefined, selectedUserId)
+    gql('{ laptops { id merk_type status heeft_vga heeft_hdmi specificaties missingAt } }', undefined, selectedUserId)
       .then(data => setLaptops(data.data?.laptops || []))
+  }
+
+  function toggleFilter(status: string) {
+    setActiveFilters(prev =>
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    )
   }
 
   async function maakLaptopAan() {
@@ -135,47 +289,58 @@ export default function Home() {
         <>
           {(selectedUser?.role === 'ADMIN' || selectedUser?.role === 'HELPDESK') && (
             <div style={{ marginBottom: 28 }}>
-              <button
-                className="btn btn-ghost"
-                onClick={() => setShowCreateForm(v => !v)}
-              >
+              <button className="btn btn-ghost" onClick={() => setShowCreateForm(v => !v)}>
                 {showCreateForm ? '✕ Annuleren' : '+ Laptop toevoegen'}
               </button>
-
               {showCreateForm && (
                 <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
                   <div>
                     <label className="label">Merk / type *</label>
-                    <input
-                      className="input"
-                      placeholder="bijv. Dell Latitude 5520"
-                      value={nieuwMerk}
-                      onChange={e => setNieuwMerk(e.target.value)}
-                    />
+                    <input className="input" placeholder="bijv. Dell Latitude 5520" value={nieuwMerk} onChange={e => setNieuwMerk(e.target.value)} />
                   </div>
                   <div>
                     <label className="label">Specificaties</label>
-                    <input
-                      className="input"
-                      placeholder="bijv. i5 8GB 256SSD"
-                      value={nieuwSpec}
-                      onChange={e => setNieuwSpec(e.target.value)}
-                    />
+                    <input className="input" placeholder="bijv. i5 8GB 256SSD" value={nieuwSpec} onChange={e => setNieuwSpec(e.target.value)} />
                   </div>
                   <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={nieuwVga} onChange={e => setNieuwVga(e.target.checked)} />
-                      VGA poort
+                      <input type="checkbox" checked={nieuwVga} onChange={e => setNieuwVga(e.target.checked)} /> VGA poort
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={nieuwHdmi} onChange={e => setNieuwHdmi(e.target.checked)} />
-                      HDMI poort
+                      <input type="checkbox" checked={nieuwHdmi} onChange={e => setNieuwHdmi(e.target.checked)} /> HDMI poort
                     </label>
                   </div>
-                  <div>
-                    <button className="btn btn-primary" onClick={maakLaptopAan}>Aanmaken</button>
-                  </div>
+                  <div><button className="btn btn-primary" onClick={maakLaptopAan}>Aanmaken</button></div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Status filter chips */}
+          {!loading && presentStatuses.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+              {presentStatuses.map(s => {
+                const active = activeFilters.includes(s)
+                const count = laptops.filter(l => l.status === s).length
+                return (
+                  <button
+                    key={s}
+                    onClick={() => toggleFilter(s)}
+                    className={`filter-chip${active ? ' filter-chip-active' : ''}`}
+                  >
+                    <span className={`badge ${statusBadge[s]}`} style={{ fontSize: 11, padding: '1px 6px' }}>
+                      {statusLabel[s]}
+                    </span>
+                    <span style={{ fontSize: 11, color: active ? 'var(--black)' : 'var(--grey)', fontWeight: 500 }}>
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+              {activeFilters.length > 0 && (
+                <button className="filter-chip" onClick={() => setActiveFilters([])}>
+                  <span style={{ fontSize: 11, color: 'var(--grey)' }}>✕ Wis filters</span>
+                </button>
               )}
             </div>
           )}
@@ -186,24 +351,24 @@ export default function Home() {
             </div>
           )}
 
-          {!loading && laptops.length === 0 && (
+          {!loading && filteredLaptops.length === 0 && (
             <div className="empty">
               <div className="empty-icon">📦</div>
-              <p className="empty-text">Geen laptops gevonden</p>
+              <p className="empty-text">{activeFilters.length > 0 ? 'Geen laptops met dit filter' : 'Geen laptops gevonden'}</p>
             </div>
           )}
 
-          {!loading && laptops.length > 0 && (
+          {!loading && filteredLaptops.length > 0 && (
             <div style={{ display: 'grid', gap: 8 }}>
-              {laptops.map(laptop => {
+              {filteredLaptops.map(laptop => {
                 const opties = allowedTransitions[laptop.status] || []
                 const kanWijzigen = selectedUser?.role === 'HELPDESK' && opties.length > 0
                 const isOpen = wijzigId === laptop.id
 
                 return (
-                  <div key={laptop.id} className="card-row">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <HoverCard key={laptop.id} laptop={laptop}>
+                    <div className="card-row laptop-row">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{laptop.merk_type}</p>
                           <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
@@ -212,63 +377,57 @@ export default function Home() {
                             {laptop.heeft_hdmi && ' · HDMI'}
                           </p>
                         </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {laptop.status === 'MISSING' && (
+                            <MissingCountdown missingAt={laptop.missingAt} />
+                          )}
+                          <span className={`badge ${statusBadge[laptop.status] || ''}`}>
+                            {statusLabel[laptop.status] || laptop.status}
+                          </span>
+                          {kanWijzigen && (
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: '4px 10px', fontSize: 12 }}
+                              onClick={() => { setWijzigId(isOpen ? null : laptop.id); setNieuweStatus(''); setMaintenanceLog('') }}
+                            >
+                              {isOpen ? 'Sluiten' : 'Wijzig'}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span className={`badge ${statusBadge[laptop.status] || ''}`}>
-                          {statusLabel[laptop.status] || laptop.status}
-                        </span>
-                        {kanWijzigen && (
-                          <button
-                            className="btn btn-ghost"
-                            style={{ padding: '4px 10px', fontSize: 12 }}
-                            onClick={() => { setWijzigId(isOpen ? null : laptop.id); setNieuweStatus(''); setMaintenanceLog('') }}
-                          >
-                            {isOpen ? 'Sluiten' : 'Wijzig'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
 
-                    {isOpen && (
-                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 12 }}>
-                        <div>
-                          <label className="label">Nieuwe status</label>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            {opties.map(opt => (
-                              <button
-                                key={opt}
-                                className={`btn ${nieuweStatus === opt ? 'btn-primary' : 'btn-ghost'}`}
-                                style={{ fontSize: 12, padding: '4px 12px' }}
-                                onClick={() => setNieuweStatus(opt)}
-                              >
-                                {statusLabel[opt] || opt}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        {nieuweStatus === 'DEFECT' && (
+                      {isOpen && (
+                        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 12 }}>
                           <div>
-                            <label className="label">Onderhoudslog</label>
-                            <input
-                              className="input"
-                              placeholder="Beschrijf het defect..."
-                              value={maintenanceLog}
-                              onChange={e => setMaintenanceLog(e.target.value)}
-                            />
+                            <label className="label">Nieuwe status</label>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {opties.map(opt => (
+                                <button
+                                  key={opt}
+                                  className={`btn ${nieuweStatus === opt ? 'btn-primary' : 'btn-ghost'}`}
+                                  style={{ fontSize: 12, padding: '4px 12px' }}
+                                  onClick={() => setNieuweStatus(opt)}
+                                >
+                                  {statusLabel[opt] || opt}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        )}
-                        <div>
-                          <button
-                            className="btn btn-primary"
-                            disabled={!nieuweStatus}
-                            onClick={() => wijzigStatus(laptop.id)}
-                          >
-                            Status opslaan
-                          </button>
+                          {nieuweStatus === 'DEFECT' && (
+                            <div>
+                              <label className="label">Onderhoudslog</label>
+                              <input className="input" placeholder="Beschrijf het defect..." value={maintenanceLog} onChange={e => setMaintenanceLog(e.target.value)} />
+                            </div>
+                          )}
+                          <div>
+                            <button className="btn btn-primary" disabled={!nieuweStatus} onClick={() => wijzigStatus(laptop.id)}>
+                              Status opslaan
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  </HoverCard>
                 )
               })}
             </div>

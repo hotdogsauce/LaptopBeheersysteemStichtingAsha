@@ -18,7 +18,7 @@ const allowedTransitions: Record<string, LaptopStatus[]> = {
   IN_CONTROL:     ['AVAILABLE', 'DEFECT', 'MISSING'],
   DEFECT:         ['OUT_OF_SERVICE'],
   OUT_OF_SERVICE: [],
-  MISSING:        [],
+  MISSING:        ['OUT_OF_SERVICE'],
 }
 
 // Statussen waarbij een storing NIET gemeld kan worden
@@ -186,7 +186,10 @@ export const resolvers = {
       if (!laptop) throw new Error('Laptop niet gevonden.')
       if (status === 'DEFECT' && !maintenanceLog) throw new Error('maintenanceLog is verplicht bij status DEFECT.')
       checkTransition(laptop.status, status as LaptopStatus)
-      const result = await prisma.laptop.update({ where: { id: laptopId }, data: { status } })
+      const data: any = { status }
+      if (status === 'MISSING') data.missingAt = new Date()
+      if (status !== 'MISSING') data.missingAt = null
+      const result = await prisma.laptop.update({ where: { id: laptopId }, data })
       logAudit('laptop_status_changed', { laptopId, from: laptop.status, to: status, userId: user.id })
       return result
     },

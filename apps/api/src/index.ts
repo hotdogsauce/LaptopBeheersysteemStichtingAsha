@@ -56,7 +56,28 @@ async function autoRejectExpiredReservations() {
   }
 }
 
+// Automatisch buiten gebruik na 7 werkdagen vermist
+async function autoDecommissionMissingLaptops() {
+  const missing = await prisma.laptop.findMany({
+    where: { status: 'MISSING', missingAt: { not: null } },
+  })
+  const now = new Date()
+  for (const l of missing) {
+    if (l.missingAt && countWorkdays(l.missingAt, now) >= 7) {
+      await prisma.laptop.update({
+        where: { id: l.id },
+        data: { status: 'OUT_OF_SERVICE', missingAt: null },
+      })
+      console.log(`Auto-buiten-gebruik: laptop ${l.id} (${l.merk_type}) — 7 werkdagen vermist`)
+    }
+  }
+}
+
 // Elk uur controleren
-setInterval(autoRejectExpiredReservations, 60 * 60 * 1000)
+setInterval(() => {
+  autoRejectExpiredReservations()
+  autoDecommissionMissingLaptops()
+}, 60 * 60 * 1000)
 // Ook direct bij opstarten uitvoeren
 autoRejectExpiredReservations()
+autoDecommissionMissingLaptops()

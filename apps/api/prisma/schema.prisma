@@ -59,6 +59,7 @@ model Laptop {
   specificaties String?
   heeft_vga     Boolean          @default(false)
   heeft_hdmi    Boolean          @default(false)
+  missingAt     DateTime?
   reservations  Reservation[]    @relation("ReservationLaptops")
   issues        Issue[]
   checklists    ChecklistReport[]
