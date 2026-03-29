@@ -200,6 +200,8 @@ export const typeDefs = `
     # Sprint 6 – UC-06 AI ondersteuning
     askAI(question: String!): String!
 
+    changePassword(login: String!, currentPassword: String!, newPassword: String!): Boolean!
+
     # Uitbreidingen
     createActivity(title: String!, start_datum_tijd: String!, eind_datum_tijd: String!, omschrijving: String, locatie: String, software_benodigdheden: String): Activity!
     createUser(name: String!, username: String!, email: String, password: String!, role: UserRole!, adminPassword: String): User!

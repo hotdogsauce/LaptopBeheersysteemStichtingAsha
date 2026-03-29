@@ -443,7 +443,11 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           {/* Logged-in user + logout */}
           {loggedInUser && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ textAlign: 'right' }}>
+              <div
+                style={{ textAlign: 'right', cursor: 'pointer' }}
+                onClick={() => router.push('/account')}
+                title="Mijn account"
+              >
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--black)', lineHeight: 1.2 }}>
                   {loggedInUser.name}
                 </p>

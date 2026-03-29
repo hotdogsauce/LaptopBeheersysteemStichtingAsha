@@ -288,6 +288,14 @@ export const resolvers = {
       return prisma.laptop.findMany({ where: { id: { in: laptopIds } } })
     },
 
+    changePassword: async (_: any, { login, currentPassword, newPassword }: any) => {
+      const user = await prisma.user.findFirst({ where: { OR: [{ username: login }, { email: login }] } })
+      if (!user || (user as any).password !== currentPassword) throw new Error('Huidig wachtwoord is onjuist.')
+      if (newPassword.length < 6) throw new Error('Nieuw wachtwoord moet minimaal 6 tekens zijn.')
+      await prisma.user.update({ where: { id: user.id }, data: { password: newPassword } as any })
+      return true
+    },
+
     createActivity: async (_: any, args: any, { user }: any) => {
       requireRole(user, 'OWNER', 'ADMIN')
       const { title, start_datum_tijd, eind_datum_tijd, omschrijving, locatie, software_benodigdheden } = args
