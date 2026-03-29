@@ -484,16 +484,53 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         </aside>
 
         <main className="layout-main">
-          {(title || subtitle) && (
-            <div className="page-header">
-              {title && <h1>{title}</h1>}
-              {subtitle && <p>{subtitle}</p>}
-            </div>
-          )}
-          {children}
+          <div key={router.pathname} className="page-enter">
+            {(title || subtitle) && (
+              <div className="page-header">
+                {title && <h1>{title}</h1>}
+                {subtitle && <p>{subtitle}</p>}
+              </div>
+            )}
+            {children}
+          </div>
         </main>
       </div>
 
+      {/* Anchor watermark — bottom left */}
+      <svg
+        aria-hidden
+        viewBox="0 0 120 160"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{
+          position: 'fixed',
+          bottom: -20,
+          left: 60,
+          width: 220,
+          opacity: isDark ? 0.035 : 0.045,
+          pointerEvents: 'none',
+          userSelect: 'none',
+          zIndex: 0,
+          color: isDark ? '#fff' : '#000',
+        }}
+      >
+        {/* Ring */}
+        <circle cx="60" cy="18" r="12" stroke="currentColor" strokeWidth="7" />
+        {/* Shaft */}
+        <line x1="60" y1="30" x2="60" y2="130" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+        {/* Crossbar */}
+        <line x1="22" y1="55" x2="98" y2="55" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
+        {/* Left arm */}
+        <path d="M60 130 Q22 130 22 105" stroke="currentColor" strokeWidth="7" fill="none" strokeLinecap="round" />
+        {/* Right arm */}
+        <path d="M60 130 Q98 130 98 105" stroke="currentColor" strokeWidth="7" fill="none" strokeLinecap="round" />
+        {/* Left cap */}
+        <circle cx="22" cy="105" r="6" fill="currentColor" />
+        {/* Right cap */}
+        <circle cx="98" cy="105" r="6" fill="currentColor" />
+      </svg>
+
+      {/* Floral watermark — bottom right */}
       <img aria-hidden src="/imgs/metro_51.png" alt="" style={{
         position: 'fixed', bottom: -60, right: -60, width: 420,
         opacity: isDark ? 0.04 : 0.055,
