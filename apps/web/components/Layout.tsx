@@ -496,10 +496,10 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         </main>
       </div>
 
-      {/* Anchor watermark — centred */}
+      {/* Compass watermark — centred */}
       <svg
         aria-hidden
-        viewBox="0 0 100 140"
+        viewBox="0 0 120 120"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{
@@ -507,7 +507,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: 380,
+          width: 360,
           opacity: isDark ? 0.016 : 0.02,
           pointerEvents: 'none',
           userSelect: 'none',
@@ -515,24 +515,25 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           color: isDark ? '#fff' : '#000',
         }}
       >
-        {/* Ring at top */}
-        <circle cx="50" cy="12" r="8" stroke="currentColor" strokeWidth="5" />
-        {/* Horizontal bar through ring */}
-        <line x1="34" y1="12" x2="66" y2="12" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-        {/* Shaft */}
-        <line x1="50" y1="20" x2="50" y2="112" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-        {/* Crossbar */}
-        <line x1="18" y1="48" x2="82" y2="48" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-        {/* Left arm curve */}
-        <path d="M50 112 C50 112 18 112 18 88" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" />
-        {/* Right arm curve */}
-        <path d="M50 112 C50 112 82 112 82 88" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round" />
-        {/* Left fluke */}
-        <circle cx="18" cy="88" r="5" fill="currentColor" />
-        {/* Right fluke */}
-        <circle cx="82" cy="88" r="5" fill="currentColor" />
-        {/* Rope loop around shaft */}
-        <ellipse cx="50" cy="28" rx="10" ry="5" stroke="currentColor" strokeWidth="2.5" opacity="0.5" />
+        {/* Outer ring */}
+        <circle cx="60" cy="60" r="54" stroke="currentColor" strokeWidth="3" />
+        {/* Inner ring */}
+        <circle cx="60" cy="60" r="44" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+        {/* Centre dot */}
+        <circle cx="60" cy="60" r="3.5" fill="currentColor" />
+        {/* N point (filled) */}
+        <polygon points="60,8 54,60 66,60" fill="currentColor" />
+        {/* S point (outline) */}
+        <polygon points="60,112 54,60 66,60" stroke="currentColor" strokeWidth="2" fill="none" />
+        {/* E point (outline) */}
+        <polygon points="112,60 60,54 60,66" stroke="currentColor" strokeWidth="2" fill="none" />
+        {/* W point (outline) */}
+        <polygon points="8,60 60,54 60,66" stroke="currentColor" strokeWidth="2" fill="none" />
+        {/* Diagonal tick marks */}
+        <line x1="21.5" y1="21.5" x2="27.5" y2="27.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <line x1="98.5" y1="21.5" x2="92.5" y2="27.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <line x1="21.5" y1="98.5" x2="27.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <line x1="98.5" y1="98.5" x2="92.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
 
       {/* Floral watermark — bottom right */}
