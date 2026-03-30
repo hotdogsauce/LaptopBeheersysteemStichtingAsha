@@ -248,8 +248,13 @@ export default function Home() {
   async function maakLaptopAan() {
     if (!nieuwMerk.trim()) { toast('Merk/type is verplicht.', 'error'); return }
     const drives = nieuwDrives
-      .filter(d => d.letter.trim() && d.type && d.size_gb && d.free_gb)
-      .map(d => ({ letter: d.letter.trim().toUpperCase(), type: d.type, size_gb: parseInt(d.size_gb), free_gb: parseInt(d.free_gb) }))
+      .filter(d => d.letter.trim() && d.type && d.size_gb)
+      .map(d => ({ letter: d.letter.trim().toUpperCase(), type: d.type, size_gb: parseInt(d.size_gb), free_gb: parseInt(d.free_gb) || 0 }))
+    for (const d of drives) {
+      if (d.size_gb <= 0) { toast(`Schijf ${d.letter}: grootte moet groter dan 0 GB zijn.`, 'error'); return }
+      if (d.free_gb < 0) { toast(`Schijf ${d.letter}: vrije ruimte kan niet negatief zijn.`, 'error'); return }
+      if (d.free_gb > d.size_gb) { toast(`Schijf ${d.letter}: vrije ruimte kan niet groter zijn dan de totale grootte (${d.size_gb} GB).`, 'error'); return }
+    }
     const data = await gql(
       `mutation($merk_type: String!, $specificaties: String, $heeft_vga: Boolean!, $heeft_hdmi: Boolean!, $ram_gb: Int, $heeft_wifi: Boolean!, $wifi_verbonden: Boolean!, $alle_toetsen_werken: Boolean!, $camera_werkt: Boolean!, $microfoon_werkt: Boolean!, $drives: [DriveInput!]) {
         createLaptop(merk_type: $merk_type, specificaties: $specificaties, heeft_vga: $heeft_vga, heeft_hdmi: $heeft_hdmi, ram_gb: $ram_gb, heeft_wifi: $heeft_wifi, wifi_verbonden: $wifi_verbonden, alle_toetsen_werken: $alle_toetsen_werken, camera_werkt: $camera_werkt, microfoon_werkt: $microfoon_werkt, drives: $drives) {
@@ -433,6 +438,7 @@ export default function Home() {
                               value={drive.free_gb}
                               onChange={e => setNieuwDrives(prev => prev.map((d, j) => j === i ? { ...d, free_gb: e.target.value } : d))}
                               min="0"
+                              max={drive.size_gb ? drive.size_gb : undefined}
                             />
                           </div>
                           <button

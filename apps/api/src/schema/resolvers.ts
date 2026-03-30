@@ -174,6 +174,13 @@ export const resolvers = {
     createLaptop: async (_: any, args: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'HELPDESK')
       const { drives, ...laptopData } = args
+      if (drives) {
+        for (const d of drives) {
+          if (d.size_gb <= 0) throw new Error(`Schijf ${d.letter}: grootte moet groter dan 0 GB zijn.`)
+          if (d.free_gb < 0) throw new Error(`Schijf ${d.letter}: vrije ruimte kan niet negatief zijn.`)
+          if (d.free_gb > d.size_gb) throw new Error(`Schijf ${d.letter}: vrije ruimte (${d.free_gb} GB) kan niet groter zijn dan de totale grootte (${d.size_gb} GB).`)
+        }
+      }
       const laptop = await prisma.laptop.create({ data: laptopData })
       if (drives && drives.length > 0) {
         await prisma.drive.createMany({

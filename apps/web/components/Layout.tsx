@@ -187,10 +187,21 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
-  async function markRead(id: string) {
+  async function markRead(id: string, message: string) {
     if (!loggedInUser) return
     await gql(`mutation { markNotificationRead(id: "${id}") }`, undefined, loggedInUser.userId).catch(() => {})
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    setBellOpen(false)
+    const link = notifLink(message, loggedInUser.role)
+    if (link) router.push(link)
+  }
+
+  function notifLink(message: string, role: string): string | null {
+    if (message.includes('reserveringsaanvraag')) return '/reserveringen'
+    if (message.includes('Je reservering')) return '/aanvragen'
+    if (message.includes('softwareaanvraag') && role === 'OWNER') return '/software'
+    if (message.includes('softwareaanvraag')) return '/reserveringen'
+    return null
   }
 
   // Fetch sidebar widget + nav badge counts
@@ -520,11 +531,11 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                       notifications.map(n => (
                         <div
                           key={n.id}
-                          onClick={() => markRead(n.id)}
+                          onClick={() => markRead(n.id, n.message)}
                           style={{
                             padding: '10px 14px',
                             borderBottom: '1px solid var(--border-subtle)',
-                            cursor: n.read ? 'default' : 'pointer',
+                            cursor: notifLink(n.message, loggedInUser?.role || '') ? 'pointer' : 'default',
                             background: n.read ? 'transparent' : 'var(--bg-soft)',
                             display: 'flex', gap: 10, alignItems: 'flex-start',
                           }}
