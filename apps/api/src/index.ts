@@ -40,6 +40,7 @@ function countWorkdays(from: Date, to: Date): number {
 async function autoRejectExpiredReservations() {
   const pending = await prisma.reservation.findMany({
     where: { status: 'REQUESTED' },
+    include: { activity: true },
   })
   const now = new Date()
   for (const r of pending) {
@@ -51,6 +52,14 @@ async function autoRejectExpiredReservations() {
           rejectionReason: 'Automatisch afgekeurd: beheerder heeft niet binnen 3 werkdagen gereageerd.',
         },
       })
+      // Notify the requester
+      await prisma.notification.create({
+        data: {
+          userId: r.requesterId,
+          message: `Je reservering voor "${r.activity.title}" is automatisch afgekeurd omdat de beheerder niet binnen 3 werkdagen heeft gereageerd.`,
+          type: 'WARNING',
+        },
+      }).catch(() => {})
       console.log(`Auto-afgewezen reservering ${r.id}`)
     }
   }

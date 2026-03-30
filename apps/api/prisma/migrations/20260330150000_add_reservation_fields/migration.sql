@@ -1,0 +1,4 @@
+ALTER TABLE "Reservation" ADD COLUMN "aantalLaptops" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "Reservation" ADD COLUMN "doel" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Reservation" ADD COLUMN "contact_info" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Reservation" ADD COLUMN "extra_info" TEXT;

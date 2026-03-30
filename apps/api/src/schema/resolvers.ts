@@ -190,21 +190,37 @@ export const resolvers = {
       return prisma.laptop.findUnique({ where: { id: laptop.id }, include: { drives: true } })
     },
 
-    requestReservation: async (_: any, { userId, activityId, startDate, endDate }: any, { user }: any) => {
+    requestReservation: async (_: any, { userId, activityId, startDate, endDate, aantalLaptops, doel, contact_info, extra_info }: any, { user }: any) => {
       requireRole(user, 'OWNER', 'ADMIN')
       const start = new Date(startDate)
       const now = new Date()
       const diffDays = (start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-      if (diffDays < 2) throw new Error('Reservering moet minimaal 2 dagen van tevoren worden aangevraagd.')
+      // Date rules only enforced for OWNER (admin can create on behalf without restriction)
+      if (user.role === 'OWNER') {
+        if (diffDays < 3) throw new Error('Startdatum moet minimaal 3 dagen in de toekomst liggen.')
+        if (diffDays > 21) throw new Error('Reserveringen kunnen maximaal 3 weken (21 dagen) van tevoren worden aangevraagd.')
+      }
       if (new Date(endDate) < start) throw new Error('Einddatum mag niet voor startdatum liggen.')
+      if (!doel?.trim()) throw new Error('Doel van de aanvraag is verplicht.')
+      if (!contact_info?.trim()) throw new Error('Contactgegevens zijn verplicht.')
+      if (!aantalLaptops || aantalLaptops < 1) throw new Error('Aantal laptops moet minimaal 1 zijn.')
       const res = await prisma.reservation.create({
-        data: { requesterId: userId, activityId, startDate: start, endDate: new Date(endDate) },
+        data: {
+          requesterId: userId, activityId,
+          startDate: start, endDate: new Date(endDate),
+          aantalLaptops, doel, contact_info,
+          extra_info: extra_info ?? null,
+        },
         include: { activity: true, requester: true, approver: true, laptops: true }
       })
-      // Notify all admins of new reservation request
+      // Notify all admins
       const adminIds = await getAdminIds()
       for (const aid of adminIds) {
-        createNotification(aid, `Nieuwe reserveringsaanvraag van ${res.requester.name} voor "${res.activity.title}".`, 'INFO')
+        createNotification(
+          aid,
+          `Nieuwe reserveringsaanvraag van ${res.requester.name} voor "${res.activity.title}" — ${aantalLaptops} laptop(s), doel: ${doel}.`,
+          'INFO'
+        )
       }
       return res
     },

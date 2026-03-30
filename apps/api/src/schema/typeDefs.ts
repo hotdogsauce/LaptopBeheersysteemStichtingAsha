@@ -105,6 +105,10 @@ export const typeDefs = `
     startDate: String!
     endDate: String!
     status: ReservationStatus!
+    aantalLaptops: Int!
+    doel: String!
+    contact_info: String!
+    extra_info: String
     activity: Activity!
     requester: User!
     approver: User
@@ -256,7 +260,7 @@ export const typeDefs = `
       microfoon_werkt: Boolean!
       drives: [DriveInput!]
     ): Laptop!
-    requestReservation(userId: ID!, activityId: ID!, startDate: String!, endDate: String!): Reservation
+    requestReservation(userId: ID!, activityId: ID!, startDate: String!, endDate: String!, aantalLaptops: Int!, doel: String!, contact_info: String!, extra_info: String): Reservation
     reviewReservation(reservationId: ID!, adminId: ID!, approve: Boolean!, reason: String): Reservation
     assignLaptopsToReservation(reservationId: ID!, laptopIds: [ID!]!): Reservation
     cancelReservation(reservationId: ID!, userId: ID!): Reservation

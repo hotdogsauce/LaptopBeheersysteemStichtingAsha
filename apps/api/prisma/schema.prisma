@@ -123,6 +123,10 @@ model Reservation {
   endDate         DateTime
   rejectionReason String?
   aanvraag_datum  DateTime          @default(now())
+  aantalLaptops   Int               @default(1)
+  doel            String            @default("")
+  contact_info    String            @default("")
+  extra_info      String?
   requester       User              @relation("requester", fields: [requesterId], references: [id])
   requesterId     String
   approver        User?             @relation("approver", fields: [approverId], references: [id])

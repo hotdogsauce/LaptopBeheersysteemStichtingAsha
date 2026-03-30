@@ -9,9 +9,13 @@ interface Reservation {
   status: string
   startDate: string
   endDate: string
+  aantalLaptops: number
+  doel: string
+  contact_info: string
+  extra_info: string | null
   rejectionReason: string | null
   requester: { name: string }
-  activity: { title: string }
+  activity: { title: string; locatie: string | null }
 }
 
 interface Activity { id: string; title: string }
@@ -58,13 +62,17 @@ export default function Reserveringen() {
   const [activityId, setActivityId] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [aantalLaptops, setAantalLaptops] = useState('1')
+  const [doel, setDoel] = useState('')
+  const [contactInfo, setContactInfo] = useState('')
+  const [extraInfo, setExtraInfo] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!selectedUserId || selectedUser?.role !== 'ADMIN') return
     setLoading(true)
     gql(
-      '{ pendingReservations { id status startDate endDate rejectionReason requester { name } activity { title } } }',
+      '{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }',
       undefined, selectedUserId
     ).then(data => { setReserveringen(data.data?.pendingReservations || []); setLoading(false) })
   }, [selectedUserId])
@@ -104,20 +112,23 @@ export default function Reserveringen() {
     if (!forUserId) { toast('Selecteer een eigenaar.', 'error'); return }
     if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
     if (!startDate || !endDate) { toast('Vul start- en einddatum in.', 'error'); return }
+    if (!doel.trim()) { toast('Vul het doel in.', 'error'); return }
+    if (!contactInfo.trim()) { toast('Vul contactgegevens in.', 'error'); return }
+    const aantal = parseInt(aantalLaptops) || 1
     setSaving(true)
     const data = await gql(
-      `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!) {
-        requestReservation(userId: $userId, activityId: $activityId, startDate: $startDate, endDate: $endDate) { id status }
+      `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
+        requestReservation(userId: $userId, activityId: $activityId, startDate: $startDate, endDate: $endDate, aantalLaptops: $aantalLaptops, doel: $doel, contact_info: $contact_info, extra_info: $extra_info) { id status }
       }`,
-      { userId: forUserId, activityId, startDate, endDate },
+      { userId: forUserId, activityId, startDate, endDate, aantalLaptops: aantal, doel, contact_info: contactInfo, extra_info: extraInfo.trim() || null },
       selectedUserId
     )
     setSaving(false)
     if (data.errors) { toast(data.errors[0].message, 'error'); return }
     toast('Reservering aangemaakt.')
     setShowForm(false); setForUserId(''); setActivityId(''); setStartDate(''); setEndDate('')
-    // reload pending list
-    gql('{ pendingReservations { id status startDate endDate rejectionReason requester { name } activity { title } } }', undefined, selectedUserId)
+    setAantalLaptops('1'); setDoel(''); setContactInfo(''); setExtraInfo('')
+    gql('{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }', undefined, selectedUserId)
       .then(d => setReserveringen(d.data?.pendingReservations || []))
   }
 
@@ -161,12 +172,30 @@ export default function Reserveringen() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label className="label">Startdatum *</label>
-                    <input type="date" className="input" min={minStartDatum()} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                    <input type="date" className="input" value={startDate} onChange={e => setStartDate(e.target.value)} />
                   </div>
                   <div>
                     <label className="label">Einddatum *</label>
-                    <input type="date" className="input" min={startDate || minStartDatum()} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                    <input type="date" className="input" min={startDate} value={endDate} onChange={e => setEndDate(e.target.value)} />
                   </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16 }}>
+                  <div>
+                    <label className="label">Aantal laptops *</label>
+                    <input type="number" className="input" min="1" value={aantalLaptops} onChange={e => setAantalLaptops(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Doel van de aanvraag *</label>
+                  <input className="input" placeholder="bijv. praktijkles, examen..." value={doel} onChange={e => setDoel(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Contactgegevens eigenaar *</label>
+                  <input className="input" placeholder="naam, telefoon of e-mail" value={contactInfo} onChange={e => setContactInfo(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Extra informatie (optioneel)</label>
+                  <input className="input" placeholder="bijzonderheden..." value={extraInfo} onChange={e => setExtraInfo(e.target.value)} />
                 </div>
                 <div>
                   <button className="btn btn-primary" disabled={saving} onClick={maakReservering}>
@@ -194,14 +223,38 @@ export default function Reserveringen() {
               {reserveringen.map(r => (
                 <div key={r.id} className="card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                    <div>
-                      <h3 style={{ marginBottom: 6 }}>{r.activity.title}</h3>
-                      <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>Aanvrager: {r.requester.name}</p>
-                      <p style={{ fontSize: 13, color: 'var(--grey)', margin: '2px 0 0' }}>
-                        {new Date(r.startDate).toLocaleDateString('nl-NL')} → {new Date(r.endDate).toLocaleDateString('nl-NL')}
-                      </p>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ marginBottom: 8 }}>{r.activity.title}</h3>
+                      <div style={{ display: 'grid', gap: 3 }}>
+                        <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Aanvrager:</strong> {r.requester.name}
+                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Contact:</strong> {r.contact_info}
+                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Datum:</strong>{' '}
+                          {new Date(r.startDate).toLocaleDateString('nl-NL')} → {new Date(r.endDate).toLocaleDateString('nl-NL')}
+                        </p>
+                        {r.activity.locatie && (
+                          <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                            <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Locatie:</strong> {r.activity.locatie}
+                          </p>
+                        )}
+                        <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Aantal laptops:</strong> {r.aantalLaptops}
+                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Doel:</strong> {r.doel}
+                        </p>
+                        {r.extra_info && (
+                          <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
+                            <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Extra info:</strong> {r.extra_info}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <span className="badge badge-pending">In afwachting</span>
+                    <span className="badge badge-pending" style={{ flexShrink: 0, marginLeft: 16 }}>In afwachting</span>
                   </div>
 
                   <div style={{ marginBottom: 12 }}>
