@@ -50,7 +50,7 @@ Het laptopbeheersysteem van Stichting Asha vervangt het handmatige proces van la
 ## Systeemvereisten
 
 Geen installatie nodig. Het systeem is bereikbaar via een webbrowser op:
-- **Productie-URL:** _______________
+- https://laptop-beheersysteem-stichting-asha.vercel.app/
 
 ---
 

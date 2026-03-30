@@ -237,6 +237,9 @@ export const typeDefs = `
     pendingSoftwareRequests: [SoftwareRequest!]!
     mySoftwareRequests(userId: ID!): [SoftwareRequest!]!
 
+    approvedReservations: [Reservation!]!
+    availableLaptopCount: Int!
+
     # Notificaties / audit / dashboard
     notifications: [Notification!]!
     auditLogs(limit: Int): [AuditLog!]!

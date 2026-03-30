@@ -28,6 +28,7 @@ const navByRole: Record<string, { href: string; label: string }[]> = {
   HELPDESK: [
     { href: '/', label: 'Overzicht' },
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/toewijzen', label: 'Toewijzen' },
     { href: '/storingen', label: 'Storingen' },
     { href: '/controle', label: 'Controle' },
     { href: '/ai', label: 'AI assistent' },

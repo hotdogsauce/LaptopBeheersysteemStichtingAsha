@@ -75,6 +75,17 @@ export const resolvers = {
     users: () => prisma.user.findMany(),
     activities: () => prisma.activity.findMany(),
 
+    approvedReservations: (_: any, __: any, { user }: any) => {
+      requireRole(user, 'HELPDESK', 'ADMIN')
+      return prisma.reservation.findMany({
+        where: { status: ReservationStatus.APPROVED },
+        include: { activity: true, requester: true, approver: true, laptops: true },
+        orderBy: { startDate: 'asc' },
+      })
+    },
+
+    availableLaptopCount: () => prisma.laptop.count({ where: { status: 'AVAILABLE' } }),
+
     notifications: (_: any, __: any, { user }: any) => {
       if (!user) return []
       return prisma.notification.findMany({
@@ -202,6 +213,10 @@ export const resolvers = {
       }
       if (new Date(endDate) < start) throw new Error('Einddatum mag niet voor startdatum liggen.')
       if (!doel?.trim()) throw new Error('Doel van de aanvraag is verplicht.')
+      const availableCount = await prisma.laptop.count({ where: { status: 'AVAILABLE' } })
+      if (aantalLaptops > availableCount) {
+        throw new Error(`Er zijn momenteel slechts ${availableCount} beschikbare laptop(s). Je vroeg om ${aantalLaptops}.`)
+      }
       if (!contact_info?.trim()) throw new Error('Contactgegevens zijn verplicht.')
       if (!aantalLaptops || aantalLaptops < 1) throw new Error('Aantal laptops moet minimaal 1 zijn.')
       const res = await prisma.reservation.create({
