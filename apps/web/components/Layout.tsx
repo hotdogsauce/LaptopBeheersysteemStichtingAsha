@@ -12,6 +12,7 @@ const roleLabel: Record<string, string> = {
 const navByRole: Record<string, { href: string; label: string }[]> = {
   ADMIN: [
     { href: '/', label: 'Overzicht' },
+    { href: '/dashboard', label: 'Dashboard' },
     { href: '/reserveringen', label: 'Reserveringen' },
     { href: '/beheer', label: 'Beheer' },
     { href: '/activiteiten', label: 'Activiteiten' },
@@ -26,6 +27,7 @@ const navByRole: Record<string, { href: string; label: string }[]> = {
   ],
   HELPDESK: [
     { href: '/', label: 'Overzicht' },
+    { href: '/dashboard', label: 'Dashboard' },
     { href: '/storingen', label: 'Storingen' },
     { href: '/controle', label: 'Controle' },
     { href: '/ai', label: 'AI assistent' },
@@ -75,6 +77,12 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
   const [sidebarTitle, setSidebarTitle] = useState('')
   const [widgetLoading, setWidgetLoading] = useState(false)
   const [navBadge, setNavBadge] = useState<{ href: string; count: number } | null>(null)
+
+  // Notifications bell
+  const [notifications, setNotifications] = useState<{ id: string; message: string; type: string; read: boolean; createdAt: string }[]>([])
+  const [bellOpen, setBellOpen] = useState(false)
+  const bellRef = useRef<HTMLDivElement>(null)
+  const unreadCount = notifications.filter(n => !n.read).length
 
   // Search
   const [searchOpen, setSearchOpen] = useState(false)
@@ -148,6 +156,42 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [])
+
+  // Fetch notifications for logged-in user
+  useEffect(() => {
+    if (!loggedInUser) { setNotifications([]); return }
+    function fetchNotifs() {
+      gql('{ notifications { id message type read createdAt } }', undefined, loggedInUser!.userId)
+        .then(d => setNotifications(d.data?.notifications || []))
+        .catch(() => {})
+    }
+    fetchNotifs()
+    const interval = setInterval(fetchNotifs, 30000)
+    return () => clearInterval(interval)
+  }, [loggedInUser?.userId])
+
+  // Close bell dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false)
+      }
+    }
+    if (bellOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [bellOpen])
+
+  async function markAllRead() {
+    if (!loggedInUser) return
+    await gql('mutation { markAllNotificationsRead }', undefined, loggedInUser.userId).catch(() => {})
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }
+
+  async function markRead(id: string) {
+    if (!loggedInUser) return
+    await gql(`mutation { markNotificationRead(id: "${id}") }`, undefined, loggedInUser.userId).catch(() => {})
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }
 
   // Fetch sidebar widget + nav badge counts
   useEffect(() => {
@@ -421,6 +465,88 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
               </div>
             )}
           </div>
+
+          {/* Notification bell */}
+          {loggedInUser && (
+            <div ref={bellRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => { setBellOpen(o => !o); if (!bellOpen && unreadCount > 0) {} }}
+                title="Notificaties"
+                style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  border: `1px solid ${bellOpen ? 'var(--black)' : 'var(--border)'}`,
+                  background: 'transparent', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, padding: 0, position: 'relative', transition: 'border-color 0.15s',
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1.5A4 4 0 0 0 3 5.5v3l-1 1.5h10l-1-1.5v-3A4 4 0 0 0 7 1.5z" stroke="var(--grey)" strokeWidth="1.3" fill="none" strokeLinejoin="round" />
+                  <path d="M5.5 10.5a1.5 1.5 0 0 0 3 0" stroke="var(--grey)" strokeWidth="1.3" fill="none" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -2, right: -2,
+                    minWidth: 14, height: 14, borderRadius: 99,
+                    background: 'var(--red)', color: '#fff',
+                    fontSize: 9, fontWeight: 700, lineHeight: '14px',
+                    textAlign: 'center', padding: '0 3px',
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {bellOpen && (
+                <div style={{
+                  position: 'absolute', top: 36, right: 0,
+                  width: 280, background: 'var(--white)',
+                  border: '1px solid var(--border)', borderRadius: 8,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  zIndex: 50, overflow: 'hidden',
+                }} className="section-enter">
+                  <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)' }}>Notificaties</span>
+                    {unreadCount > 0 && (
+                      <button onClick={markAllRead} style={{ fontSize: 11, color: 'var(--grey)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                        Alles gelezen
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                    {notifications.length === 0 ? (
+                      <p style={{ padding: '16px 14px', fontSize: 12, color: 'var(--grey)', margin: 0 }}>Geen notificaties.</p>
+                    ) : (
+                      notifications.map(n => (
+                        <div
+                          key={n.id}
+                          onClick={() => markRead(n.id)}
+                          style={{
+                            padding: '10px 14px',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            cursor: n.read ? 'default' : 'pointer',
+                            background: n.read ? 'transparent' : 'var(--bg-soft)',
+                            display: 'flex', gap: 10, alignItems: 'flex-start',
+                          }}
+                        >
+                          <span style={{
+                            width: 6, height: 6, borderRadius: '50', marginTop: 4, flexShrink: 0,
+                            background: n.read ? 'transparent' : (n.type === 'SUCCESS' ? '#22c55e' : n.type === 'WARNING' ? 'var(--red)' : 'var(--grey)'),
+                          }} />
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontSize: 12, color: 'var(--black)', margin: 0, lineHeight: 1.4 }}>{n.message}</p>
+                            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '2px 0 0' }}>
+                              {new Date(n.createdAt).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Theme toggle */}
           <button

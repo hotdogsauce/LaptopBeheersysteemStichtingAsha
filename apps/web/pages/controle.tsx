@@ -3,60 +3,165 @@ import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 
 interface Laptop { id: string; merk_type: string; status: string; specificaties: string }
-interface ChecklistReport {
+interface ChecklistHistory {
   id: string
   passed: boolean
   createdAt: string
   submittedBy: { name: string }
+  toetsenbord_ok: boolean | null
+  camera_ok: boolean | null
+  microfoon_ok: boolean | null
+  schijf_type: string | null
+  ram_totaal: string | null
+  wifi_signaal: number | null
+  ping_ms: number | null
 }
 
-const CHECKLIST_ITEMS: { key: string; label: string; beschrijving: string }[] = [
-  { key: 'geenSchade',    label: 'Geen zichtbare schade',   beschrijving: 'Geen schade aan scherm, toetsenbord of behuizing' },
-  { key: 'geenBestanden', label: 'Schone software',         beschrijving: 'Geen ongewenste bestanden of internetgeschiedenis' },
-  { key: 'schoongemaakt', label: 'Hygiëne in orde',         beschrijving: 'Laptop is schoongemaakt' },
-  { key: 'accuOk',        label: 'Accu > 80% + lader OK',   beschrijving: 'Accu is opgeladen en lader functioneert' },
-  { key: 'updatesOk',     label: 'Software up-to-date',     beschrijving: 'OS en vereiste software zijn bijgewerkt' },
-]
+function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <span style={{
+          width: 24, height: 24, borderRadius: '50%', background: 'var(--black)',
+          color: 'var(--white)', fontSize: 11, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>{number}</span>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--black)' }}>{title}</p>
+      </div>
+      <div style={{ paddingLeft: 34, display: 'grid', gap: 12 }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button
+        type="button"
+        className={`btn ${value === true ? 'btn-primary' : 'btn-ghost'}`}
+        style={{ fontSize: 12, padding: '5px 16px' }}
+        onClick={() => onChange(true)}
+      >Ja</button>
+      <button
+        type="button"
+        className={`btn ${value === false ? 'btn-danger' : 'btn-ghost'}`}
+        style={{ fontSize: 12, padding: '5px 16px' }}
+        onClick={() => onChange(false)}
+      >Nee</button>
+    </div>
+  )
+}
+
+function Check({ ok }: { ok: boolean | null }) {
+  if (ok === null) return <span style={{ color: 'var(--grey)', fontSize: 12 }}>—</span>
+  return <span style={{ fontSize: 12, color: ok ? '#16a34a' : 'var(--red)' }}>{ok ? '✓' : '✕'}</span>
+}
+
+const emptyForm = () => ({
+  schijf_type: '',
+  schijf_grootte: '',
+  schijf_sneller: '',
+  ram_totaal: '',
+  ram_gebruikt: '',
+  opslag_vrij: '',
+  opstartprogrammas: '',
+  energie_ingesteld: null as boolean | null,
+  wifi_signaal: '',
+  ping_ms: '',
+  toetsenbord_ok: null as boolean | null,
+  camera_ok: null as boolean | null,
+  microfoon_ok: null as boolean | null,
+})
 
 export default function Controle() {
   const { selectedUserId, selectedUser } = useUser()
   const [inControlLaptops, setInControlLaptops] = useState<Laptop[]>([])
   const [selectedLaptopId, setSelectedLaptopId] = useState('')
-  const [checklistItems, setChecklistItems] = useState<Record<string, boolean>>({
-    geenSchade: false, geenBestanden: false, schoongemaakt: false, accuOk: false, updatesOk: false,
-  })
-  const [checklistHistory, setChecklistHistory] = useState<ChecklistReport[]>([])
+  const [form, setForm] = useState(emptyForm())
+  const [history, setHistory] = useState<ChecklistHistory[]>([])
   const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const allChecked = Object.values(checklistItems).every(v => v)
-  const checkedCount = Object.values(checklistItems).filter(Boolean).length
+  const canSubmit = form.toetsenbord_ok !== null && form.camera_ok !== null && form.microfoon_ok !== null
+
+  function set<K extends keyof ReturnType<typeof emptyForm>>(key: K, value: ReturnType<typeof emptyForm>[K]) {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
 
   useEffect(() => {
     if (!selectedUserId || selectedUser?.role !== 'HELPDESK') return
     gql('{ laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }', undefined, selectedUserId)
-      .then(data => setInControlLaptops(data.data?.laptopsByStatus || []))
+      .then(d => setInControlLaptops(d.data?.laptopsByStatus || []))
   }, [selectedUserId])
 
   useEffect(() => {
     if (!selectedLaptopId || !selectedUserId) return
-    setChecklistItems({ geenSchade: false, geenBestanden: false, schoongemaakt: false, accuOk: false, updatesOk: false })
+    setForm(emptyForm())
     gql(
-      `query($laptopId: ID!) { checklistsByLaptop(laptopId: $laptopId) { id passed createdAt submittedBy { name } } }`,
+      `query($laptopId: ID!) {
+        checklistsByLaptop(laptopId: $laptopId) {
+          id passed createdAt
+          submittedBy { name }
+          toetsenbord_ok camera_ok microfoon_ok
+          schijf_type ram_totaal wifi_signaal ping_ms
+        }
+      }`,
       { laptopId: selectedLaptopId },
       selectedUserId
-    ).then(data => setChecklistHistory(data.data?.checklistsByLaptop || []))
+    ).then(d => setHistory(d.data?.checklistsByLaptop || []))
   }, [selectedLaptopId])
 
   async function indienen() {
+    if (!canSubmit) return
+    setSubmitting(true)
+    const vars: Record<string, unknown> = {
+      laptopId: selectedLaptopId,
+      toetsenbord_ok: form.toetsenbord_ok,
+      camera_ok: form.camera_ok,
+      microfoon_ok: form.microfoon_ok,
+    }
+    if (form.schijf_type) vars.schijf_type = form.schijf_type
+    if (form.schijf_grootte) vars.schijf_grootte = form.schijf_grootte
+    if (form.schijf_sneller) vars.schijf_sneller = form.schijf_sneller
+    if (form.ram_totaal) vars.ram_totaal = form.ram_totaal
+    if (form.ram_gebruikt) vars.ram_gebruikt = form.ram_gebruikt
+    if (form.opslag_vrij) vars.opslag_vrij = form.opslag_vrij
+    if (form.opstartprogrammas) vars.opstartprogrammas = form.opstartprogrammas
+    if (form.energie_ingesteld !== null) vars.energie_ingesteld = form.energie_ingesteld
+    if (form.wifi_signaal) vars.wifi_signaal = parseInt(form.wifi_signaal)
+    if (form.ping_ms) vars.ping_ms = parseInt(form.ping_ms)
+
     const data = await gql(
-      `mutation($laptopId: ID!, $geenSchade: Boolean!, $geenBestanden: Boolean!, $schoongemaakt: Boolean!, $accuOk: Boolean!, $updatesOk: Boolean!) {
-        submitChecklist(laptopId: $laptopId, geenSchade: $geenSchade, geenBestanden: $geenBestanden, schoongemaakt: $schoongemaakt, accuOk: $accuOk, updatesOk: $updatesOk) {
-          id passed laptop { merk_type status }
-        }
+      `mutation(
+        $laptopId: ID!, $toetsenbord_ok: Boolean!, $camera_ok: Boolean!, $microfoon_ok: Boolean!,
+        $schijf_type: String, $schijf_grootte: String, $schijf_sneller: String,
+        $ram_totaal: String, $ram_gebruikt: String, $opslag_vrij: String,
+        $opstartprogrammas: String, $energie_ingesteld: Boolean,
+        $wifi_signaal: Int, $ping_ms: Int
+      ) {
+        submitChecklist(
+          laptopId: $laptopId, toetsenbord_ok: $toetsenbord_ok, camera_ok: $camera_ok, microfoon_ok: $microfoon_ok,
+          schijf_type: $schijf_type, schijf_grootte: $schijf_grootte, schijf_sneller: $schijf_sneller,
+          ram_totaal: $ram_totaal, ram_gebruikt: $ram_gebruikt, opslag_vrij: $opslag_vrij,
+          opstartprogrammas: $opstartprogrammas, energie_ingesteld: $energie_ingesteld,
+          wifi_signaal: $wifi_signaal, ping_ms: $ping_ms
+        ) { id passed laptop { merk_type status } }
       }`,
-      { laptopId: selectedLaptopId, ...checklistItems },
+      vars,
       selectedUserId
     )
+    setSubmitting(false)
     if (data.errors) {
       setBericht({ text: data.errors[0].message, type: 'fout' })
     } else {
@@ -65,9 +170,10 @@ export default function Controle() {
         text: passed
           ? `Checklist geslaagd. ${laptop.merk_type} is weer beschikbaar.`
           : `Checklist niet geslaagd. ${laptop.merk_type} → DEFECT.`,
-        type: passed ? 'ok' : 'fout'
+        type: passed ? 'ok' : 'fout',
       })
       setSelectedLaptopId('')
+      setForm(emptyForm())
       gql('{ laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }', undefined, selectedUserId)
         .then(d => setInControlLaptops(d.data?.laptopsByStatus || []))
     }
@@ -84,9 +190,7 @@ export default function Controle() {
       )}
 
       {selectedUserId && selectedUser?.role !== 'HELPDESK' && (
-        <div className="alert alert-error">
-          Deze pagina is alleen toegankelijk voor helpdeskmedewerkers.
-        </div>
+        <div className="alert alert-error">Deze pagina is alleen toegankelijk voor helpdeskmedewerkers.</div>
       )}
 
       {selectedUserId && selectedUser?.role === 'HELPDESK' && (
@@ -110,15 +214,12 @@ export default function Controle() {
                     key={l.id}
                     onClick={() => setSelectedLaptopId(l.id)}
                     style={{
-                      textAlign: 'left',
-                      padding: '12px 16px',
+                      textAlign: 'left', padding: '12px 16px',
                       borderRadius: 'var(--radius)',
                       border: selectedLaptopId === l.id ? '1px solid var(--black)' : '1px solid var(--border)',
                       background: selectedLaptopId === l.id ? 'var(--black)' : 'var(--white)',
                       color: selectedLaptopId === l.id ? 'var(--white)' : 'var(--black)',
-                      cursor: 'pointer',
-                      fontSize: 14,
-                      fontFamily: 'var(--font)',
+                      cursor: 'pointer', fontSize: 14, fontFamily: 'var(--font)',
                       fontWeight: selectedLaptopId === l.id ? 500 : 400,
                       transition: 'all 0.12s',
                     }}
@@ -135,51 +236,169 @@ export default function Controle() {
 
           {selectedLaptopId && (
             <div className="card" style={{ marginBottom: 32 }}>
-              <h2 style={{ marginBottom: 20 }}>Controlelijst</h2>
-              <div style={{ display: 'grid', gap: 16, marginBottom: 24 }}>
-                {CHECKLIST_ITEMS.map(item => (
-                  <label
-                    key={item.key}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checklistItems[item.key] || false}
-                      onChange={e => setChecklistItems(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                      style={{ marginTop: 2, width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }}
-                    />
-                    <div>
-                      <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{item.label}</p>
-                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>{item.beschrijving}</p>
+              <h2 style={{ marginBottom: 24, fontSize: 16 }}>Controlelijst</h2>
+
+              {/* Deel 1 – Hardware */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>
+                Deel 1 – Laptop hardware controleren
+              </p>
+
+              <Step number={1} title="Schijf controleren (SSD of HDD)">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Type schijf">
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {['SSD', 'HDD'].map(t => (
+                        <button key={t} type="button"
+                          className={`btn ${form.schijf_type === t ? 'btn-primary' : 'btn-ghost'}`}
+                          style={{ fontSize: 12, padding: '5px 16px' }}
+                          onClick={() => set('schijf_type', t)}
+                        >{t}</button>
+                      ))}
                     </div>
-                  </label>
-                ))}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  </Field>
+                  <Field label="Grootte schijf">
+                    <input className="input" placeholder="bijv. 256 GB" value={form.schijf_grootte} onChange={e => set('schijf_grootte', e.target.value)} />
+                  </Field>
+                </div>
+                <Field label="Welke schijf is sneller?">
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['SSD', 'HDD'].map(t => (
+                      <button key={t} type="button"
+                        className={`btn ${form.schijf_sneller === t ? 'btn-primary' : 'btn-ghost'}`}
+                        style={{ fontSize: 12, padding: '5px 16px' }}
+                        onClick={() => set('schijf_sneller', t)}
+                      >{t}</button>
+                    ))}
+                  </div>
+                </Field>
+              </Step>
+
+              <Step number={2} title="Werkgeheugen (RAM) controleren">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <Field label="Hoeveel RAM heeft de laptop?">
+                    <input className="input" placeholder="bijv. 8 GB" value={form.ram_totaal} onChange={e => set('ram_totaal', e.target.value)} />
+                  </Field>
+                  <Field label="Hoeveel RAM wordt gebruikt?">
+                    <input className="input" placeholder="bijv. 3,2 GB" value={form.ram_gebruikt} onChange={e => set('ram_gebruikt', e.target.value)} />
+                  </Field>
+                </div>
+              </Step>
+
+              <Step number={3} title="Opslagruimte controleren">
+                <Field label="Vrije ruimte op C:">
+                  <input className="input" placeholder="bijv. 120 GB" value={form.opslag_vrij} onChange={e => set('opslag_vrij', e.target.value)} />
+                </Field>
+              </Step>
+
+              {/* Deel 2 – Optimaliseren */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, marginTop: 8 }}>
+                Deel 2 – Laptop optimaliseren
+              </p>
+
+              <Step number={4} title="Opstartprogramma's controleren">
+                <Field label="Programma's die uitgeschakeld kunnen worden">
+                  <textarea
+                    className="input"
+                    placeholder="bijv. Spotify, OneDrive, Teams..."
+                    value={form.opstartprogrammas}
+                    onChange={e => set('opstartprogrammas', e.target.value)}
+                    style={{ minHeight: 60, resize: 'vertical' }}
+                  />
+                </Field>
+              </Step>
+
+              <Step number={5} title="Energie-instellingen aanpassen">
+                <Field label="Energieplan ingesteld op High Performance?">
+                  <YesNo value={form.energie_ingesteld} onChange={v => set('energie_ingesteld', v)} />
+                </Field>
+              </Step>
+
+              {/* Deel 3 – Wi-Fi */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, marginTop: 8 }}>
+                Deel 3 – Wi-Fi controleren
+              </p>
+
+              <Step number={6} title="Wi-Fi signaal meten">
+                <Field label="Signaalsterkte (%) — netsh wlan show interfaces">
+                  <input type="number" className="input" placeholder="bijv. 85" value={form.wifi_signaal}
+                    onChange={e => set('wifi_signaal', e.target.value)} min="0" max="100"
+                    style={{ width: 120 }} />
+                </Field>
+              </Step>
+
+              <Step number={7} title="Ping test uitvoeren">
+                <Field label="Ping naar google.com (ms) — ping google.com">
+                  <input type="number" className="input" placeholder="bijv. 14" value={form.ping_ms}
+                    onChange={e => set('ping_ms', e.target.value)} min="0"
+                    style={{ width: 120 }} />
+                </Field>
+              </Step>
+
+              {/* Deel 4 – Testen */}
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, marginTop: 8 }}>
+                Deel 4 – Laptop testen
+              </p>
+
+              <Step number={8} title="Toetsenbord testen">
+                <Field label="Werken alle toetsen? (letters, cijfers, functietoetsen) *">
+                  <YesNo value={form.toetsenbord_ok} onChange={v => set('toetsenbord_ok', v)} />
+                </Field>
+              </Step>
+
+              <Step number={9} title="Camera testen">
+                <Field label="Werkt de camera? *">
+                  <YesNo value={form.camera_ok} onChange={v => set('camera_ok', v)} />
+                </Field>
+              </Step>
+
+              <Step number={10} title="Microfoon testen">
+                <Field label="Werkt de microfoon? *">
+                  <YesNo value={form.microfoon_ok} onChange={v => set('microfoon_ok', v)} />
+                </Field>
+              </Step>
+
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 20, marginTop: 8, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <button
-                  className={`btn ${allChecked ? 'btn-primary' : 'btn-danger'}`}
+                  className={`btn ${canSubmit && form.toetsenbord_ok && form.camera_ok && form.microfoon_ok ? 'btn-primary' : canSubmit ? 'btn-danger' : 'btn-ghost'}`}
                   onClick={indienen}
+                  disabled={!canSubmit || submitting}
                 >
-                  {allChecked ? 'Indienen — alles OK' : 'Indienen — bevindingen'}
+                  {submitting ? 'Opslaan…' : canSubmit
+                    ? (form.toetsenbord_ok && form.camera_ok && form.microfoon_ok ? 'Indienen — alles OK' : 'Indienen — bevindingen')
+                    : 'Vul verplichte velden in (*)'}
                 </button>
-                <span style={{ fontSize: 12, color: 'var(--grey)' }}>
-                  {checkedCount}/5 items afgevinkt
-                </span>
+                {!canSubmit && (
+                  <span style={{ fontSize: 12, color: 'var(--grey)' }}>
+                    Stap 8, 9 en 10 zijn verplicht
+                  </span>
+                )}
               </div>
             </div>
           )}
 
-          {checklistHistory.length > 0 && (
+          {history.length > 0 && (
             <div>
               <p className="section-label" style={{ marginBottom: 10 }}>Eerdere controles</p>
               <div style={{ display: 'grid', gap: 6 }}>
-                {checklistHistory.map(r => (
-                  <div
-                    key={r.id}
-                    className={r.passed ? 'alert alert-ok' : 'alert alert-error'}
-                    style={{ marginBottom: 0, fontSize: 12 }}
-                  >
-                    {r.passed ? 'Geslaagd' : 'Niet geslaagd'} — {new Date(r.createdAt).toLocaleDateString('nl-NL')} — {r.submittedBy.name}
+                {history.map(r => (
+                  <div key={r.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>
+                        {new Date(r.createdAt).toLocaleDateString('nl-NL')} — {r.submittedBy.name}
+                      </p>
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '3px 0 0', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {r.toetsenbord_ok !== null && <span><Check ok={r.toetsenbord_ok} /> Toetsenbord</span>}
+                        {r.camera_ok !== null && <span><Check ok={r.camera_ok} /> Camera</span>}
+                        {r.microfoon_ok !== null && <span><Check ok={r.microfoon_ok} /> Microfoon</span>}
+                        {r.schijf_type && <span>Schijf: {r.schijf_type}</span>}
+                        {r.ram_totaal && <span>RAM: {r.ram_totaal}</span>}
+                        {r.wifi_signaal != null && <span>Wi-Fi: {r.wifi_signaal}%</span>}
+                        {r.ping_ms != null && <span>Ping: {r.ping_ms}ms</span>}
+                      </p>
+                    </div>
+                    <span className={`badge ${r.passed ? 'badge-approved' : 'badge-defect'}`} style={{ fontSize: 11, flexShrink: 0 }}>
+                      {r.passed ? 'Geslaagd' : 'Niet geslaagd'}
+                    </span>
                   </div>
                 ))}
               </div>

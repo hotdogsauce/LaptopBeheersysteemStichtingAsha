@@ -208,6 +208,13 @@ export default function Home() {
   const [nieuwSpec, setNieuwSpec] = useState('')
   const [nieuwVga, setNieuwVga] = useState(false)
   const [nieuwHdmi, setNieuwHdmi] = useState(false)
+  const [nieuwRamGb, setNieuwRamGb] = useState<string>('')
+  const [nieuwWifi, setNieuwWifi] = useState(false)
+  const [nieuwWifiVerbonden, setNieuwWifiVerbonden] = useState(false)
+  const [nieuwToetsen, setNieuwToetsen] = useState(false)
+  const [nieuwCamera, setNieuwCamera] = useState(false)
+  const [nieuwMicrofoon, setNieuwMicrofoon] = useState(false)
+  const [nieuwDrives, setNieuwDrives] = useState<{ letter: string; type: string; size_gb: string; free_gb: string }[]>([])
 
   const [wijzigId, setWijzigId] = useState<string | null>(null)
   const [nieuweStatus, setNieuweStatus] = useState('')
@@ -240,13 +247,28 @@ export default function Home() {
 
   async function maakLaptopAan() {
     if (!nieuwMerk.trim()) { toast('Merk/type is verplicht.', 'error'); return }
+    const drives = nieuwDrives
+      .filter(d => d.letter.trim() && d.type && d.size_gb && d.free_gb)
+      .map(d => ({ letter: d.letter.trim().toUpperCase(), type: d.type, size_gb: parseInt(d.size_gb), free_gb: parseInt(d.free_gb) }))
     const data = await gql(
-      `mutation($merk_type: String!, $specificaties: String, $heeft_vga: Boolean!, $heeft_hdmi: Boolean!) {
-        createLaptop(merk_type: $merk_type, specificaties: $specificaties, heeft_vga: $heeft_vga, heeft_hdmi: $heeft_hdmi) {
+      `mutation($merk_type: String!, $specificaties: String, $heeft_vga: Boolean!, $heeft_hdmi: Boolean!, $ram_gb: Int, $heeft_wifi: Boolean!, $wifi_verbonden: Boolean!, $alle_toetsen_werken: Boolean!, $camera_werkt: Boolean!, $microfoon_werkt: Boolean!, $drives: [DriveInput!]) {
+        createLaptop(merk_type: $merk_type, specificaties: $specificaties, heeft_vga: $heeft_vga, heeft_hdmi: $heeft_hdmi, ram_gb: $ram_gb, heeft_wifi: $heeft_wifi, wifi_verbonden: $wifi_verbonden, alle_toetsen_werken: $alle_toetsen_werken, camera_werkt: $camera_werkt, microfoon_werkt: $microfoon_werkt, drives: $drives) {
           id merk_type status
         }
       }`,
-      { merk_type: nieuwMerk, specificaties: nieuwSpec || null, heeft_vga: nieuwVga, heeft_hdmi: nieuwHdmi },
+      {
+        merk_type: nieuwMerk,
+        specificaties: nieuwSpec || null,
+        heeft_vga: nieuwVga,
+        heeft_hdmi: nieuwHdmi,
+        ram_gb: nieuwRamGb ? parseInt(nieuwRamGb) : null,
+        heeft_wifi: nieuwWifi,
+        wifi_verbonden: nieuwWifiVerbonden,
+        alle_toetsen_werken: nieuwToetsen,
+        camera_werkt: nieuwCamera,
+        microfoon_werkt: nieuwMicrofoon,
+        drives: drives.length > 0 ? drives : null,
+      },
       selectedUserId
     )
     if (data.errors) {
@@ -254,6 +276,9 @@ export default function Home() {
     } else {
       toast(`Laptop "${nieuwMerk}" aangemaakt.`)
       setNieuwMerk(''); setNieuwSpec(''); setNieuwVga(false); setNieuwHdmi(false)
+      setNieuwRamGb(''); setNieuwWifi(false); setNieuwWifiVerbonden(false)
+      setNieuwToetsen(false); setNieuwCamera(false); setNieuwMicrofoon(false)
+      setNieuwDrives([])
       setShowCreateForm(false)
       herlaadLaptops()
     }
@@ -296,22 +321,133 @@ export default function Home() {
               </button>
               {showCreateForm && (
                 <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label className="label">Merk / type *</label>
+                      <input className="input" placeholder="bijv. Dell Latitude 5520" value={nieuwMerk} onChange={e => setNieuwMerk(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="label">Specificaties</label>
+                      <input className="input" placeholder="bijv. i5, Windows 11" value={nieuwSpec} onChange={e => setNieuwSpec(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label className="label">RAM (GB)</label>
+                      <input type="number" className="input" placeholder="bijv. 8" value={nieuwRamGb} onChange={e => setNieuwRamGb(e.target.value)} min="0" />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="label">Merk / type *</label>
-                    <input className="input" placeholder="bijv. Dell Latitude 5520" value={nieuwMerk} onChange={e => setNieuwMerk(e.target.value)} />
+                    <label className="label">Poorten & connectiviteit</label>
+                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 13 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={nieuwVga} onChange={e => setNieuwVga(e.target.checked)} /> VGA poort
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={nieuwHdmi} onChange={e => setNieuwHdmi(e.target.checked)} /> HDMI poort
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={nieuwWifi} onChange={e => setNieuwWifi(e.target.checked)} /> Wi-Fi aanwezig
+                      </label>
+                      {nieuwWifi && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                          <input type="checkbox" checked={nieuwWifiVerbonden} onChange={e => setNieuwWifiVerbonden(e.target.checked)} /> Wi-Fi verbonden
+                        </label>
+                      )}
+                    </div>
                   </div>
+
                   <div>
-                    <label className="label">Specificaties</label>
-                    <input className="input" placeholder="bijv. i5 8GB 256SSD" value={nieuwSpec} onChange={e => setNieuwSpec(e.target.value)} />
+                    <label className="label">Hardware status</label>
+                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 13 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={nieuwToetsen} onChange={e => setNieuwToetsen(e.target.checked)} /> Alle toetsen werken
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={nieuwCamera} onChange={e => setNieuwCamera(e.target.checked)} /> Camera werkt
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={nieuwMicrofoon} onChange={e => setNieuwMicrofoon(e.target.checked)} /> Microfoon werkt
+                      </label>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={nieuwVga} onChange={e => setNieuwVga(e.target.checked)} /> VGA poort
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={nieuwHdmi} onChange={e => setNieuwHdmi(e.target.checked)} /> HDMI poort
-                    </label>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <label className="label" style={{ margin: 0 }}>Schijven</label>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ fontSize: 12, padding: '3px 10px' }}
+                        onClick={() => setNieuwDrives(prev => [...prev, { letter: '', type: 'SSD', size_gb: '', free_gb: '' }])}
+                      >
+                        + Schijf toevoegen
+                      </button>
+                    </div>
+                    {nieuwDrives.length === 0 && (
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Nog geen schijven toegevoegd.</p>
+                    )}
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {nieuwDrives.map((drive, i) => (
+                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '60px 100px 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                          <div>
+                            <label className="label" style={{ fontSize: 11 }}>Letter</label>
+                            <input
+                              className="input"
+                              placeholder="C"
+                              maxLength={2}
+                              value={drive.letter}
+                              onChange={e => setNieuwDrives(prev => prev.map((d, j) => j === i ? { ...d, letter: e.target.value } : d))}
+                            />
+                          </div>
+                          <div>
+                            <label className="label" style={{ fontSize: 11 }}>Type</label>
+                            <select
+                              className="input"
+                              value={drive.type}
+                              onChange={e => setNieuwDrives(prev => prev.map((d, j) => j === i ? { ...d, type: e.target.value } : d))}
+                            >
+                              <option value="SSD">SSD</option>
+                              <option value="HDD">HDD</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="label" style={{ fontSize: 11 }}>Grootte (GB)</label>
+                            <input
+                              type="number"
+                              className="input"
+                              placeholder="256"
+                              value={drive.size_gb}
+                              onChange={e => setNieuwDrives(prev => prev.map((d, j) => j === i ? { ...d, size_gb: e.target.value } : d))}
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="label" style={{ fontSize: 11 }}>Vrije ruimte (GB)</label>
+                            <input
+                              type="number"
+                              className="input"
+                              placeholder="120"
+                              value={drive.free_gb}
+                              onChange={e => setNieuwDrives(prev => prev.map((d, j) => j === i ? { ...d, free_gb: e.target.value } : d))}
+                              min="0"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            style={{ fontSize: 12, padding: '6px 10px', color: 'var(--red)' }}
+                            onClick={() => setNieuwDrives(prev => prev.filter((_, j) => j !== i))}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+
                   <div><button className="btn btn-primary" onClick={maakLaptopAan}>Aanmaken</button></div>
                 </div>
               )}

@@ -37,6 +37,21 @@ export const typeDefs = `
     email: String
   }
 
+  type Drive {
+    id: ID!
+    letter: String!
+    type: String!
+    size_gb: Int!
+    free_gb: Int!
+  }
+
+  input DriveInput {
+    letter: String!
+    type: String!
+    size_gb: Int!
+    free_gb: Int!
+  }
+
   type Laptop {
     id: ID!
     status: LaptopStatus!
@@ -44,7 +59,14 @@ export const typeDefs = `
     specificaties: String
     heeft_vga: Boolean!
     heeft_hdmi: Boolean!
+    ram_gb: Int
+    heeft_wifi: Boolean!
+    wifi_verbonden: Boolean!
+    alle_toetsen_werken: Boolean!
+    camera_werkt: Boolean!
+    microfoon_werkt: Boolean!
     missingAt: String
+    drives: [Drive!]!
   }
 
   type LaptopDetail {
@@ -54,7 +76,14 @@ export const typeDefs = `
     specificaties: String
     heeft_vga: Boolean!
     heeft_hdmi: Boolean!
+    ram_gb: Int
+    heeft_wifi: Boolean!
+    wifi_verbonden: Boolean!
+    alle_toetsen_werken: Boolean!
+    camera_werkt: Boolean!
+    microfoon_werkt: Boolean!
     missingAt: String
+    drives: [Drive!]!
     issues: [Issue!]!
     checklists: [ChecklistReport!]!
     reservations: [Reservation!]!
@@ -104,6 +133,19 @@ export const typeDefs = `
     schoongemaakt: Boolean!
     accuOk: Boolean!
     updatesOk: Boolean!
+    schijf_type: String
+    schijf_grootte: String
+    schijf_sneller: String
+    ram_totaal: String
+    ram_gebruikt: String
+    opslag_vrij: String
+    opstartprogrammas: String
+    energie_ingesteld: Boolean
+    wifi_signaal: Int
+    ping_ms: Int
+    toetsenbord_ok: Boolean
+    camera_ok: Boolean
+    microfoon_ok: Boolean
     passed: Boolean!
     createdAt: String!
   }
@@ -136,6 +178,34 @@ export const typeDefs = `
     email: String
   }
 
+  type Notification {
+    id: ID!
+    message: String!
+    type: String!
+    read: Boolean!
+    createdAt: String!
+  }
+
+  type AuditLog {
+    id: ID!
+    event: String!
+    userId: String
+    details: String!
+    createdAt: String!
+  }
+
+  type DashboardStats {
+    totalLaptops: Int!
+    available: Int!
+    inUse: Int!
+    defect: Int!
+    missing: Int!
+    oos: Int!
+    pendingReservations: Int!
+    openIssues: Int!
+    totalReservations: Int!
+  }
+
   type Query {
     # Sprint 4
     laptops: [Laptop!]!
@@ -162,13 +232,30 @@ export const typeDefs = `
     # Sprint 5 – UC-05 Software aanvraag
     pendingSoftwareRequests: [SoftwareRequest!]!
     mySoftwareRequests(userId: ID!): [SoftwareRequest!]!
+
+    # Notificaties / audit / dashboard
+    notifications: [Notification!]!
+    auditLogs(limit: Int): [AuditLog!]!
+    dashboardStats: DashboardStats!
   }
 
   type Mutation {
     login(login: String!, password: String!): AuthPayload
 
     # Sprint 4
-    createLaptop(merk_type: String!, specificaties: String, heeft_vga: Boolean!, heeft_hdmi: Boolean!): Laptop!
+    createLaptop(
+      merk_type: String!
+      specificaties: String
+      heeft_vga: Boolean!
+      heeft_hdmi: Boolean!
+      ram_gb: Int
+      heeft_wifi: Boolean!
+      wifi_verbonden: Boolean!
+      alle_toetsen_werken: Boolean!
+      camera_werkt: Boolean!
+      microfoon_werkt: Boolean!
+      drives: [DriveInput!]
+    ): Laptop!
     requestReservation(userId: ID!, activityId: ID!, startDate: String!, endDate: String!): Reservation
     reviewReservation(reservationId: ID!, adminId: ID!, approve: Boolean!, reason: String): Reservation
     assignLaptopsToReservation(reservationId: ID!, laptopIds: [ID!]!): Reservation
@@ -183,11 +270,19 @@ export const typeDefs = `
     # Sprint 5 – UC-04 Controle na gebruik (checklist)
     submitChecklist(
       laptopId: ID!
-      geenSchade: Boolean!
-      geenBestanden: Boolean!
-      schoongemaakt: Boolean!
-      accuOk: Boolean!
-      updatesOk: Boolean!
+      schijf_type: String
+      schijf_grootte: String
+      schijf_sneller: String
+      ram_totaal: String
+      ram_gebruikt: String
+      opslag_vrij: String
+      opstartprogrammas: String
+      energie_ingesteld: Boolean
+      wifi_signaal: Int
+      ping_ms: Int
+      toetsenbord_ok: Boolean!
+      camera_ok: Boolean!
+      microfoon_ok: Boolean!
     ): ChecklistReport!
 
     # Sprint 5 – UC-03 Laptop uit beheer nemen
@@ -205,5 +300,8 @@ export const typeDefs = `
     # Uitbreidingen
     createActivity(title: String!, start_datum_tijd: String!, eind_datum_tijd: String!, omschrijving: String, locatie: String, software_benodigdheden: String): Activity!
     createUser(name: String!, username: String!, email: String, password: String!, role: UserRole!, adminPassword: String): User!
+
+    markNotificationRead(id: ID!): Boolean!
+    markAllNotificationsRead: Boolean!
   }
 `

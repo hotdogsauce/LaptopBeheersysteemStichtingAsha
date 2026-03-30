@@ -1,5 +1,5 @@
 import { requireRole } from '../auth.js'
-import { checkAiRateLimit, logAudit } from '../utils.js'
+import { checkAiRateLimit, logAudit, createNotification, getAdminIds } from '../utils.js'
 import { PrismaClient, LaptopStatus, ReservationStatus, SoftwareRequestStatus } from '@prisma/client'
 
 const prisma = new PrismaClient({
@@ -50,6 +50,7 @@ export const resolvers = {
       prisma.laptop.findUnique({
         where: { id },
         include: {
+          drives: true,
           issues: { include: { reportedBy: true, resolvedBy: true }, orderBy: { createdAt: 'desc' } },
           checklists: { include: { submittedBy: true }, orderBy: { createdAt: 'desc' } },
           reservations: { include: { requester: true, activity: true }, orderBy: { startDate: 'desc' } },
@@ -73,6 +74,42 @@ export const resolvers = {
       }),
     users: () => prisma.user.findMany(),
     activities: () => prisma.activity.findMany(),
+
+    notifications: (_: any, __: any, { user }: any) => {
+      if (!user) return []
+      return prisma.notification.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      })
+    },
+
+    auditLogs: (_: any, { limit }: { limit?: number }, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      return prisma.auditLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit ?? 100,
+      })
+    },
+
+    dashboardStats: async (_: any, __: any, { user }: any) => {
+      requireRole(user, 'ADMIN', 'HELPDESK')
+      const [
+        totalLaptops, available, inUse, defect, missing, oos,
+        pendingReservations, openIssues, totalReservations,
+      ] = await Promise.all([
+        prisma.laptop.count(),
+        prisma.laptop.count({ where: { status: 'AVAILABLE' } }),
+        prisma.laptop.count({ where: { status: 'IN_USE' } }),
+        prisma.laptop.count({ where: { status: 'DEFECT' } }),
+        prisma.laptop.count({ where: { status: 'MISSING' } }),
+        prisma.laptop.count({ where: { status: 'OUT_OF_SERVICE' } }),
+        prisma.reservation.count({ where: { status: 'REQUESTED' } }),
+        prisma.issue.count({ where: { resolved: false } }),
+        prisma.reservation.count(),
+      ])
+      return { totalLaptops, available, inUse, defect, missing, oos, pendingReservations, openIssues, totalReservations }
+    },
 
     // UC-02 Storing
     openIssues: () =>
@@ -134,9 +171,16 @@ export const resolvers = {
     },
 
     // Sprint 4
-    createLaptop: (_: any, args: any, { user }: any) => {
+    createLaptop: async (_: any, args: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'HELPDESK')
-      return prisma.laptop.create({ data: args })
+      const { drives, ...laptopData } = args
+      const laptop = await prisma.laptop.create({ data: laptopData })
+      if (drives && drives.length > 0) {
+        await prisma.drive.createMany({
+          data: drives.map((d: any) => ({ ...d, laptopId: laptop.id }))
+        })
+      }
+      return prisma.laptop.findUnique({ where: { id: laptop.id }, include: { drives: true } })
     },
 
     requestReservation: async (_: any, { userId, activityId, startDate, endDate }: any, { user }: any) => {
@@ -146,10 +190,16 @@ export const resolvers = {
       const diffDays = (start.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       if (diffDays < 2) throw new Error('Reservering moet minimaal 2 dagen van tevoren worden aangevraagd.')
       if (new Date(endDate) < start) throw new Error('Einddatum mag niet voor startdatum liggen.')
-      return prisma.reservation.create({
+      const res = await prisma.reservation.create({
         data: { requesterId: userId, activityId, startDate: start, endDate: new Date(endDate) },
         include: { activity: true, requester: true, approver: true, laptops: true }
       })
+      // Notify all admins of new reservation request
+      const adminIds = await getAdminIds()
+      for (const aid of adminIds) {
+        createNotification(aid, `Nieuwe reserveringsaanvraag van ${res.requester.name} voor "${res.activity.title}".`, 'INFO')
+      }
+      return res
     },
 
     reviewReservation: async (_: any, { reservationId, adminId, approve, reason }: any, { user }: any) => {
@@ -168,6 +218,14 @@ export const resolvers = {
         include: { activity: true, requester: true, approver: true, laptops: true }
       })
       logAudit('reservation_reviewed', { reservationId, adminId, approve, reason: reason ?? null })
+      // Notify requester
+      createNotification(
+        result.requesterId,
+        approve
+          ? `Je reservering voor "${result.activity.title}" is goedgekeurd.`
+          : `Je reservering voor "${result.activity.title}" is afgewezen${reason ? ': ' + reason : ''}.`,
+        approve ? 'SUCCESS' : 'WARNING'
+      )
       return result
     },
 
@@ -246,17 +304,35 @@ export const resolvers = {
     // UC-04: Controle na gebruik (checklist)
     submitChecklist: async (_: any, args: any, { user }: any) => {
       requireRole(user, 'HELPDESK')
-      const { laptopId, geenSchade, geenBestanden, schoongemaakt, accuOk, updatesOk } = args
+      const {
+        laptopId, toetsenbord_ok, camera_ok, microfoon_ok,
+        schijf_type, schijf_grootte, schijf_sneller,
+        ram_totaal, ram_gebruikt, opslag_vrij,
+        opstartprogrammas, energie_ingesteld, wifi_signaal, ping_ms,
+      } = args
       const laptop = await prisma.laptop.findUnique({ where: { id: laptopId } })
       if (!laptop) throw new Error('Laptop niet gevonden.')
       if (laptop.status !== LaptopStatus.IN_CONTROL) {
         throw new Error('Checklist kan alleen worden ingediend voor een laptop met status IN_CONTROL.')
       }
-      const passed = geenSchade && geenBestanden && schoongemaakt && accuOk && updatesOk
+      const passed = toetsenbord_ok && camera_ok && microfoon_ok
       const newStatus = passed ? LaptopStatus.AVAILABLE : LaptopStatus.DEFECT
       await prisma.laptop.update({ where: { id: laptopId }, data: { status: newStatus } })
       return prisma.checklistReport.create({
-        data: { laptopId, submittedById: user.id, geenSchade, geenBestanden, schoongemaakt, accuOk, updatesOk, passed },
+        data: {
+          laptopId, submittedById: user.id,
+          toetsenbord_ok, camera_ok, microfoon_ok, passed,
+          schijf_type: schijf_type ?? null,
+          schijf_grootte: schijf_grootte ?? null,
+          schijf_sneller: schijf_sneller ?? null,
+          ram_totaal: ram_totaal ?? null,
+          ram_gebruikt: ram_gebruikt ?? null,
+          opslag_vrij: opslag_vrij ?? null,
+          opstartprogrammas: opstartprogrammas ?? null,
+          energie_ingesteld: energie_ingesteld ?? null,
+          wifi_signaal: wifi_signaal ?? null,
+          ping_ms: ping_ms ?? null,
+        },
         include: { laptop: true, submittedBy: true }
       })
     },
@@ -328,6 +404,18 @@ export const resolvers = {
       return prisma.user.create({ data: { name, username, email: email?.trim() || null, password, role } })
     },
 
+    markNotificationRead: async (_: any, { id }: any, { user }: any) => {
+      if (!user) throw new Error('Niet ingelogd.')
+      await prisma.notification.update({ where: { id }, data: { read: true } })
+      return true
+    },
+
+    markAllNotificationsRead: async (_: any, __: any, { user }: any) => {
+      if (!user) throw new Error('Niet ingelogd.')
+      await prisma.notification.updateMany({ where: { userId: user.id, read: false }, data: { read: true } })
+      return true
+    },
+
     // UC-06: AI ondersteuning
     askAI: async (_: any, { question }: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'OWNER', 'HELPDESK')
@@ -369,6 +457,13 @@ export const resolvers = {
         include: { requester: true, approver: true, activity: true }
       })
       logAudit('software_request_reviewed', { requestId, adminId, approve, reason: reason ?? null })
+      createNotification(
+        result.requesterId,
+        approve
+          ? `Je softwareaanvraag "${result.title}" is goedgekeurd.`
+          : `Je softwareaanvraag "${result.title}" is afgewezen${reason ? ': ' + reason : ''}.`,
+        approve ? 'SUCCESS' : 'WARNING'
+      )
       return result
     },
   },
@@ -400,5 +495,9 @@ export const resolvers = {
     requester: (parent: any) => prisma.user.findUnique({ where: { id: parent.requesterId } }),
     approver: (parent: any) => parent.approverId ? prisma.user.findUnique({ where: { id: parent.approverId } }) : null,
     activity: (parent: any) => prisma.activity.findUnique({ where: { id: parent.activityId } }),
+  },
+
+  Laptop: {
+    drives: (parent: any) => prisma.drive.findMany({ where: { laptopId: parent.id }, orderBy: { letter: 'asc' } }),
   },
 }

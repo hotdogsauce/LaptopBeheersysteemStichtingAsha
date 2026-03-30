@@ -34,7 +34,14 @@ interface LaptopDetail {
   specificaties: string | null
   heeft_vga: boolean
   heeft_hdmi: boolean
+  ram_gb: number | null
+  heeft_wifi: boolean
+  wifi_verbonden: boolean
+  alle_toetsen_werken: boolean
+  camera_werkt: boolean
+  microfoon_werkt: boolean
   missingAt: string | null
+  drives: { id: string; letter: string; type: string; size_gb: number; free_gb: number }[]
   issues: {
     id: string; description: string; resolved: boolean; createdAt: string; resolvedAt: string | null
     reportedBy: { name: string }; resolvedBy: { name: string } | null; solution: string | null
@@ -42,6 +49,8 @@ interface LaptopDetail {
   checklists: {
     id: string; passed: boolean; createdAt: string; submittedBy: { name: string }
     geenSchade: boolean; geenBestanden: boolean; schoongemaakt: boolean; accuOk: boolean; updatesOk: boolean
+    toetsenbord_ok: boolean | null; camera_ok: boolean | null; microfoon_ok: boolean | null
+    schijf_type: string | null; ram_totaal: string | null; wifi_signaal: number | null; ping_ms: number | null
   }[]
   reservations: {
     id: string; status: string; startDate: string; endDate: string
@@ -54,15 +63,18 @@ const QUERY = `
   query($id: ID!) {
     laptopDetail(id: $id) {
       id merk_type status specificaties heeft_vga heeft_hdmi missingAt
+      ram_gb heeft_wifi wifi_verbonden alle_toetsen_werken camera_werkt microfoon_werkt
+      drives { id letter type size_gb free_gb }
       issues { id description resolved createdAt resolvedAt solution reportedBy { name } resolvedBy { name } }
-      checklists { id passed createdAt geenSchade geenBestanden schoongemaakt accuOk updatesOk submittedBy { name } }
+      checklists { id passed createdAt toetsenbord_ok camera_ok microfoon_ok schijf_type ram_totaal wifi_signaal ping_ms geenSchade geenBestanden schoongemaakt accuOk updatesOk submittedBy { name } }
       reservations { id status startDate endDate requester { name } activity { title } }
       decommission { reden datum doneBy { name } }
     }
   }
 `
 
-function Check({ ok }: { ok: boolean }) {
+function Check({ ok }: { ok: boolean | null }) {
+  if (ok === null) return <span style={{ color: 'var(--grey)', fontSize: 12 }}>—</span>
   return <span style={{ fontSize: 12, color: ok ? '#16a34a' : 'var(--red)' }}>{ok ? '✓' : '✕'}</span>
 }
 
@@ -116,6 +128,24 @@ export default function LaptopDetailPage() {
             )}
           </div>
           {ports && <p style={{ margin: 0, fontSize: 13, color: 'var(--grey)' }}>Poorten: {ports}</p>}
+          {/* Hardware details */}
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
+            {laptop.ram_gb != null && (
+              <span style={{ fontSize: 12, color: 'var(--grey)' }}>RAM: {laptop.ram_gb} GB</span>
+            )}
+            <span style={{ fontSize: 12, color: laptop.heeft_wifi ? 'var(--grey)' : 'var(--grey)' }}>
+              Wi-Fi: {laptop.heeft_wifi ? (laptop.wifi_verbonden ? 'Verbonden' : 'Aanwezig') : 'Geen'}
+            </span>
+            <span style={{ fontSize: 12, color: laptop.alle_toetsen_werken ? '#16a34a' : 'var(--grey)' }}>
+              Toetsen: {laptop.alle_toetsen_werken ? '✓' : '—'}
+            </span>
+            <span style={{ fontSize: 12, color: laptop.camera_werkt ? '#16a34a' : 'var(--grey)' }}>
+              Camera: {laptop.camera_werkt ? '✓' : '—'}
+            </span>
+            <span style={{ fontSize: 12, color: laptop.microfoon_werkt ? '#16a34a' : 'var(--grey)' }}>
+              Microfoon: {laptop.microfoon_werkt ? '✓' : '—'}
+            </span>
+          </div>
           {laptop.decommission && (
             <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 4 }}>
               Uit beheer op {fmt(laptop.decommission.datum)} door {laptop.decommission.doneBy.name} — {laptop.decommission.reden}
@@ -124,6 +154,39 @@ export default function LaptopDetailPage() {
         </div>
         <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => router.back()}>← Terug</button>
       </div>
+
+      {/* Schijven */}
+      {laptop.drives.length > 0 && (
+        <section style={{ marginBottom: 40 }}>
+          <p className="section-label" style={{ marginBottom: 12 }}>Schijven ({laptop.drives.length})</p>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {laptop.drives.map(drive => (
+              <div key={drive.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{
+                    width: 28, height: 28, borderRadius: 6, background: 'var(--bg-soft)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, color: 'var(--black)',
+                  }}>{drive.letter}:</span>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{drive.type} · {drive.size_gb} GB</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--grey)' }}>
+                      {drive.free_gb} GB vrij · {Math.round((drive.free_gb / drive.size_gb) * 100)}% beschikbaar
+                    </p>
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: 11, fontWeight: 600,
+                  color: drive.type === 'SSD' ? '#3b82f6' : '#92400e',
+                  background: drive.type === 'SSD' ? '#eff6ff' : '#fffbeb',
+                  border: `1px solid ${drive.type === 'SSD' ? '#bfdbfe' : '#fde68a'}`,
+                  borderRadius: 99, padding: '2px 8px',
+                }}>{drive.type}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Reserveringen */}
       <section style={{ marginBottom: 40 }}>
@@ -185,22 +248,36 @@ export default function LaptopDetailPage() {
         {laptop.checklists.length === 0 && <p style={{ fontSize: 13, color: 'var(--grey)' }}>Geen checklists ingediend.</p>}
         <div style={{ display: 'grid', gap: 6 }}>
           {laptop.checklists.map(cl => (
-            <div key={cl.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>
-                  {fmtDT(cl.createdAt)} — {cl.submittedBy.name}
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0', display: 'flex', gap: 12 }}>
-                  <span><Check ok={cl.geenSchade} /> Geen schade</span>
-                  <span><Check ok={cl.geenBestanden} /> Geen bestanden</span>
-                  <span><Check ok={cl.schoongemaakt} /> Schoon</span>
-                  <span><Check ok={cl.accuOk} /> Accu OK</span>
-                  <span><Check ok={cl.updatesOk} /> Updates OK</span>
-                </p>
-              </div>
-              <span className={`badge ${cl.passed ? 'badge-approved' : 'badge-defect'}`} style={{ fontSize: 11, flexShrink: 0 }}>
-                {cl.passed ? 'Geslaagd' : 'Niet geslaagd'}
-              </span>
+            <div key={cl.id} className="card-row">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, margin: 0 }}>
+                      {fmtDT(cl.createdAt)} — {cl.submittedBy.name}
+                    </p>
+                    {cl.toetsenbord_ok !== null ? (
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <span><Check ok={cl.toetsenbord_ok} /> Toetsenbord</span>
+                        <span><Check ok={cl.camera_ok} /> Camera</span>
+                        <span><Check ok={cl.microfoon_ok} /> Microfoon</span>
+                        {cl.schijf_type && <span>Schijf: {cl.schijf_type}</span>}
+                        {cl.ram_totaal && <span>RAM: {cl.ram_totaal}</span>}
+                        {cl.wifi_signaal != null && <span>Wi-Fi: {cl.wifi_signaal}%</span>}
+                        {cl.ping_ms != null && <span>Ping: {cl.ping_ms}ms</span>}
+                      </p>
+                    ) : (
+                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0', display: 'flex', gap: 12 }}>
+                        <span><Check ok={cl.geenSchade} /> Geen schade</span>
+                        <span><Check ok={cl.geenBestanden} /> Geen bestanden</span>
+                        <span><Check ok={cl.schoongemaakt} /> Schoon</span>
+                        <span><Check ok={cl.accuOk} /> Accu OK</span>
+                        <span><Check ok={cl.updatesOk} /> Updates OK</span>
+                      </p>
+                    )}
+                  </div>
+                  <span className={`badge ${cl.passed ? 'badge-approved' : 'badge-defect'}`} style={{ fontSize: 11, flexShrink: 0 }}>
+                    {cl.passed ? 'Geslaagd' : 'Niet geslaagd'}
+                  </span>
+                </div>
             </div>
           ))}
         </div>

@@ -36,7 +36,15 @@ const BULK_TARGETS: Record<string, string[]> = {
 const roleLabel: Record<string, string> = { ADMIN: 'Beheerder', OWNER: 'Eigenaar', HELPDESK: 'Helpdesk' }
 const roleBadge: Record<string, string> = { ADMIN: 'badge-defect', OWNER: 'badge-approved', HELPDESK: 'badge-in-use' }
 
-type Tab = 'laptops' | 'bulk' | 'accounts'
+interface AuditLogEntry {
+  id: string
+  event: string
+  userId: string | null
+  details: string
+  createdAt: string
+}
+
+type Tab = 'laptops' | 'bulk' | 'accounts' | 'audit'
 
 export default function Beheer() {
   const { selectedUserId, selectedUser } = useUser()
@@ -50,6 +58,10 @@ export default function Beheer() {
   const [selected, setSelected] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulkFilter, setBulkFilter] = useState('')
+
+  // Audit
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([])
+  const [auditLoading, setAuditLoading] = useState(false)
 
   // Accounts
   const [users, setUsers] = useState<{ id: string; name: string; username: string; email: string | null; role: string }[]>([])
@@ -78,6 +90,14 @@ export default function Beheer() {
     herlaadLaptops()
     herlaadUsers()
   }, [selectedUserId])
+
+  useEffect(() => {
+    if (tab !== 'audit' || !selectedUserId || selectedUser?.role !== 'ADMIN') return
+    setAuditLoading(true)
+    gql('{ auditLogs(limit: 100) { id event userId details createdAt } }', undefined, selectedUserId)
+      .then(d => { setAuditLogs(d.data?.auditLogs || []); setAuditLoading(false) })
+      .catch(() => setAuditLoading(false))
+  }, [tab, selectedUserId])
 
   function herlaadLaptops() {
     gql('{ laptops { id merk_type status specificaties heeft_vga heeft_hdmi } }', undefined, selectedUserId)
@@ -143,6 +163,31 @@ export default function Beheer() {
     }
   }
 
+  function exportAuditCSV() {
+    if (auditLogs.length === 0) return
+    const header = 'Tijdstip,Gebeurtenis,Gebruiker ID,Details'
+    const rows = auditLogs.map(l => {
+      const ts = new Date(l.createdAt).toLocaleString('nl-NL')
+      const details = l.details.replace(/"/g, '""')
+      return `"${ts}","${l.event}","${l.userId || ''}","${details}"`
+    })
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const eventLabel: Record<string, string> = {
+    reservation_reviewed: 'Reservering beoordeeld',
+    software_request_reviewed: 'Softwareaanvraag beoordeeld',
+    laptop_status_changed: 'Laptop status gewijzigd',
+    ai_question: 'AI vraag gesteld',
+  }
+
   const presentStatuses = ALL_STATUSES.filter(s => laptops.some(l => l.status === s))
 
   return (
@@ -162,7 +207,7 @@ export default function Beheer() {
         <>
           {/* Tab bar */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 32, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 0 }}>
-            {(['laptops', 'bulk', 'accounts'] as Tab[]).map(t => (
+            {(['laptops', 'bulk', 'accounts', 'audit'] as Tab[]).map(t => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -174,7 +219,7 @@ export default function Beheer() {
                   marginBottom: -1, fontFamily: 'var(--font)',
                 }}
               >
-                {t === 'laptops' ? 'Uit beheer nemen' : t === 'bulk' ? 'Bulk status' : 'Accounts'}
+                {t === 'laptops' ? 'Uit beheer nemen' : t === 'bulk' ? 'Bulk status' : t === 'accounts' ? 'Accounts' : 'Audit log'}
               </button>
             ))}
           </div>
@@ -381,6 +426,62 @@ export default function Beheer() {
                   </div>
                 ))}
               </div>
+            </>
+          )}
+          {/* ── Tab: Audit log ── */}
+          {tab === 'audit' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--grey)' }}>Laatste 100 gebeurtenissen</p>
+                <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={exportAuditCSV} disabled={auditLogs.length === 0}>
+                  ↓ Exporteer CSV
+                </button>
+              </div>
+
+              {auditLoading ? (
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="card-row" style={{ display: 'flex', gap: 12 }}>
+                      <div className="skeleton" style={{ width: 90, height: 11 }} />
+                      <div className="skeleton" style={{ width: 140, height: 11 }} />
+                    </div>
+                  ))}
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <p style={{ fontSize: 13, color: 'var(--grey)' }}>Nog geen audit-events geregistreerd.</p>
+              ) : (
+                <div style={{ display: 'grid', gap: 4 }}>
+                  {auditLogs.map(log => {
+                    let details: Record<string, unknown> = {}
+                    try { details = JSON.parse(log.details) } catch {}
+                    return (
+                      <div key={log.id} className="card-row" style={{ display: 'grid', gridTemplateColumns: '150px 1fr auto', gap: 16, alignItems: 'start' }}>
+                        <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)', lineHeight: 1.4, fontVariantNumeric: 'tabular-nums' }}>
+                          {new Date(log.createdAt).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <div>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--black)' }}>
+                            {eventLabel[log.event] || log.event}
+                          </p>
+                          {Object.keys(details).length > 0 && (
+                            <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--grey)', lineHeight: 1.4 }}>
+                              {Object.entries(details)
+                                .filter(([k]) => k !== 'userId')
+                                .map(([k, v]) => `${k}: ${String(v)}`)
+                                .join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                        {log.userId && (
+                          <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)', whiteSpace: 'nowrap' }}>
+                            {log.userId.slice(0, 8)}…
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </>
           )}
         </>

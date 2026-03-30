@@ -52,20 +52,56 @@ model User {
   decommissions     DecommissionLog[] @relation("DecommissionUser")
   softwareRequests  SoftwareRequest[] @relation("SoftwareRequester")
   softwareApprovals SoftwareRequest[] @relation("SoftwareApprover")
+  notifications     Notification[]
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  event     String
+  userId    String?
+  details   String   @default("{}")
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  message   String
+  type      String   @default("INFO")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Laptop {
-  id            String           @id @default(uuid())
-  status        LaptopStatus     @default(AVAILABLE)
-  merk_type     String
-  specificaties String?
-  heeft_vga     Boolean          @default(false)
-  heeft_hdmi    Boolean          @default(false)
-  missingAt     DateTime?
-  reservations  Reservation[]    @relation("ReservationLaptops")
-  issues        Issue[]
-  checklists    ChecklistReport[]
-  decommission  DecommissionLog?
+  id                  String            @id @default(uuid())
+  status              LaptopStatus      @default(AVAILABLE)
+  merk_type           String
+  specificaties       String?
+  heeft_vga           Boolean           @default(false)
+  heeft_hdmi          Boolean           @default(false)
+  ram_gb              Int?
+  heeft_wifi          Boolean           @default(false)
+  wifi_verbonden      Boolean           @default(false)
+  alle_toetsen_werken Boolean           @default(false)
+  camera_werkt        Boolean           @default(false)
+  microfoon_werkt     Boolean           @default(false)
+  missingAt           DateTime?
+  reservations        Reservation[]     @relation("ReservationLaptops")
+  issues              Issue[]
+  checklists          ChecklistReport[]
+  decommission        DecommissionLog?
+  drives              Drive[]
+}
+
+model Drive {
+  id       String @id @default(uuid())
+  laptop   Laptop @relation(fields: [laptopId], references: [id])
+  laptopId String
+  letter   String
+  type     String
+  size_gb  Int
+  free_gb  Int
 }
 
 model Activity {
@@ -112,18 +148,31 @@ model Issue {
 }
 
 model ChecklistReport {
-  id            String   @id @default(uuid())
-  laptop        Laptop   @relation(fields: [laptopId], references: [id])
-  laptopId      String
-  submittedBy   User     @relation("ChecklistSubmitter", fields: [submittedById], references: [id])
-  submittedById String
-  geenSchade    Boolean
-  geenBestanden Boolean
-  schoongemaakt Boolean
-  accuOk        Boolean
-  updatesOk     Boolean
-  passed        Boolean
-  createdAt     DateTime @default(now())
+  id                String   @id @default(uuid())
+  laptop            Laptop   @relation(fields: [laptopId], references: [id])
+  laptopId          String
+  submittedBy       User     @relation("ChecklistSubmitter", fields: [submittedById], references: [id])
+  submittedById     String
+  geenSchade        Boolean  @default(false)
+  geenBestanden     Boolean  @default(false)
+  schoongemaakt     Boolean  @default(false)
+  accuOk            Boolean  @default(false)
+  updatesOk         Boolean  @default(false)
+  schijf_type       String?
+  schijf_grootte    String?
+  schijf_sneller    String?
+  ram_totaal        String?
+  ram_gebruikt      String?
+  opslag_vrij       String?
+  opstartprogrammas String?
+  energie_ingesteld Boolean?
+  wifi_signaal      Int?
+  ping_ms           Int?
+  toetsenbord_ok    Boolean?
+  camera_ok         Boolean?
+  microfoon_ok      Boolean?
+  passed            Boolean
+  createdAt         DateTime @default(now())
 }
 
 model DecommissionLog {
