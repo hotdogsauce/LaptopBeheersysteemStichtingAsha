@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
+import PhoneInput from '../components/PhoneInput'
 import { useUser, gql } from '../context/UserContext'
 
 interface Activity {
@@ -178,7 +179,8 @@ export default function Aanvragen() {
   const [endDate, setEndDate] = useState('')
   const [aantalLaptops, setAantalLaptops] = useState('1')
   const [doel, setDoel] = useState('')
-  const [contactInfo, setContactInfo] = useState('')
+  const [contactNaam, setContactNaam] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
 
   useEffect(() => {
@@ -195,7 +197,7 @@ export default function Aanvragen() {
   }, [selectedUserId])
 
   useEffect(() => {
-    if (selectedUser?.name && !contactInfo) setContactInfo(selectedUser.name)
+    if (selectedUser?.name && !contactNaam) setContactNaam(selectedUser.name)
   }, [selectedUser?.name])
 
   function herlaadAanvragen() {
@@ -215,12 +217,14 @@ export default function Aanvragen() {
     if (!startDate) { setBericht({ text: 'Vul een startdatum in.', type: 'fout' }); return }
     if (!endDate) { setBericht({ text: 'Vul een einddatum in.', type: 'fout' }); return }
     if (!doel.trim()) { setBericht({ text: 'Vul het doel van de aanvraag in.', type: 'fout' }); return }
-    if (!contactInfo.trim()) { setBericht({ text: 'Vul je contactgegevens in.', type: 'fout' }); return }
+    if (!contactNaam.trim()) { setBericht({ text: 'Vul je naam in.', type: 'fout' }); return }
     const aantal = parseInt(aantalLaptops)
     if (!aantal || aantal < 1) { setBericht({ text: 'Aantal laptops moet minimaal 1 zijn.', type: 'fout' }); return }
     if (availableCount !== null && aantal > availableCount) {
       setBericht({ text: `Er zijn momenteel slechts ${availableCount} beschikbare laptop(s).`, type: 'fout' }); return
     }
+
+    const contactInfo = contactNaam.trim() + (contactPhone ? ` — ${contactPhone}` : '')
 
     const data = await gql(
       `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
@@ -236,7 +240,7 @@ export default function Aanvragen() {
     } else {
       setBericht({ text: 'Aanvraag ingediend. De beheerder beoordeelt dit binnen 3 werkdagen.', type: 'ok' })
       setActivityId(''); setStartDate(''); setEndDate('')
-      setAantalLaptops('1'); setDoel(''); setExtraInfo('')
+      setAantalLaptops('1'); setDoel(''); setContactPhone(''); setExtraInfo('')
       herlaadAanvragen()
     }
   }
@@ -343,8 +347,13 @@ export default function Aanvragen() {
               </div>
 
               <div>
-                <label className="label">Uw naam en contactgegevens *</label>
-                <input className="input" placeholder="bijv. Jan de Vries — 06-12345678" value={contactInfo} onChange={e => setContactInfo(e.target.value)} />
+                <label className="label">Uw naam *</label>
+                <input className="input" placeholder="bijv. Jan de Vries" value={contactNaam} onChange={e => setContactNaam(e.target.value)} />
+              </div>
+
+              <div>
+                <label className="label">Telefoonnummer (optioneel)</label>
+                <PhoneInput value={contactPhone} onChange={setContactPhone} />
               </div>
 
               <div>

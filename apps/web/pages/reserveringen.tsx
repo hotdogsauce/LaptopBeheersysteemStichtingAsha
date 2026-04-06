@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
+import PhoneInput from '../components/PhoneInput'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
@@ -64,7 +65,8 @@ export default function Reserveringen() {
   const [endDate, setEndDate] = useState('')
   const [aantalLaptops, setAantalLaptops] = useState('1')
   const [doel, setDoel] = useState('')
-  const [contactInfo, setContactInfo] = useState('')
+  const [contactNaam, setContactNaam] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -113,8 +115,9 @@ export default function Reserveringen() {
     if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
     if (!startDate || !endDate) { toast('Vul start- en einddatum in.', 'error'); return }
     if (!doel.trim()) { toast('Vul het doel in.', 'error'); return }
-    if (!contactInfo.trim()) { toast('Vul contactgegevens in.', 'error'); return }
+    if (!contactNaam.trim()) { toast('Vul de naam van de eigenaar in.', 'error'); return }
     const aantal = parseInt(aantalLaptops) || 1
+    const contactInfo = contactNaam.trim() + (contactPhone ? ` — ${contactPhone}` : '')
     setSaving(true)
     const data = await gql(
       `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
@@ -127,7 +130,7 @@ export default function Reserveringen() {
     if (data.errors) { toast(data.errors[0].message, 'error'); return }
     toast('Reservering aangemaakt.')
     setShowForm(false); setForUserId(''); setActivityId(''); setStartDate(''); setEndDate('')
-    setAantalLaptops('1'); setDoel(''); setContactInfo(''); setExtraInfo('')
+    setAantalLaptops('1'); setDoel(''); setContactNaam(''); setContactPhone(''); setExtraInfo('')
     gql('{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }', undefined, selectedUserId)
       .then(d => setReserveringen(d.data?.pendingReservations || []))
   }
@@ -190,8 +193,12 @@ export default function Reserveringen() {
                   <input className="input" placeholder="bijv. praktijkles, examen..." value={doel} onChange={e => setDoel(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Contactgegevens eigenaar *</label>
-                  <input className="input" placeholder="naam, telefoon of e-mail" value={contactInfo} onChange={e => setContactInfo(e.target.value)} />
+                  <label className="label">Naam eigenaar *</label>
+                  <input className="input" placeholder="bijv. Jan de Vries" value={contactNaam} onChange={e => setContactNaam(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Telefoonnummer eigenaar (optioneel)</label>
+                  <PhoneInput value={contactPhone} onChange={setContactPhone} />
                 </div>
                 <div>
                   <label className="label">Extra informatie (optioneel)</label>
