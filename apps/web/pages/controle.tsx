@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useT } from '../context/LanguageContext'
 
 interface Laptop { id: string; merk_type: string; status: string; specificaties: string }
 interface ChecklistHistory {
@@ -86,6 +87,7 @@ const emptyForm = () => ({
 
 export default function Controle() {
   const { selectedUserId, selectedUser } = useUser()
+  const { t } = useT()
   const [inControlLaptops, setInControlLaptops] = useState<Laptop[]>([])
   const [selectedLaptopId, setSelectedLaptopId] = useState('')
   const [form, setForm] = useState(emptyForm())
@@ -180,17 +182,17 @@ export default function Controle() {
   }
 
   return (
-    <Layout title="Controle na gebruik" subtitle="Controleer laptops die zijn ingeleverd">
+    <Layout title={t('ctrl_title')} subtitle={t('ctrl_sub')}>
 
       {!selectedUserId && (
         <div className="empty">
           <div className="empty-icon">✓</div>
-          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
+          <p className="empty-text">{t('select_user')}</p>
         </div>
       )}
 
       {selectedUserId && selectedUser?.role !== 'HELPDESK' && (
-        <div className="alert alert-error">Deze pagina is alleen toegankelijk voor helpdeskmedewerkers.</div>
+        <div className="alert alert-error">{t('ctrl_no_access')}</div>
       )}
 
       {selectedUserId && selectedUser?.role === 'HELPDESK' && (
@@ -240,12 +242,12 @@ export default function Controle() {
 
               {/* Deel 1 – Hardware */}
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>
-                Deel 1 – Laptop hardware controleren
+                {t('ctrl_p1')}
               </p>
 
-              <Step number={1} title="Schijf controleren (SSD of HDD)">
+              <Step number={1} title={t('ctrl_s1')}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <Field label="Type schijf">
+                  <Field label={t('ctrl_disk_type')}>
                     <div style={{ display: 'flex', gap: 8 }}>
                       {['SSD', 'HDD'].map(t => (
                         <button key={t} type="button"
@@ -256,11 +258,11 @@ export default function Controle() {
                       ))}
                     </div>
                   </Field>
-                  <Field label="Grootte schijf">
+                  <Field label={t('ctrl_disk_size')}>
                     <input className="input" placeholder="bijv. 256 GB" value={form.schijf_grootte} onChange={e => set('schijf_grootte', e.target.value)} />
                   </Field>
                 </div>
-                <Field label="Welke schijf is sneller?">
+                <Field label={t('ctrl_disk_faster')}>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {['SSD', 'HDD'].map(t => (
                       <button key={t} type="button"
@@ -273,30 +275,30 @@ export default function Controle() {
                 </Field>
               </Step>
 
-              <Step number={2} title="Werkgeheugen (RAM) controleren">
+              <Step number={2} title={t('ctrl_s2')}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <Field label="Hoeveel RAM heeft de laptop?">
+                  <Field label={t('ctrl_ram_total')}>
                     <input className="input" placeholder="bijv. 8 GB" value={form.ram_totaal} onChange={e => set('ram_totaal', e.target.value)} />
                   </Field>
-                  <Field label="Hoeveel RAM wordt gebruikt?">
+                  <Field label={t('ctrl_ram_used')}>
                     <input className="input" placeholder="bijv. 3,2 GB" value={form.ram_gebruikt} onChange={e => set('ram_gebruikt', e.target.value)} />
                   </Field>
                 </div>
               </Step>
 
-              <Step number={3} title="Opslagruimte controleren">
-                <Field label="Vrije ruimte op C:">
+              <Step number={3} title={t('ctrl_s3')}>
+                <Field label={t('ctrl_storage')}>
                   <input className="input" placeholder="bijv. 120 GB" value={form.opslag_vrij} onChange={e => set('opslag_vrij', e.target.value)} />
                 </Field>
               </Step>
 
               {/* Deel 2 – Optimaliseren */}
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, marginTop: 8 }}>
-                Deel 2 – Laptop optimaliseren
+                {t('ctrl_p2')}
               </p>
 
-              <Step number={4} title="Opstartprogramma's controleren">
-                <Field label="Programma's die uitgeschakeld kunnen worden">
+              <Step number={4} title={t('ctrl_s4')}>
+                <Field label={t('ctrl_startup')}>
                   <textarea
                     className="input"
                     placeholder="bijv. Spotify, OneDrive, Teams..."
@@ -307,27 +309,27 @@ export default function Controle() {
                 </Field>
               </Step>
 
-              <Step number={5} title="Energie-instellingen aanpassen">
-                <Field label="Energieplan ingesteld op High Performance?">
+              <Step number={5} title={t('ctrl_s5')}>
+                <Field label={t('ctrl_energy')}>
                   <YesNo value={form.energie_ingesteld} onChange={v => set('energie_ingesteld', v)} />
                 </Field>
               </Step>
 
               {/* Deel 3 – Wi-Fi */}
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, marginTop: 8 }}>
-                Deel 3 – Wi-Fi controleren
+                {t('ctrl_p3')}
               </p>
 
-              <Step number={6} title="Wi-Fi signaal meten">
-                <Field label="Signaalsterkte (%) — netsh wlan show interfaces">
+              <Step number={6} title={t('ctrl_s6')}>
+                <Field label={`${t('ctrl_wifi_signal')} — netsh wlan show interfaces`}>
                   <input type="number" className="input" placeholder="bijv. 85" value={form.wifi_signaal}
                     onChange={e => set('wifi_signaal', e.target.value)} min="0" max="100"
                     style={{ width: 120 }} />
                 </Field>
               </Step>
 
-              <Step number={7} title="Ping test uitvoeren">
-                <Field label="Ping naar google.com (ms) — ping google.com">
+              <Step number={7} title={t('ctrl_s7')}>
+                <Field label={`${t('ctrl_ping')} — ping google.com`}>
                   <input type="number" className="input" placeholder="bijv. 14" value={form.ping_ms}
                     onChange={e => set('ping_ms', e.target.value)} min="0"
                     style={{ width: 120 }} />
@@ -336,23 +338,23 @@ export default function Controle() {
 
               {/* Deel 4 – Testen */}
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--grey)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16, marginTop: 8 }}>
-                Deel 4 – Laptop testen
+                {t('ctrl_p4')}
               </p>
 
-              <Step number={8} title="Toetsenbord testen">
-                <Field label="Werken alle toetsen? (letters, cijfers, functietoetsen) *">
+              <Step number={8} title={t('ctrl_s8')}>
+                <Field label={`${t('ctrl_keyboard')} *`}>
                   <YesNo value={form.toetsenbord_ok} onChange={v => set('toetsenbord_ok', v)} />
                 </Field>
               </Step>
 
-              <Step number={9} title="Camera testen">
-                <Field label="Werkt de camera? *">
+              <Step number={9} title={t('ctrl_s9')}>
+                <Field label={`${t('ctrl_camera')} *`}>
                   <YesNo value={form.camera_ok} onChange={v => set('camera_ok', v)} />
                 </Field>
               </Step>
 
-              <Step number={10} title="Microfoon testen">
-                <Field label="Werkt de microfoon? *">
+              <Step number={10} title={t('ctrl_s10')}>
+                <Field label={`${t('ctrl_mic')} *`}>
                   <YesNo value={form.microfoon_ok} onChange={v => set('microfoon_ok', v)} />
                 </Field>
               </Step>
@@ -363,9 +365,9 @@ export default function Controle() {
                   onClick={indienen}
                   disabled={!canSubmit || submitting}
                 >
-                  {submitting ? 'Opslaan…' : canSubmit
-                    ? (form.toetsenbord_ok && form.camera_ok && form.microfoon_ok ? 'Indienen — alles OK' : 'Indienen — bevindingen')
-                    : 'Vul verplichte velden in (*)'}
+                  {submitting ? t('saving') : canSubmit
+                    ? (form.toetsenbord_ok && form.camera_ok && form.microfoon_ok ? t('ctrl_submit_ok') : t('ctrl_submit_issues'))
+                    : t('ctrl_fill')}
                 </button>
                 {!canSubmit && (
                   <span style={{ fontSize: 12, color: 'var(--grey)' }}>
@@ -378,7 +380,7 @@ export default function Controle() {
 
           {history.length > 0 && (
             <div>
-              <p className="section-label" style={{ marginBottom: 10 }}>Eerdere controles</p>
+              <p className="section-label" style={{ marginBottom: 10 }}>{t('ctrl_history')}</p>
               <div style={{ display: 'grid', gap: 6 }}>
                 {history.map(r => (
                   <div key={r.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -397,7 +399,7 @@ export default function Controle() {
                       </p>
                     </div>
                     <span className={`badge ${r.passed ? 'badge-approved' : 'badge-defect'}`} style={{ fontSize: 11, flexShrink: 0 }}>
-                      {r.passed ? 'Geslaagd' : 'Niet geslaagd'}
+                      {r.passed ? t('ctrl_passed') : t('ctrl_failed')}
                     </span>
                   </div>
                 ))}

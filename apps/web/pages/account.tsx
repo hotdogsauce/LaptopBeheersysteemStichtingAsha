@@ -2,16 +2,15 @@ import { useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
-
-const roleLabel: Record<string, string> = {
-  ADMIN: 'Beheerder', OWNER: 'Eigenaar', HELPDESK: 'Helpdesk',
-}
+import { useT } from '../context/LanguageContext'
 
 type Section = 'settings' | 'manual' | null
 
 export default function Account() {
   const { loggedInUser, logout } = useUser()
   const { toast } = useToast()
+  const { t } = useT()
+  const roleLabel: Record<string, string> = { ADMIN: t('role_admin'), OWNER: t('role_owner'), HELPDESK: t('role_helpdesk') }
   const [section, setSection] = useState<Section>(null)
 
   // Settings state
@@ -54,7 +53,7 @@ export default function Account() {
   if (!loggedInUser) return null
 
   return (
-    <Layout title="Mijn account">
+    <Layout title={t('acc_title')}>
       {/* Profile card */}
       <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
         <div style={{
@@ -83,7 +82,7 @@ export default function Account() {
             textAlign: 'left', fontFamily: 'var(--font)', padding: '14px 2px',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>Wachtwoord veranderen</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>{t('acc_change_pw')}</span>
           <span style={{ fontSize: 12, color: 'var(--grey)', transform: section === 'settings' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
         </button>
 
@@ -96,7 +95,7 @@ export default function Account() {
             textAlign: 'left', fontFamily: 'var(--font)', padding: '14px 2px',
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>Handleiding & app installeren</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>{t('acc_guide')}</span>
           <span style={{ fontSize: 12, color: 'var(--grey)', transform: section === 'manual' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
         </button>
       </div>
@@ -104,21 +103,21 @@ export default function Account() {
       {/* ── Wachtwoord veranderen ── */}
       {section === 'settings' && (
         <div className="card section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
-          <h2 style={{ marginBottom: 4 }}>Wachtwoord wijzigen</h2>
+          <h2 style={{ marginBottom: 4 }}>{t('acc_save_pw')}</h2>
           <div>
-            <label className="label">Huidig wachtwoord</label>
+            <label className="label">{t('acc_curr_pw')}</label>
             <input type="password" className="input" value={huidig} onChange={e => setHuidig(e.target.value)} placeholder="••••••••" />
           </div>
           <div>
-            <label className="label">Nieuw wachtwoord</label>
-            <input type="password" className="input" value={nieuw} onChange={e => setNieuw(e.target.value)} placeholder="Minimaal 6 tekens" />
+            <label className="label">{t('acc_new_pw')}</label>
+            <input type="password" className="input" value={nieuw} onChange={e => setNieuw(e.target.value)} placeholder={t('acc_min')} />
           </div>
           <div>
-            <label className="label">Bevestig nieuw wachtwoord</label>
+            <label className="label">{t('acc_confirm_pw')}</label>
             <input type="password" className="input" value={bevestig} onChange={e => setBevestig(e.target.value)} placeholder="••••••••" />
           </div>
           <button className="btn btn-primary" disabled={saving} onClick={wijzigWachtwoord} style={{ width: 'fit-content' }}>
-            {saving ? 'Opslaan…' : 'Wachtwoord wijzigen'}
+            {saving ? t('saving') : t('acc_save_pw')}
           </button>
         </div>
       )}
@@ -130,10 +129,10 @@ export default function Account() {
           {/* App toevoegen aan beginscherm */}
           <div className="card" style={{ padding: '20px 24px' }}>
             <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px', color: 'var(--black)' }}>
-              App toevoegen aan beginscherm
+              {t('acc_install_title')}
             </p>
             <p style={{ fontSize: 13, color: 'var(--grey)', margin: '0 0 16px' }}>
-              Installeer Laptopbeheer als app op je telefoon — geen app store nodig.
+              {t('acc_install_desc')}
             </p>
 
             <div style={{ display: 'grid', gap: 8 }}>
@@ -148,7 +147,7 @@ export default function Account() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 18 }}>🤖</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)' }}>Android</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)' }}>{t('acc_android')}</span>
                 </div>
                 <span style={{ fontSize: 12, color: 'var(--grey)', transform: platform === 'android' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
               </button>
@@ -185,7 +184,7 @@ export default function Account() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 18 }}>🍎</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)' }}>iPhone / iPad (iOS)</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--black)' }}>{t('acc_ios')}</span>
                 </div>
                 <span style={{ fontSize: 12, color: 'var(--grey)', transform: platform === 'ios' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
               </button>
@@ -209,7 +208,7 @@ export default function Account() {
                     </div>
                   ))}
                   <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--grey)' }}>
-                    Let op: gebruik Safari. Chrome op iOS ondersteunt dit niet.
+                    {t('acc_ios_note')}
                   </p>
                 </div>
               )}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
+import { useT } from '../context/LanguageContext'
 
 interface AvailableLaptop {
   id: string
@@ -28,6 +29,7 @@ function fmt(d: string) {
 export default function Toewijzen() {
   const { selectedUserId, selectedUser } = useUser()
   const { toast } = useToast()
+  const { t } = useT()
 
   const [reserveringen, setReserveringen] = useState<Reservation[]>([])
   const [beschikbaar, setBeschikbaar] = useState<AvailableLaptop[]>([])
@@ -102,17 +104,17 @@ export default function Toewijzen() {
   const assigned = reserveringen.filter(r => r.laptops.length >= r.aantalLaptops)
 
   return (
-    <Layout title="Laptops toewijzen" subtitle="Wijs laptops toe aan goedgekeurde reserveringen">
+    <Layout title={t('tw_title')} subtitle={t('tw_sub')}>
 
       {!selectedUserId && (
         <div className="empty">
           <div className="empty-icon">🔗</div>
-          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
+          <p className="empty-text">{t('select_user')}</p>
         </div>
       )}
 
       {selectedUserId && selectedUser?.role !== 'HELPDESK' && (
-        <div className="alert alert-error">Deze pagina is alleen toegankelijk voor helpdeskmedewerkers.</div>
+        <div className="alert alert-error">{t('tw_no_access')}</div>
       )}
 
       {selectedUserId && selectedUser?.role === 'HELPDESK' && (
@@ -127,7 +129,7 @@ export default function Toewijzen() {
               {pending.length > 0 && (
                 <div style={{ marginBottom: 40 }}>
                   <p className="section-label" style={{ marginBottom: 12 }}>
-                    Nog toe te wijzen ({pending.length})
+                    {t('tw_pending')} ({pending.length})
                   </p>
                   <div style={{ display: 'grid', gap: 12 }}>
                     {pending.map(r => {
@@ -158,10 +160,10 @@ export default function Toewijzen() {
                                 fontSize: 11, fontWeight: 600, borderRadius: 99, padding: '2px 8px',
                                 background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a',
                               }}>
-                                {nodig} laptop{nodig !== 1 ? 's' : ''} nodig
+                                {nodig} {t('tw_needed')}
                               </span>
                               <span style={{ fontSize: 11, color: 'var(--grey)' }}>
-                                {isOpen ? '▲ Sluiten' : '▼ Toewijzen'}
+                                {isOpen ? t('tw_close') : t('tw_open')}
                               </span>
                             </div>
                           </div>
@@ -170,12 +172,12 @@ export default function Toewijzen() {
                           {isOpen && (
                             <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-subtle)' }} className="section-enter">
                               <p style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 12 }}>
-                                Contact: {r.contact_info} · Selecteer precies <strong>{r.aantalLaptops}</strong> laptop(s)
-                                ({sel.length} geselecteerd)
+                                {t('tw_contact')}: {r.contact_info} · {t('tw_select_exact')} <strong>{r.aantalLaptops}</strong> {t('tw_laptops')}
+                                ({sel.length} {t('tw_selected')})
                               </p>
 
                               {beschikbaar.length === 0 ? (
-                                <p style={{ fontSize: 13, color: 'var(--grey)' }}>Geen beschikbare laptops.</p>
+                                <p style={{ fontSize: 13, color: 'var(--grey)' }}>{t('tw_no_avail')}</p>
                               ) : (
                                 <div style={{ display: 'grid', gap: 6, marginBottom: 16 }}>
                                   {beschikbaar
@@ -218,7 +220,7 @@ export default function Toewijzen() {
                                 disabled={saving || sel.length !== r.aantalLaptops}
                                 onClick={() => wijs(r)}
                               >
-                                {saving ? 'Opslaan…' : `${r.aantalLaptops} laptop(s) toewijzen`}
+                                {saving ? t('saving') : `${r.aantalLaptops} ${t('tw_submit')}`}
                               </button>
                             </div>
                           )}
@@ -232,14 +234,14 @@ export default function Toewijzen() {
               {pending.length === 0 && !loading && (
                 <div className="empty" style={{ marginBottom: 40 }}>
                   <div className="empty-icon">✓</div>
-                  <p className="empty-text">Alle goedgekeurde reserveringen hebben laptops toegewezen.</p>
+                  <p className="empty-text">{t('tw_empty')}</p>
                 </div>
               )}
 
               {/* Al toegewezen */}
               {assigned.length > 0 && (
                 <div>
-                  <p className="section-label" style={{ marginBottom: 12 }}>Al toegewezen ({assigned.length})</p>
+                  <p className="section-label" style={{ marginBottom: 12 }}>{t('tw_assigned')} ({assigned.length})</p>
                   <div style={{ display: 'grid', gap: 6 }}>
                     {assigned.map(r => (
                       <div key={r.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -256,7 +258,7 @@ export default function Toewijzen() {
                           fontSize: 11, fontWeight: 600, borderRadius: 99, padding: '2px 8px', flexShrink: 0,
                           background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0',
                         }}>
-                          Klaar
+                          {t('tw_done')}
                         </span>
                       </div>
                     ))}

@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { UserProvider, useUser } from "../context/UserContext";
 import { ToastProvider } from "../context/ToastContext";
 import { ConfirmProvider } from "../context/ConfirmContext";
+import { LanguageProvider } from "../context/LanguageContext";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { loggedIn } = useUser()
@@ -22,14 +23,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <UserProvider>
-      <ToastProvider>
-        <ConfirmProvider>
-          <AuthGuard>
-            <Component {...pageProps} />
-          </AuthGuard>
-        </ConfirmProvider>
-      </ToastProvider>
-    </UserProvider>
+    <LanguageProvider>
+      <UserProvider>
+        <ToastProvider>
+          <ConfirmProvider>
+            <AuthGuard>
+              <Component {...pageProps} />
+            </AuthGuard>
+          </ConfirmProvider>
+        </ToastProvider>
+      </UserProvider>
+    </LanguageProvider>
   );
 }

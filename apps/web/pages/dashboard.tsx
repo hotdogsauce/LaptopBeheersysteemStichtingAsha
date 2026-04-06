@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useT } from '../context/LanguageContext'
 
 interface DashboardStats {
   totalLaptops: number
@@ -33,15 +34,16 @@ function StatCard({ label, value, sub, color }: { label: string; value: number; 
 }
 
 function BarChart({ stats }: { stats: DashboardStats }) {
+  const { t } = useT()
   const active = stats.totalLaptops - stats.oos
   if (active === 0) return null
 
   const bars = [
-    { label: 'Beschikbaar', value: stats.available, color: statusColor.available },
-    { label: 'In gebruik', value: stats.inUse, color: statusColor.inUse },
-    { label: 'Defect', value: stats.defect, color: statusColor.defect },
-    { label: 'Vermist', value: stats.missing, color: statusColor.missing },
-    { label: 'Buiten gebruik', value: stats.oos, color: statusColor.oos },
+    { label: t('dash_available'), value: stats.available, color: statusColor.available },
+    { label: t('dash_in_use'),   value: stats.inUse,      color: statusColor.inUse },
+    { label: t('dash_defect'),   value: stats.defect,     color: statusColor.defect },
+    { label: t('dash_missing'),  value: stats.missing,    color: statusColor.missing },
+    { label: t('dash_oos'),      value: stats.oos,        color: statusColor.oos },
   ].filter(b => b.value > 0)
 
   const max = Math.max(...bars.map(b => b.value), 1)
@@ -70,6 +72,7 @@ function BarChart({ stats }: { stats: DashboardStats }) {
 
 export default function Dashboard() {
   const { selectedUserId, selectedUser } = useUser()
+  const { t } = useT()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -89,17 +92,17 @@ export default function Dashboard() {
   const allowed = selectedUser?.role === 'ADMIN' || selectedUser?.role === 'HELPDESK'
 
   return (
-    <Layout title="Dashboard" subtitle="Statistieken en bezetting">
+    <Layout title={t('dash_title')} subtitle={t('dash_sub')}>
 
       {!selectedUserId && (
         <div className="empty">
           <div className="empty-icon">📊</div>
-          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
+          <p className="empty-text">{t('select_user')}</p>
         </div>
       )}
 
       {selectedUserId && !allowed && (
-        <div className="alert alert-error">Dit dashboard is alleen toegankelijk voor beheerders en helpdesk.</div>
+        <div className="alert alert-error">{t('dash_no_access')}</div>
       )}
 
       {selectedUserId && allowed && loading && (
@@ -112,30 +115,27 @@ export default function Dashboard() {
 
       {selectedUserId && allowed && !loading && stats && (
         <>
-          {/* Stats grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 40 }}>
-            <StatCard label="Totaal laptops" value={stats.totalLaptops} />
-            <StatCard label="Beschikbaar" value={stats.available} color={statusColor.available} />
-            <StatCard label="In gebruik" value={stats.inUse} color={statusColor.inUse} />
-            <StatCard label="Defect" value={stats.defect} color={stats.defect > 0 ? statusColor.defect : undefined} />
-            <StatCard label="Vermist" value={stats.missing} color={stats.missing > 0 ? statusColor.missing : undefined} />
-            <StatCard label="Buiten gebruik" value={stats.oos} color={stats.oos > 0 ? statusColor.oos : undefined} />
+            <StatCard label={t('dash_total')}     value={stats.totalLaptops} />
+            <StatCard label={t('dash_available')} value={stats.available} color={statusColor.available} />
+            <StatCard label={t('dash_in_use')}    value={stats.inUse}     color={statusColor.inUse} />
+            <StatCard label={t('dash_defect')}    value={stats.defect}    color={stats.defect  > 0 ? statusColor.defect   : undefined} />
+            <StatCard label={t('dash_missing')}   value={stats.missing}   color={stats.missing > 0 ? statusColor.missing  : undefined} />
+            <StatCard label={t('dash_oos')}       value={stats.oos}       color={stats.oos     > 0 ? statusColor.oos      : undefined} />
           </div>
 
-          {/* Secondary stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 48 }}>
-            <StatCard label="Reserveringen" value={stats.totalReservations} sub="totaal" />
-            <StatCard label="In behandeling" value={stats.pendingReservations} sub="reserveringen" color={stats.pendingReservations > 0 ? statusColor.defect : undefined} />
-            <StatCard label="Open storingen" value={stats.openIssues} sub="meldingen" color={stats.openIssues > 0 ? statusColor.missing : undefined} />
+            <StatCard label={t('dash_reservations')} value={stats.totalReservations}  sub={t('dash_reservations').toLowerCase()} />
+            <StatCard label={t('dash_pending')}      value={stats.pendingReservations} sub={t('dash_reservations').toLowerCase()} color={stats.pendingReservations > 0 ? statusColor.defect : undefined} />
+            <StatCard label={t('dash_issues')}       value={stats.openIssues}          sub={t('dash_issues').toLowerCase()} color={stats.openIssues > 0 ? statusColor.missing : undefined} />
           </div>
 
-          {/* Bezetting grafiek */}
           <div className="card" style={{ padding: '24px 28px' }}>
-            <p className="section-label" style={{ marginBottom: 20 }}>Bezetting laptops</p>
+            <p className="section-label" style={{ marginBottom: 20 }}>{t('dash_chart')}</p>
             <BarChart stats={stats} />
             {stats.totalLaptops > 0 && (
               <p style={{ fontSize: 12, color: 'var(--grey)', marginTop: 20, marginBottom: 0 }}>
-                Beschikbaarheid: {Math.round((stats.available / stats.totalLaptops) * 100)}% · {stats.available} van {stats.totalLaptops} laptops vrij
+                {t('dash_chart')}: {Math.round((stats.available / stats.totalLaptops) * 100)}% · {stats.available} {t('dash_chart_sub')}
               </p>
             )}
           </div>

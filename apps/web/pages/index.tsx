@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
+import { useT } from '../context/LanguageContext'
 
 interface Laptop {
   id: string
@@ -198,6 +199,7 @@ function SkeletonRow() {
 export default function Home() {
   const { selectedUserId, selectedUser } = useUser()
   const { toast } = useToast()
+  const { t } = useT()
   const router = useRouter()
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [loading, setLoading] = useState(false)
@@ -308,12 +310,12 @@ export default function Home() {
   }
 
   return (
-    <Layout title="Overzicht" subtitle="Alle laptops in het systeem">
+    <Layout title={t('ov_title')} subtitle={t('ov_sub')}>
 
       {!selectedUserId && (
         <div className="empty">
           <div className="empty-icon">💻</div>
-          <p className="empty-text">Selecteer een gebruiker in de navigatiebalk om verder te gaan</p>
+          <p className="empty-text">{t('ov_select_user')}</p>
         </div>
       )}
 
@@ -322,7 +324,7 @@ export default function Home() {
           {(selectedUser?.role === 'ADMIN' || selectedUser?.role === 'HELPDESK') && (
             <div style={{ marginBottom: 28 }}>
               <button className="btn btn-ghost" onClick={() => setShowCreateForm(v => !v)}>
-                {showCreateForm ? '✕ Annuleren' : '+ Laptop toevoegen'}
+                {showCreateForm ? t('ov_cancel') : t('ov_add')}
               </button>
               {showCreateForm && (
                 <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>

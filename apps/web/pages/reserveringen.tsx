@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import { useUser, gql } from '../context/UserContext'
+import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
 
@@ -49,6 +50,7 @@ function minStartDatum() {
 
 export default function Reserveringen() {
   const { selectedUserId, selectedUser } = useUser()
+  const { t } = useT()
   const { toast } = useToast()
   const { confirm } = useConfirm()
   const [reserveringen, setReserveringen] = useState<Reservation[]>([])
@@ -136,16 +138,16 @@ export default function Reserveringen() {
   }
 
   return (
-    <Layout title="Reserveringen" subtitle="Openstaande aanvragen beoordelen">
+    <Layout title={t('res_title')} subtitle={t('res_sub')}>
 
       {!selectedUserId && (
         <div className="empty"><div className="empty-icon">📋</div>
-          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
+          <p className="empty-text">{t('select_user')}</p>
         </div>
       )}
 
       {selectedUserId && selectedUser?.role !== 'ADMIN' && (
-        <div className="alert alert-error">Deze pagina is alleen toegankelijk voor beheerders.</div>
+        <div className="alert alert-error">{t('res_no_access')}</div>
       )}
 
       {selectedUserId && selectedUser?.role === 'ADMIN' && (
@@ -153,20 +155,20 @@ export default function Reserveringen() {
           {/* Reservering aanmaken namens eigenaar */}
           <div style={{ marginBottom: 32 }}>
             <button className="btn btn-ghost" onClick={() => setShowForm(v => !v)}>
-              {showForm ? '✕ Annuleren' : '+ Reservering aanmaken'}
+              {showForm ? `✕ ${t('cancel')}` : t('res_add')}
             </button>
 
             {showForm && (
               <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
                 <div>
-                  <label className="label">Eigenaar *</label>
+                  <label className="label">{t('res_form_owner')}</label>
                   <select className="input" value={forUserId} onChange={e => setForUserId(e.target.value)}>
                     <option value="">— Selecteer eigenaar —</option>
                     {owners.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label">Activiteit *</label>
+                  <label className="label">{t('res_form_activity')}</label>
                   <select className="input" value={activityId} onChange={e => setActivityId(e.target.value)}>
                     <option value="">— Selecteer activiteit —</option>
                     {activities.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
@@ -174,17 +176,17 @@ export default function Reserveringen() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
-                    <label className="label">Startdatum *</label>
+                    <label className="label">{t('res_form_start')}</label>
                     <input type="date" className="input" value={startDate} onChange={e => setStartDate(e.target.value)} />
                   </div>
                   <div>
-                    <label className="label">Einddatum *</label>
+                    <label className="label">{t('res_form_end')}</label>
                     <input type="date" className="input" min={startDate} value={endDate} onChange={e => setEndDate(e.target.value)} />
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16 }}>
                   <div>
-                    <label className="label">Aantal laptops *</label>
+                    <label className="label">{t('res_form_count')}</label>
                     <input type="number" className="input" min="1" value={aantalLaptops} onChange={e => setAantalLaptops(e.target.value)} />
                   </div>
                 </div>
@@ -193,20 +195,20 @@ export default function Reserveringen() {
                   <input className="input" placeholder="bijv. praktijkles, examen..." value={doel} onChange={e => setDoel(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Naam eigenaar *</label>
+                  <label className="label">{t('res_form_name')}</label>
                   <input className="input" placeholder="bijv. Jan de Vries" value={contactNaam} onChange={e => setContactNaam(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Telefoonnummer eigenaar (optioneel)</label>
+                  <label className="label">{t('res_form_phone')}</label>
                   <PhoneInput value={contactPhone} onChange={setContactPhone} />
                 </div>
                 <div>
-                  <label className="label">Extra informatie (optioneel)</label>
+                  <label className="label">{t('res_form_extra')}</label>
                   <input className="input" placeholder="bijzonderheden..." value={extraInfo} onChange={e => setExtraInfo(e.target.value)} />
                 </div>
                 <div>
                   <button className="btn btn-primary" disabled={saving} onClick={maakReservering}>
-                    {saving ? 'Opslaan…' : 'Reservering aanmaken'}
+                    {saving ? t('saving') : t('res_form_submit')}
                   </button>
                 </div>
               </div>
@@ -221,7 +223,7 @@ export default function Reserveringen() {
 
           {!loading && reserveringen.length === 0 && (
             <div className="empty"><div className="empty-icon">✓</div>
-              <p className="empty-text">Geen openstaande aanvragen</p>
+              <p className="empty-text">{t('res_empty')}</p>
             </div>
           )}
 
@@ -234,29 +236,29 @@ export default function Reserveringen() {
                       <h3 style={{ marginBottom: 8 }}>{r.activity.title}</h3>
                       <div style={{ display: 'grid', gap: 3 }}>
                         <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Aanvrager:</strong> {r.requester.name}
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_requester')}:</strong> {r.requester.name}
                         </p>
                         <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Contact:</strong> {r.contact_info}
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_contact')}:</strong> {r.contact_info}
                         </p>
                         <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Datum:</strong>{' '}
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_date')}:</strong>{' '}
                           {new Date(r.startDate).toLocaleDateString('nl-NL')} → {new Date(r.endDate).toLocaleDateString('nl-NL')}
                         </p>
                         {r.activity.locatie && (
                           <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                            <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Locatie:</strong> {r.activity.locatie}
+                            <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_location')}:</strong> {r.activity.locatie}
                           </p>
                         )}
                         <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Aantal laptops:</strong> {r.aantalLaptops}
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_count')}:</strong> {r.aantalLaptops}
                         </p>
                         <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Doel:</strong> {r.doel}
+                          <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_goal')}:</strong> {r.doel}
                         </p>
                         {r.extra_info && (
                           <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>
-                            <strong style={{ color: 'var(--black)', fontWeight: 500 }}>Extra info:</strong> {r.extra_info}
+                            <strong style={{ color: 'var(--black)', fontWeight: 500 }}>{t('res_extra')}:</strong> {r.extra_info}
                           </p>
                         )}
                       </div>
@@ -265,7 +267,7 @@ export default function Reserveringen() {
                   </div>
 
                   <div style={{ marginBottom: 12 }}>
-                    <label className="label">Reden voor afwijzing</label>
+                    <label className="label">{t('res_reason')}</label>
                     <input
                       className="input"
                       placeholder="Verplicht bij afkeuren..."
@@ -275,8 +277,8 @@ export default function Reserveringen() {
                   </div>
 
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => beoordeel(r.id, true, r.activity.title)}>Goedkeuren</button>
-                    <button className="btn btn-danger-ghost" style={{ flex: 1 }} onClick={() => beoordeel(r.id, false, r.activity.title)}>Afwijzen</button>
+                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => beoordeel(r.id, true, r.activity.title)}>{t('res_approve')}</button>
+                    <button className="btn btn-danger-ghost" style={{ flex: 1 }} onClick={() => beoordeel(r.id, false, r.activity.title)}>{t('res_reject')}</button>
                   </div>
                 </div>
               ))}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
+import { useT } from '../context/LanguageContext'
 
 interface Laptop {
   id: string
@@ -49,6 +50,7 @@ type Tab = 'laptops' | 'bulk' | 'accounts' | 'audit'
 export default function Beheer() {
   const { selectedUserId, selectedUser } = useUser()
   const { toast } = useToast()
+  const { t: tr } = useT()
   const [tab, setTab] = useState<Tab>('laptops')
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [decommissionId, setDecommissionId] = useState('')
@@ -191,16 +193,16 @@ export default function Beheer() {
   const presentStatuses = ALL_STATUSES.filter(s => laptops.some(l => l.status === s))
 
   return (
-    <Layout title="Beheer" subtitle="Laptops, accounts en bulk acties">
+    <Layout title={tr('beh_title')} subtitle={tr('beh_sub')}>
 
       {!selectedUserId && (
         <div className="empty"><div className="empty-icon">🖥</div>
-          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
+          <p className="empty-text">{tr('select_user')}</p>
         </div>
       )}
 
       {selectedUserId && selectedUser?.role !== 'ADMIN' && (
-        <div className="alert alert-error">Deze pagina is alleen toegankelijk voor beheerders.</div>
+        <div className="alert alert-error">{tr('beh_no_access')}</div>
       )}
 
       {selectedUserId && selectedUser?.role === 'ADMIN' && (
@@ -219,7 +221,7 @@ export default function Beheer() {
                   marginBottom: -1, fontFamily: 'var(--font)',
                 }}
               >
-                {t === 'laptops' ? 'Uit beheer nemen' : t === 'bulk' ? 'Bulk status' : t === 'accounts' ? 'Accounts' : 'Audit log'}
+                {t === 'laptops' ? tr('beh_tab_retire') : t === 'bulk' ? tr('beh_tab_bulk') : t === 'accounts' ? tr('beh_tab_accounts') : tr('beh_tab_audit')}
               </button>
             ))}
           </div>
@@ -242,11 +244,11 @@ export default function Beheer() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <span className={`badge ${statusBadge[laptop.status] || ''}`}>{statusLabel[laptop.status] || laptop.status}</span>
                             {geblokkeerd ? (
-                              <span style={{ fontSize: 12, color: 'var(--grey)', padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 5 }}>Vergrendeld</span>
+                              <span style={{ fontSize: 12, color: 'var(--grey)', padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 5 }}>{tr('beh_retire_locked')}</span>
                             ) : (
                               <button className="btn btn-danger-ghost" style={{ fontSize: 12, padding: '4px 12px' }}
                                 onClick={() => { setDecommissionId(isOpen ? '' : laptop.id); setReden('') }}>
-                                {isOpen ? 'Annuleren' : 'Uit beheer'}
+                                {isOpen ? tr('beh_retire_cancel') : tr('beh_retire_done')}
                               </button>
                             )}
                           </div>
@@ -254,11 +256,11 @@ export default function Beheer() {
                         {isOpen && (
                           <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 12 }}>
                             <div>
-                              <label className="label">Reden *</label>
+                              <label className="label">{tr('res_reason')}</label>
                               <input className="input" placeholder="bijv. Onherstelbaar defect, verouderd model..." value={reden} onChange={e => setReden(e.target.value)} />
                             </div>
-                            <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Let op: laptop wordt permanent op buiten gebruik gezet.</p>
-                            <button className="btn btn-danger" onClick={() => uitBeheer(laptop.id)}>Bevestig: uit beheer nemen</button>
+                            <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>{tr('beh_retire_warning')}</p>
+                            <button className="btn btn-danger" onClick={() => uitBeheer(laptop.id)}>{tr('beh_retire_confirm')}</button>
                           </div>
                         )}
                       </div>
@@ -291,7 +293,7 @@ export default function Beheer() {
                   onClick={() => setBulkFilter('')}
                   className={`filter-chip${!bulkFilter ? ' filter-chip-active' : ''}`}
                 >
-                  <span style={{ fontSize: 11, color: 'var(--grey)' }}>Alle</span>
+                  <span style={{ fontSize: 11, color: 'var(--grey)' }}>{tr('beh_bulk_all')}</span>
                 </button>
                 {presentStatuses.map(s => (
                   <button key={s} onClick={() => { setBulkFilter(s); setSelected([]) }}
@@ -310,19 +312,19 @@ export default function Beheer() {
                     <>
                       <select className="input" style={{ width: 'auto', padding: '5px 28px 5px 10px', fontSize: 12, height: 32 }}
                         value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
-                        <option value="">— Nieuwe status —</option>
+                        <option value="">{tr('beh_bulk_new')}</option>
                         {validBulkTargets.map(s => <option key={s} value={s}>{statusLabel[s]}</option>)}
                       </select>
                       <button className="btn btn-primary" style={{ fontSize: 12 }} disabled={!bulkStatus} onClick={bulkWijzig}>
-                        Toepassen
+                        {tr('beh_bulk_apply')}
                       </button>
                     </>
                   )}
                   {selected.length > 0 && validBulkTargets.length === 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>Gemengde statussen — selecteer één type</span>
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>{tr('beh_bulk_mixed')}</span>
                   )}
                   {selected.length > 0 && (
-                    <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setSelected([])}>Deselecteer</button>
+                    <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setSelected([])}>{tr('beh_bulk_deselect')}</button>
                   )}
                 </div>
               </div>
@@ -365,48 +367,48 @@ export default function Beheer() {
             <>
               <div style={{ marginBottom: 28 }}>
                 <button className="btn btn-ghost" onClick={() => setShowUserForm(v => !v)}>
-                  {showUserForm ? '✕ Annuleren' : '+ Account aanmaken'}
+                  {showUserForm ? `✕ ${tr('cancel')}` : tr('beh_acc_add')}
                 </button>
 
                 {showUserForm && (
                   <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div>
-                        <label className="label">Naam *</label>
+                        <label className="label">{tr('beh_acc_name')}</label>
                         <input className="input" placeholder="Volledige naam" value={newName} onChange={e => setNewName(e.target.value)} />
                       </div>
                       <div>
-                        <label className="label">Gebruikersnaam *</label>
+                        <label className="label">{tr('beh_acc_username')}</label>
                         <input className="input" placeholder="bijv. jan_de_vries" value={newUsername} onChange={e => setNewUsername(e.target.value)} />
                       </div>
                     </div>
                     <div>
-                      <label className="label">E-mailadres (optioneel)</label>
+                      <label className="label">{tr('beh_acc_email')}</label>
                       <input type="email" className="input" placeholder="naam@asha.nl" value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div>
-                        <label className="label">Wachtwoord *</label>
+                        <label className="label">{tr('beh_acc_password')}</label>
                         <input type="password" className="input" placeholder="Tijdelijk wachtwoord" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
                       </div>
                       <div>
-                        <label className="label">Rol *</label>
+                        <label className="label">{tr('beh_acc_role')}</label>
                         <select className="input" value={newRole} onChange={e => { setNewRole(e.target.value); setAdminPass('') }}>
-                          <option value="OWNER">Eigenaar</option>
-                          <option value="HELPDESK">Helpdesk</option>
-                          <option value="ADMIN">Beheerder</option>
+                          <option value="OWNER">{tr('role_owner')}</option>
+                          <option value="HELPDESK">{tr('role_helpdesk')}</option>
+                          <option value="ADMIN">{tr('role_admin')}</option>
                         </select>
                       </div>
                     </div>
                     {newRole === 'ADMIN' && (
                       <div>
-                        <label className="label">Jouw wachtwoord * (vereist voor admin)</label>
+                        <label className="label">{tr('beh_acc_admin_pw')}</label>
                         <input type="password" className="input" placeholder="Jouw huidige wachtwoord" value={adminPass} onChange={e => setAdminPass(e.target.value)} />
                       </div>
                     )}
                     <div>
                       <button className="btn btn-primary" disabled={savingUser} onClick={maakAccount}>
-                        {savingUser ? 'Opslaan…' : 'Account aanmaken'}
+                        {savingUser ? tr('saving') : tr('beh_acc_create')}
                       </button>
                     </div>
                   </div>
@@ -432,9 +434,9 @@ export default function Beheer() {
           {tab === 'audit' && (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--grey)' }}>Laatste 100 gebeurtenissen</p>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--grey)' }}>{tr('beh_audit_title')}</p>
                 <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={exportAuditCSV} disabled={auditLogs.length === 0}>
-                  ↓ Exporteer CSV
+                  {tr('beh_audit_export')}
                 </button>
               </div>
 
@@ -448,7 +450,7 @@ export default function Beheer() {
                   ))}
                 </div>
               ) : auditLogs.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--grey)' }}>Nog geen audit-events geregistreerd.</p>
+                <p style={{ fontSize: 13, color: 'var(--grey)' }}>{tr('beh_audit_empty')}</p>
               ) : (
                 <div style={{ display: 'grid', gap: 4 }}>
                   {auditLogs.map(log => {

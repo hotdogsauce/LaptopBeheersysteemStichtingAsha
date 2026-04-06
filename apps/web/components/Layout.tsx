@@ -2,43 +2,7 @@ import { ReactNode, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useUser, gql } from '../context/UserContext'
-
-const roleLabel: Record<string, string> = {
-  ADMIN: 'Beheerder',
-  OWNER: 'Eigenaar',
-  HELPDESK: 'Helpdesk',
-}
-
-const navByRole: Record<string, { href: string; label: string }[]> = {
-  ADMIN: [
-    { href: '/', label: 'Overzicht' },
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/reserveringen', label: 'Reserveringen' },
-    { href: '/beheer', label: 'Beheer' },
-    { href: '/activiteiten', label: 'Activiteiten' },
-    { href: '/software', label: 'Software' },
-    { href: '/ai', label: 'AI assistent' },
-  ],
-  OWNER: [
-    { href: '/aanvragen', label: 'Aanvragen' },
-    { href: '/activiteiten', label: 'Activiteiten' },
-    { href: '/software', label: 'Software' },
-    { href: '/ai', label: 'AI assistent' },
-  ],
-  HELPDESK: [
-    { href: '/', label: 'Overzicht' },
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/toewijzen', label: 'Toewijzen' },
-    { href: '/storingen', label: 'Storingen' },
-    { href: '/controle', label: 'Controle' },
-    { href: '/ai', label: 'AI assistent' },
-  ],
-}
-
-const statusLabel: Record<string, string> = {
-  AVAILABLE: 'Beschikbaar', RESERVED: 'Gereserveerd', IN_USE: 'In gebruik',
-  IN_CONTROL: 'In controle', DEFECT: 'Defect', OUT_OF_SERVICE: 'Buiten gebruik', MISSING: 'Vermist',
-}
+import { useT, LANG_OPTIONS } from '../context/LanguageContext'
 
 const statusBadge: Record<string, string> = {
   AVAILABLE: 'badge-available', RESERVED: 'badge-reserved', IN_USE: 'badge-in-use',
@@ -71,9 +35,12 @@ interface LayoutProps {
 
 export default function Layout({ children, title, subtitle }: LayoutProps) {
   const { selectedUser, theme, toggleTheme, loggedInUser, logout } = useUser()
+  const { t, lang, setLang } = useT()
   const router = useRouter()
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+  const langRef = useRef<HTMLDivElement>(null)
   const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([])
   const [sidebarTitle, setSidebarTitle] = useState('')
   const [widgetLoading, setWidgetLoading] = useState(false)
@@ -92,6 +59,41 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
   const [laptopsLoaded, setLaptopsLoaded] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
+
+  const roleLabel: Record<string, string> = {
+    ADMIN: t('role_admin'), OWNER: t('role_owner'), HELPDESK: t('role_helpdesk'),
+  }
+  const navByRole: Record<string, { href: string; label: string }[]> = {
+    ADMIN: [
+      { href: '/', label: t('nav_overview') },
+      { href: '/dashboard', label: t('nav_dashboard') },
+      { href: '/reserveringen', label: t('nav_reservations') },
+      { href: '/beheer', label: t('nav_beheer') },
+      { href: '/activiteiten', label: t('nav_activities') },
+      { href: '/software', label: t('nav_software') },
+      { href: '/ai', label: t('nav_ai') },
+    ],
+    OWNER: [
+      { href: '/aanvragen', label: t('nav_requests') },
+      { href: '/activiteiten', label: t('nav_activities') },
+      { href: '/software', label: t('nav_software') },
+      { href: '/ai', label: t('nav_ai') },
+    ],
+    HELPDESK: [
+      { href: '/', label: t('nav_overview') },
+      { href: '/dashboard', label: t('nav_dashboard') },
+      { href: '/toewijzen', label: t('nav_assign') },
+      { href: '/storingen', label: t('nav_issues') },
+      { href: '/controle', label: t('nav_control') },
+      { href: '/ai', label: t('nav_ai') },
+    ],
+  }
+  const statusLabel: Record<string, string> = {
+    AVAILABLE: t('status_available'), RESERVED: t('status_reserved'),
+    IN_USE: t('status_in_use'), IN_CONTROL: t('status_in_control'),
+    DEFECT: t('status_defect'), OUT_OF_SERVICE: t('status_out_of_service'),
+    MISSING: t('status_missing'),
+  }
 
   const navItems = selectedUser ? (navByRole[selectedUser.role] || []) : []
   const isDark = theme === 'dark'
@@ -182,6 +184,17 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [bellOpen])
 
+  // Close lang dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false)
+      }
+    }
+    if (langOpen) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [langOpen])
+
   async function markAllRead() {
     if (!loggedInUser) return
     await gql('mutation { markAllNotificationsRead }', undefined, loggedInUser.userId).catch(() => {})
@@ -211,7 +224,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
     setWidgetLoading(true)
 
     if (selectedUser.role === 'ADMIN') {
-      setSidebarTitle('Wachten op keuring')
+      setSidebarTitle(t('widget_pending'))
       gql('{ pendingReservations { id startDate activity { title } requester { name } } }', undefined, selectedUser.id)
         .then(d => {
           const list = d.data?.pendingReservations || []
@@ -227,7 +240,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         })
         .catch(() => { setWidgetLoading(false) })
     } else if (selectedUser.role === 'HELPDESK') {
-      setSidebarTitle('Open storingen')
+      setSidebarTitle(t('widget_issues'))
       gql('{ openIssues { id description laptop { merk_type } } }', undefined, selectedUser.id)
         .then(d => {
           const list = d.data?.openIssues || []
@@ -243,7 +256,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         })
         .catch(() => { setWidgetLoading(false) })
     } else if (selectedUser.role === 'OWNER') {
-      setSidebarTitle('Aankomend')
+      setSidebarTitle(t('widget_upcoming'))
       gql(`{ myReservations(userId: "${selectedUser.id}") { id startDate status activity { title } } }`, undefined, selectedUser.id)
         .then(d => {
           const now = new Date()
@@ -255,7 +268,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           const items = upcoming.slice(0, 4).map((r: any) => ({
             id: r.id,
             label: r.activity?.title || 'Activiteit',
-            sublabel: formatDate(r.startDate) + ' · ' + (r.status === 'APPROVED' ? 'Goedgekeurd' : 'In afwachting'),
+            sublabel: formatDate(r.startDate) + ' · ' + (r.status === 'APPROVED' ? t('sidebar_approved') : t('sidebar_awaiting')),
             href: '/aanvragen',
           }))
           setSidebarItems(items)
@@ -343,7 +356,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                 </Link>
               ))
             ) : (
-              <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Niets op dit moment.</p>
+              <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>{t('widget_nothing')}</p>
             )}
           </div>
         </>
@@ -377,7 +390,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           <button
             className="hamburger"
             onClick={() => setMenuOpen(o => !o)}
-            aria-label={menuOpen ? 'Sluit menu' : 'Open menu'}
+            aria-label={menuOpen ? t('menu_close') : t('menu_open')}
           >
             <span className={`ham-line${menuOpen ? ' open-top' : ''}`} />
             <span className={`ham-line${menuOpen ? ' open-mid' : ''}`} />
@@ -431,7 +444,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                 ref={searchInputRef}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Zoek laptop…"
+                placeholder={t('search_placeholder')}
                 style={{
                   width: '100%', height: 26, padding: '0 10px',
                   fontSize: 12, border: '1px solid var(--border)', borderRadius: 13,
@@ -446,11 +459,11 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
               <div className="search-dropdown">
                 {!selectedUser ? (
                   <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--grey)' }}>
-                    Selecteer eerst een gebruiker
+                    {t('search_hint')}
                   </div>
                 ) : searchResults.length === 0 ? (
                   <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--grey)' }}>
-                    Geen laptops gevonden
+                    {t('search_empty')}
                   </div>
                 ) : (
                   searchResults.map(l => (
@@ -483,7 +496,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             <div ref={bellRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => { setBellOpen(o => !o); if (!bellOpen && unreadCount > 0) {} }}
-                title="Notificaties"
+                title={t('notifs')}
                 style={{
                   width: 26, height: 26, borderRadius: '50%',
                   border: `1px solid ${bellOpen ? 'var(--black)' : 'var(--border)'}`,
@@ -518,16 +531,16 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                   zIndex: 50, overflow: 'hidden',
                 }} className="section-enter">
                   <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)' }}>Notificaties</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)' }}>{t('notifs')}</span>
                     {unreadCount > 0 && (
                       <button onClick={markAllRead} style={{ fontSize: 11, color: 'var(--grey)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                        Alles gelezen
+                        {t('notif_all_read')}
                       </button>
                     )}
                   </div>
                   <div style={{ maxHeight: 320, overflowY: 'auto' }}>
                     {notifications.length === 0 ? (
-                      <p style={{ padding: '16px 14px', fontSize: 12, color: 'var(--grey)', margin: 0 }}>Geen notificaties.</p>
+                      <p style={{ padding: '16px 14px', fontSize: 12, color: 'var(--grey)', margin: 0 }}>{t('notif_empty')}</p>
                     ) : (
                       notifications.map(n => (
                         <div
@@ -560,10 +573,52 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             </div>
           )}
 
+          {/* Language switcher */}
+          <div ref={langRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setLangOpen(o => !o)}
+              title="Language / Taal"
+              style={{
+                width: 26, height: 26, borderRadius: '50%',
+                border: `1px solid ${langOpen ? 'var(--black)' : 'var(--border)'}`,
+                background: 'transparent', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, padding: 0, fontSize: 13, transition: 'border-color 0.15s',
+              }}
+            >
+              {LANG_OPTIONS.find(o => o.code === lang)?.flag ?? '🌐'}
+            </button>
+            {langOpen && (
+              <div style={{
+                position: 'absolute', top: 36, right: 0,
+                background: 'var(--bg)', border: '1px solid var(--border)',
+                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                overflow: 'hidden', zIndex: 50, minWidth: 160,
+              }} className="section-enter">
+                {LANG_OPTIONS.map(o => (
+                  <button
+                    key={o.code}
+                    onClick={() => { setLang(o.code); setLangOpen(false) }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 14px', border: 'none', cursor: 'pointer',
+                      background: lang === o.code ? 'var(--bg-soft)' : 'transparent',
+                      fontFamily: 'var(--font)', fontSize: 13, color: 'var(--black)',
+                      fontWeight: lang === o.code ? 600 : 400, textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>{o.flag}</span>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            title={isDark ? 'Schakel naar licht' : 'Schakel naar donker'}
+            title={isDark ? t('theme_to_light') : t('theme_to_dark')}
             style={{
               width: 26, height: 26, borderRadius: '50%',
               border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer',
@@ -584,7 +639,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
               <div
                 style={{ textAlign: 'right', cursor: 'pointer' }}
                 onClick={() => router.push('/account')}
-                title="Mijn account"
+                title={t('nav_account')}
               >
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--black)', lineHeight: 1.2 }}>
                   {loggedInUser.name}
@@ -595,7 +650,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
               </div>
               <button
                 onClick={() => { logout(); router.push('/login') }}
-                title="Uitloggen"
+                title={t('nav_logout')}
                 style={{
                   width: 28, height: 28, borderRadius: '50%',
                   border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer',

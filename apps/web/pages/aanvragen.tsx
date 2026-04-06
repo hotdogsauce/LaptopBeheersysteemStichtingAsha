@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import { useUser, gql } from '../context/UserContext'
+import { useT } from '../context/LanguageContext'
 
 interface Activity {
   id: string
@@ -26,10 +27,7 @@ const statusBadge: Record<string, string> = {
   REQUESTED: 'badge-pending', APPROVED: 'badge-approved', REJECTED: 'badge-rejected',
   CANCELLED: 'badge-oos', COMPLETED: 'badge-in-use',
 }
-const statusLabel: Record<string, string> = {
-  REQUESTED: 'In afwachting', APPROVED: 'Goedgekeurd', REJECTED: 'Afgewezen',
-  CANCELLED: 'Geannuleerd', COMPLETED: 'Afgerond',
-}
+// statusLabel is computed inside component to support i18n
 const statusColor: Record<string, string> = {
   REQUESTED: '#f97316', APPROVED: '#22c55e', REJECTED: '#ef4444',
   CANCELLED: '#9ca3af', COMPLETED: '#6b7280',
@@ -51,6 +49,10 @@ const WEEKDAYS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
 const MONTHS = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
 
 function Calendar({ reservations }: { reservations: Reservation[] }) {
+  const { t } = useT()
+  const statusLabel: Record<string, string> = {
+    REQUESTED: t('res_requested'), APPROVED: t('res_approved'), REJECTED: t('res_rejected'),
+  }
   const [cur, setCur] = useState(() => {
     const d = new Date(); d.setDate(1); return d
   })
@@ -168,6 +170,11 @@ function Calendar({ reservations }: { reservations: Reservation[] }) {
 
 export default function Aanvragen() {
   const { selectedUserId, selectedUser } = useUser()
+  const { t } = useT()
+  const statusLabel: Record<string, string> = {
+    REQUESTED: t('res_requested'), APPROVED: t('res_approved'), REJECTED: t('res_rejected'),
+    CANCELLED: t('cancel'), COMPLETED: t('tw_done'),
+  }
   const [activities, setActivities] = useState<Activity[]>([])
   const [myReservations, setMyReservations] = useState<Reservation[]>([])
   const [availableCount, setAvailableCount] = useState<number | null>(null)
@@ -264,12 +271,12 @@ export default function Aanvragen() {
   const selectedActivity = activities.find(a => a.id === activityId)
 
   return (
-    <Layout title="Laptops aanvragen" subtitle="Dien een reserveringsaanvraag in voor jouw activiteit">
+    <Layout title={t('req_title')} subtitle={t('req_sub')}>
 
       {!selectedUserId && (
         <div className="empty">
           <div className="empty-icon">📋</div>
-          <p className="empty-text">Selecteer een gebruiker om verder te gaan</p>
+          <p className="empty-text">{t('select_user')}</p>
         </div>
       )}
 
@@ -287,7 +294,7 @@ export default function Aanvragen() {
 
           <div className="card" style={{ marginBottom: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-              <h2 style={{ margin: 0 }}>Nieuwe aanvraag</h2>
+              <h2 style={{ margin: 0 }}>{t('req_new')}</h2>
               {availableCount !== null && (
                 <span style={{
                   fontSize: 12, fontWeight: 500,
@@ -296,14 +303,14 @@ export default function Aanvragen() {
                   border: `1px solid ${availableCount === 0 ? '#fecaca' : '#bbf7d0'}`,
                   borderRadius: 99, padding: '3px 10px',
                 }}>
-                  {availableCount} laptop{availableCount !== 1 ? 's' : ''} beschikbaar
+                  {availableCount} {t('req_available')}
                 </span>
               )}
             </div>
 
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
-                <label className="label">Activiteit *</label>
+                <label className="label">{t('req_activity')}</label>
                 <select className="input" value={activityId} onChange={e => setActivityId(e.target.value)}>
                   <option value="">— Selecteer activiteit —</option>
                   {activities.map(a => (
@@ -317,11 +324,11 @@ export default function Aanvragen() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label className="label">Startdatum *</label>
+                  <label className="label">{t('req_start')}</label>
                   <input type="date" className="input" min={minDatum()} max={maxDatum()} value={startDate} onChange={e => setStartDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className="label">Einddatum *</label>
+                  <label className="label">{t('req_end')}</label>
                   <input type="date" className="input" min={startDate || minDatum()} max={maxDatum()} value={endDate} onChange={e => setEndDate(e.target.value)} />
                 </div>
               </div>
@@ -331,7 +338,7 @@ export default function Aanvragen() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16 }}>
                 <div>
-                  <label className="label">Aantal laptops *</label>
+                  <label className="label">{t('req_count')}</label>
                   <input
                     type="number" className="input" min="1"
                     max={availableCount ?? undefined}
@@ -342,27 +349,27 @@ export default function Aanvragen() {
               </div>
 
               <div>
-                <label className="label">Doel van de aanvraag *</label>
+                <label className="label">{t('req_goal')}</label>
                 <textarea className="input" placeholder="Waarvoor worden de laptops gebruikt?" value={doel} onChange={e => setDoel(e.target.value)} style={{ minHeight: 70, resize: 'vertical' }} />
               </div>
 
               <div>
-                <label className="label">Uw naam *</label>
+                <label className="label">{t('req_name')}</label>
                 <input className="input" placeholder="bijv. Jan de Vries" value={contactNaam} onChange={e => setContactNaam(e.target.value)} />
               </div>
 
               <div>
-                <label className="label">Telefoonnummer (optioneel)</label>
+                <label className="label">{t('req_phone')}</label>
                 <PhoneInput value={contactPhone} onChange={setContactPhone} />
               </div>
 
               <div>
-                <label className="label">Onvoorziene relevante informatie (optioneel)</label>
+                <label className="label">{t('req_extra')}</label>
                 <textarea className="input" placeholder="bijzonderheden, speciale vereisten..." value={extraInfo} onChange={e => setExtraInfo(e.target.value)} style={{ minHeight: 60, resize: 'vertical' }} />
               </div>
 
               <div>
-                <button className="btn btn-primary" onClick={doeAanvraag}>Aanvraag indienen</button>
+                <button className="btn btn-primary" onClick={doeAanvraag}>{t('req_submit')}</button>
               </div>
             </div>
           </div>
@@ -387,7 +394,7 @@ export default function Aanvragen() {
                     fontFamily: 'var(--font)',
                   } as React.CSSProperties}
                 >
-                  {v === 'lijst' ? 'Lijst' : 'Agenda'}
+                  {v === 'lijst' ? t('req_list') : t('req_agenda')}
                 </button>
               ))}
             </div>
@@ -395,7 +402,7 @@ export default function Aanvragen() {
 
           {myReservations.length === 0 && (
             <div className="empty" style={{ padding: '40px 0' }}>
-              <p className="empty-text">Nog geen aanvragen ingediend.</p>
+              <p className="empty-text">{t('req_empty')}</p>
             </div>
           )}
 
@@ -428,7 +435,7 @@ export default function Aanvragen() {
                       )}
                       {r.status === 'APPROVED' && r.laptops.length === 0 && (
                         <p style={{ fontSize: 12, color: '#92400e', margin: '2px 0 0' }}>
-                          Helpdesk wijst laptops toe…
+                          {t('req_helpdesk')}
                         </p>
                       )}
                       {r.rejectionReason && (
