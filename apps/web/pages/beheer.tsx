@@ -75,6 +75,14 @@ export default function Beheer() {
   const [newRole, setNewRole] = useState('OWNER')
   const [adminPass, setAdminPass] = useState('')
   const [savingUser, setSavingUser] = useState(false)
+  // Edit/delete state
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editUsername, setEditUsername] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editResetPw, setEditResetPw] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const actiefLaptops = laptops.filter(l => l.status !== 'OUT_OF_SERVICE')
   const uitBeheerLaptops = laptops.filter(l => l.status === 'OUT_OF_SERVICE')
@@ -163,6 +171,50 @@ export default function Beheer() {
       setNewName(''); setNewUsername(''); setNewEmail(''); setNewPassword(''); setAdminPass(''); setNewRole('OWNER')
       setShowUserForm(false); herlaadUsers()
     }
+  }
+
+  function openEdit(u: { id: string; name: string; username: string; email: string | null }) {
+    setEditId(u.id); setEditName(u.name); setEditUsername(u.username); setEditEmail(u.email || ''); setEditResetPw('')
+    setDeleteConfirmId(null)
+  }
+
+  async function slaEditOp() {
+    if (!editId) return
+    setSavingEdit(true)
+    const data = await gql(
+      `mutation($userId: ID!, $name: String, $username: String, $email: String) {
+        updateUser(userId: $userId, name: $name, username: $username, email: $email) { id name username email role }
+      }`,
+      { userId: editId, name: editName.trim() || undefined, username: editUsername.trim() || undefined, email: editEmail.trim() || null },
+      selectedUserId
+    )
+    setSavingEdit(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast(`Account bijgewerkt.`)
+    setEditId(null); herlaadUsers()
+  }
+
+  async function resetWachtwoord() {
+    if (!editId || !editResetPw.trim()) { toast('Vul een nieuw wachtwoord in.', 'error'); return }
+    setSavingEdit(true)
+    const data = await gql(
+      `mutation($userId: ID!, $newPassword: String!) { adminResetPassword(userId: $userId, newPassword: $newPassword) }`,
+      { userId: editId, newPassword: editResetPw },
+      selectedUserId
+    )
+    setSavingEdit(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Wachtwoord gereset.'); setEditResetPw('')
+  }
+
+  async function verwijderUser(userId: string) {
+    const data = await gql(
+      `mutation($userId: ID!) { deleteUser(userId: $userId) }`,
+      { userId }, selectedUserId
+    )
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Account verwijderd.')
+    setDeleteConfirmId(null); setEditId(null); herlaadUsers()
   }
 
   function exportAuditCSV() {
@@ -416,17 +468,80 @@ export default function Beheer() {
               </div>
 
               <div style={{ display: 'grid', gap: 6 }}>
-                {users.map(u => (
-                  <div key={u.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{u.name}</p>
-                      <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
-                        @{u.username}{u.email ? ` · ${u.email}` : ''}
-                      </p>
+                {users.map(u => {
+                  const isEditing = editId === u.id
+                  const isConfirmDelete = deleteConfirmId === u.id
+                  return (
+                    <div key={u.id} className="card-row">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{u.name}</p>
+                          <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
+                            @{u.username}{u.email ? ` · ${u.email}` : ''}
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span className={`badge ${roleBadge[u.role] || ''}`}>{roleLabel[u.role] || u.role}</span>
+                          <button className="btn btn-ghost" style={{ fontSize: 12, padding: '3px 10px' }}
+                            onClick={() => isEditing ? setEditId(null) : openEdit(u)}>
+                            {isEditing ? '✕' : 'Wijzig'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {isEditing && (
+                        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 14 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                              <label className="label">Naam</label>
+                              <input className="input" value={editName} onChange={e => setEditName(e.target.value)} />
+                            </div>
+                            <div>
+                              <label className="label">Gebruikersnaam</label>
+                              <input className="input" value={editUsername} onChange={e => setEditUsername(e.target.value)} />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="label">E-mail</label>
+                            <input type="email" className="input" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button className="btn btn-primary" style={{ fontSize: 12 }} disabled={savingEdit} onClick={slaEditOp}>
+                              {savingEdit ? 'Opslaan…' : 'Opslaan'}
+                            </button>
+                          </div>
+
+                          <div style={{ paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+                            <label className="label">Wachtwoord resetten</label>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                              <input type="password" className="input" placeholder="Nieuw wachtwoord (min. 6)" value={editResetPw} onChange={e => setEditResetPw(e.target.value)} style={{ flex: 1 }} />
+                              <button className="btn btn-ghost" style={{ fontSize: 12, whiteSpace: 'nowrap' }} disabled={savingEdit} onClick={resetWachtwoord}>
+                                Reset
+                              </button>
+                            </div>
+                          </div>
+
+                          {u.id !== selectedUserId && (
+                            <div style={{ paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+                              {!isConfirmDelete ? (
+                                <button className="btn btn-danger-ghost" style={{ fontSize: 12 }}
+                                  onClick={() => setDeleteConfirmId(u.id)}>
+                                  Account verwijderen
+                                </button>
+                              ) : (
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                  <p style={{ margin: 0, fontSize: 13, color: 'var(--red)' }}>Zeker weten? Dit kan niet ongedaan worden.</p>
+                                  <button className="btn btn-danger" style={{ fontSize: 12 }} onClick={() => verwijderUser(u.id)}>Ja, verwijder</button>
+                                  <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setDeleteConfirmId(null)}>Annuleer</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <span className={`badge ${roleBadge[u.role] || ''}`}>{roleLabel[u.role] || u.role}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </>
           )}

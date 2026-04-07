@@ -13,6 +13,28 @@ export default function Account() {
   const roleLabel: Record<string, string> = { ADMIN: t('role_admin'), OWNER: t('role_owner'), HELPDESK: t('role_helpdesk') }
   const [section, setSection] = useState<Section>(null)
 
+  // Name change
+  const [nieuweNaam, setNieuweNaam] = useState('')
+  const [savingNaam, setSavingNaam] = useState(false)
+
+  async function wijzigNaam() {
+    if (!nieuweNaam.trim()) { toast('Vul een naam in.', 'error'); return }
+    if (nieuweNaam.trim() === loggedInUser!.name) { toast('Naam is gelijk aan de huidige naam.', 'error'); return }
+    setSavingNaam(true)
+    const data = await gql(
+      `mutation($userId: ID!, $name: String) { updateUser(userId: $userId, name: $name) { id name } }`,
+      { userId: loggedInUser!.userId, name: nieuweNaam.trim() },
+      loggedInUser!.userId
+    )
+    setSavingNaam(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Naam gewijzigd.')
+    // Update stored session so the header reflects the new name
+    const updated = { ...loggedInUser!, name: data.data.updateUser.name }
+    localStorage.setItem('asha-session', JSON.stringify(updated))
+    setNieuweNaam('')
+  }
+
   // Settings state
   const [huidig, setHuidig] = useState('')
   const [nieuw, setNieuw] = useState('')
@@ -68,6 +90,23 @@ export default function Account() {
           <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--grey)' }}>
             @{loggedInUser.username} · {roleLabel[loggedInUser.role] || loggedInUser.role}
           </p>
+        </div>
+      </div>
+
+      {/* Naam wijzigen */}
+      <div className="card" style={{ marginBottom: 24, display: 'grid', gap: 12 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Naam wijzigen</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            className="input"
+            placeholder={loggedInUser.name}
+            value={nieuweNaam}
+            onChange={e => setNieuweNaam(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button className="btn btn-primary" style={{ fontSize: 13, whiteSpace: 'nowrap' }} disabled={savingNaam} onClick={wijzigNaam}>
+            {savingNaam ? 'Opslaan…' : 'Opslaan'}
+          </button>
         </div>
       </div>
 

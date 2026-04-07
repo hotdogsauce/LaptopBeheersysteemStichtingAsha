@@ -307,6 +307,9 @@ export const typeDefs = `
     # Uitbreidingen
     createActivity(title: String!, omschrijving: String, locatie: String, software_benodigdheden: String): Activity!
     createUser(name: String!, username: String!, email: String, password: String!, role: UserRole!, adminPassword: String): User!
+    updateUser(userId: ID!, name: String, username: String, email: String): User!
+    adminResetPassword(userId: ID!, newPassword: String!): Boolean!
+    deleteUser(userId: ID!): Boolean!
 
     markNotificationRead(id: ID!): Boolean!
     markAllNotificationsRead: Boolean!

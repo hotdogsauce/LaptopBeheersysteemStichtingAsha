@@ -22,7 +22,7 @@ Admin
 + data van andere accounts kunnen zien zoals oude reserveringen en aanvragen etc.
 
 Eigenaar
-+ eigenaar laptop overzicht scherm. 
++ eigenaar laptop overzicht scherm. V
 
 HBO'er(s)
 + met jivon aan tafel.

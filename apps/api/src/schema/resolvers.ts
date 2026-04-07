@@ -448,6 +448,55 @@ export const resolvers = {
       return prisma.user.create({ data: { name, username, email: email?.trim() || null, password, role } })
     },
 
+    updateUser: async (_: any, { userId, name, username, email }: any, { user }: any) => {
+      if (!user) throw new Error('Niet ingelogd.')
+      const isAdmin = user.role === 'ADMIN'
+      const isSelf = user.id === userId
+      if (!isAdmin && !isSelf) throw new Error('Geen toegang.')
+      // Non-admins can only change their own name
+      if (!isAdmin && (username || email)) throw new Error('Je kunt alleen je naam wijzigen.')
+      const data: Record<string, unknown> = {}
+      if (name?.trim()) data.name = name.trim()
+      if (isAdmin && username?.trim()) {
+        const existing = await prisma.user.findFirst({ where: { username: username.trim(), NOT: { id: userId } } })
+        if (existing) throw new Error('Gebruikersnaam is al in gebruik.')
+        data.username = username.trim()
+      }
+      if (isAdmin && email !== undefined) data.email = email?.trim() || null
+      if (Object.keys(data).length === 0) throw new Error('Geen wijzigingen opgegeven.')
+      const updated = await prisma.user.update({ where: { id: userId }, data })
+      // If non-admin changes their own name, notify all admins
+      if (!isAdmin && isSelf && data.name) {
+        const adminIds = await getAdminIds()
+        for (const aid of adminIds) {
+          createNotification(aid, `${updated.name} heeft zijn/haar naam gewijzigd.`, 'INFO')
+        }
+      }
+      logAudit('user_updated', { userId, changes: Object.keys(data).join(', ') })
+      return updated
+    },
+
+    adminResetPassword: async (_: any, { userId, newPassword }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      if (!newPassword || newPassword.length < 6) throw new Error('Wachtwoord moet minimaal 6 tekens zijn.')
+      const target = await prisma.user.findUnique({ where: { id: userId } })
+      if (!target) throw new Error('Gebruiker niet gevonden.')
+      await prisma.user.update({ where: { id: userId }, data: { password: newPassword } as any })
+      logAudit('password_reset_by_admin', { targetUserId: userId, adminId: user.id })
+      return true
+    },
+
+    deleteUser: async (_: any, { userId }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      if (userId === user.id) throw new Error('Je kunt je eigen account niet verwijderen.')
+      const target = await prisma.user.findUnique({ where: { id: userId } })
+      if (!target) throw new Error('Gebruiker niet gevonden.')
+      await prisma.notification.deleteMany({ where: { userId } })
+      await prisma.user.delete({ where: { id: userId } })
+      logAudit('user_deleted', { deletedUserId: userId, deletedName: target.name })
+      return true
+    },
+
     markNotificationRead: async (_: any, { id }: any, { user }: any) => {
       if (!user) throw new Error('Niet ingelogd.')
       await prisma.notification.update({ where: { id }, data: { read: true } })
