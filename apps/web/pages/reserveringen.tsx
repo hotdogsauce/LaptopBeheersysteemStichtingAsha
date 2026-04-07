@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
+import TimeInput from '../components/TimeInput'
 import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
@@ -43,7 +44,7 @@ function SkeletonCard() {
   )
 }
 
-function minStartDatum() {
+function minDatum() {
   const d = new Date(); d.setDate(d.getDate() + 3)
   return d.toISOString().split('T')[0]
 }
@@ -63,8 +64,9 @@ export default function Reserveringen() {
   const [owners, setOwners] = useState<Owner[]>([])
   const [forUserId, setForUserId] = useState('')
   const [activityId, setActivityId] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [date, setDate] = useState('')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('10:00')
   const [aantalLaptops, setAantalLaptops] = useState('1')
   const [doel, setDoel] = useState('')
   const [contactNaam, setContactNaam] = useState('')
@@ -115,11 +117,14 @@ export default function Reserveringen() {
   async function maakReservering() {
     if (!forUserId) { toast('Selecteer een eigenaar.', 'error'); return }
     if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
-    if (!startDate || !endDate) { toast('Vul start- en einddatum in.', 'error'); return }
+    if (!date) { toast('Vul een datum in.', 'error'); return }
+    if (startTime >= endTime) { toast('De eindtijd moet na de starttijd liggen.', 'error'); return }
     if (!doel.trim()) { toast('Vul het doel in.', 'error'); return }
     if (!contactNaam.trim()) { toast('Vul de naam van de eigenaar in.', 'error'); return }
     const aantal = parseInt(aantalLaptops) || 1
     const contactInfo = contactNaam.trim() + (contactPhone ? ` — ${contactPhone}` : '')
+    const startDate = `${date}T${startTime}:00`
+    const endDate = `${date}T${endTime}:00`
     setSaving(true)
     const data = await gql(
       `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
@@ -131,7 +136,7 @@ export default function Reserveringen() {
     setSaving(false)
     if (data.errors) { toast(data.errors[0].message, 'error'); return }
     toast('Reservering aangemaakt.')
-    setShowForm(false); setForUserId(''); setActivityId(''); setStartDate(''); setEndDate('')
+    setShowForm(false); setForUserId(''); setActivityId(''); setDate(''); setStartTime('09:00'); setEndTime('10:00')
     setAantalLaptops('1'); setDoel(''); setContactNaam(''); setContactPhone(''); setExtraInfo('')
     gql('{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }', undefined, selectedUserId)
       .then(d => setReserveringen(d.data?.pendingReservations || []))
@@ -174,14 +179,20 @@ export default function Reserveringen() {
                     {activities.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="label">Datum *</label>
+                  <input type="date" className="input" min={minDatum()} value={date} onChange={e => setDate(e.target.value)} />
+                  <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0' }}>Minimaal 3 dagen vooruit</p>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label className="label">{t('res_form_start')}</label>
-                    <input type="date" className="input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                    <TimeInput value={startTime} onChange={setStartTime} />
                   </div>
                   <div>
                     <label className="label">{t('res_form_end')}</label>
-                    <input type="date" className="input" min={startDate} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                    <TimeInput value={endTime} onChange={setEndTime} />
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16 }}>
