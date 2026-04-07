@@ -4,7 +4,7 @@ import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
 
-type Section = 'settings' | 'manual' | null
+type Section = 'naam' | 'settings' | 'manual' | null
 
 export default function Account() {
   const { loggedInUser, logout } = useUser()
@@ -93,25 +93,21 @@ export default function Account() {
         </div>
       </div>
 
-      {/* Naam wijzigen */}
-      <div className="card" style={{ marginBottom: 24, display: 'grid', gap: 12 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Naam wijzigen</p>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            className="input"
-            placeholder={loggedInUser.name}
-            value={nieuweNaam}
-            onChange={e => setNieuweNaam(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <button className="btn btn-primary" style={{ fontSize: 13, whiteSpace: 'nowrap' }} disabled={savingNaam} onClick={wijzigNaam}>
-            {savingNaam ? 'Opslaan…' : 'Opslaan'}
-          </button>
-        </div>
-      </div>
-
       {/* Menu buttons */}
       <div style={{ display: 'grid', gap: 8, marginBottom: 32 }}>
+        <button
+          onClick={() => setSection(section === 'naam' ? null : 'naam')}
+          className="card-row"
+          style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            cursor: 'pointer', background: 'none', border: 'none', width: '100%',
+            textAlign: 'left', fontFamily: 'var(--font)', padding: '14px 2px',
+          }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--black)' }}>Naam wijzigen</span>
+          <span style={{ fontSize: 12, color: 'var(--grey)', transform: section === 'naam' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+        </button>
+
         <button
           onClick={() => setSection(section === 'settings' ? null : 'settings')}
           className="card-row"
@@ -138,6 +134,19 @@ export default function Account() {
           <span style={{ fontSize: 12, color: 'var(--grey)', transform: section === 'manual' ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
         </button>
       </div>
+
+      {/* ── Naam wijzigen ── */}
+      {section === 'naam' && (
+        <div className="card section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
+          <div>
+            <label className="label">Nieuwe naam</label>
+            <input className="input" placeholder={loggedInUser.name} value={nieuweNaam} onChange={e => setNieuweNaam(e.target.value)} />
+          </div>
+          <button className="btn btn-primary" style={{ width: 'fit-content' }} disabled={savingNaam} onClick={wijzigNaam}>
+            {savingNaam ? 'Opslaan…' : 'Opslaan'}
+          </button>
+        </div>
+      )}
 
       {/* ── Wachtwoord veranderen ── */}
       {section === 'settings' && (
