@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
 import { useUser, gql } from '../context/UserContext'
@@ -49,6 +50,7 @@ interface AuditLogEntry {
 type Tab = 'laptops' | 'bulk' | 'accounts' | 'audit'
 
 export default function Beheer() {
+  const router = useRouter()
   const { selectedUserId, selectedUser } = useUser()
   const { toast } = useToast()
   const { t: tr } = useT()
@@ -76,36 +78,6 @@ export default function Beheer() {
   const [newRole, setNewRole] = useState('OWNER')
   const [adminPass, setAdminPass] = useState('')
   const [savingUser, setSavingUser] = useState(false)
-  // User history panel
-  const [historyUserId, setHistoryUserId] = useState<string | null>(null)
-  const [historyLoading, setHistoryLoading] = useState(false)
-  const [historyData, setHistoryData] = useState<{
-    reservations: any[]
-    softwareRequests: any[]
-    issues: any[]
-    checklists: any[]
-  } | null>(null)
-
-  async function laadUserHistory(userId: string) {
-    if (historyUserId === userId) { setHistoryUserId(null); return }
-    setHistoryUserId(userId)
-    setHistoryData(null)
-    setHistoryLoading(true)
-    const [res, sw, iss, chk] = await Promise.all([
-      gql(`{ myReservations(userId: "${userId}") { id startDate endDate status aantalLaptops doel activity { title } } }`, undefined, selectedUserId),
-      gql(`{ mySoftwareRequests(userId: "${userId}") { id title status createdAt activity { title } } }`, undefined, selectedUserId),
-      gql(`{ issuesByUser(userId: "${userId}") { id description resolved createdAt laptop { merk_type } } }`, undefined, selectedUserId),
-      gql(`{ checklistsByUser(userId: "${userId}") { id passed createdAt laptop { merk_type } } }`, undefined, selectedUserId),
-    ])
-    setHistoryLoading(false)
-    setHistoryData({
-      reservations: res.data?.myReservations || [],
-      softwareRequests: sw.data?.mySoftwareRequests || [],
-      issues: iss.data?.issuesByUser || [],
-      checklists: chk.data?.checklistsByUser || [],
-    })
-  }
-
   // Edit/delete state
   const [editId, setEditId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -517,99 +489,15 @@ export default function Beheer() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span className={`badge ${roleBadge[u.role] || ''}`}>{roleLabel[u.role] || u.role}</span>
                           <button className="btn btn-ghost" style={{ fontSize: 12, padding: '3px 10px' }}
-                            onClick={() => { laadUserHistory(u.id); setEditId(null) }}>
-                            {historyUserId === u.id ? '✕' : 'Bekijk'}
+                            onClick={() => router.push(`/gebruiker/${u.id}`)}>
+                            Bekijk
                           </button>
                           <button className="btn btn-ghost" style={{ fontSize: 12, padding: '3px 10px' }}
-                            onClick={() => { isEditing ? setEditId(null) : openEdit(u); setHistoryUserId(null) }}>
+                            onClick={() => isEditing ? setEditId(null) : openEdit(u)}>
                             {isEditing ? '✕' : 'Wijzig'}
                           </button>
                         </div>
                       </div>
-
-                      {historyUserId === u.id && (
-                        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 20 }}>
-                          {historyLoading ? (
-                            <p style={{ fontSize: 13, color: 'var(--grey)', margin: 0 }}>Laden…</p>
-                          ) : historyData && (<>
-
-                            {/* Reserveringen */}
-                            <div>
-                              <p className="section-label" style={{ marginBottom: 8 }}>Reserveringen ({historyData.reservations.length})</p>
-                              {historyData.reservations.length === 0 ? (
-                                <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Geen reserveringen.</p>
-                              ) : historyData.reservations.map((r: any) => (
-                                <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                                  <div>
-                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{r.activity?.title || '—'}</p>
-                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)' }}>
-                                      {r.startDate ? new Date(r.startDate).toLocaleDateString('nl-NL') : '—'} · {r.aantalLaptops} laptop(s) · {r.doel}
-                                    </p>
-                                  </div>
-                                  <span className={`badge ${r.status === 'APPROVED' ? 'badge-approved' : r.status === 'REJECTED' ? 'badge-defect' : 'badge-in-control'}`} style={{ fontSize: 11 }}>
-                                    {r.status === 'APPROVED' ? 'Goedgekeurd' : r.status === 'REJECTED' ? 'Afgekeurd' : 'In behandeling'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Software aanvragen */}
-                            <div>
-                              <p className="section-label" style={{ marginBottom: 8 }}>Softwareaanvragen ({historyData.softwareRequests.length})</p>
-                              {historyData.softwareRequests.length === 0 ? (
-                                <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Geen softwareaanvragen.</p>
-                              ) : historyData.softwareRequests.map((s: any) => (
-                                <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                                  <div>
-                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{s.title}</p>
-                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)' }}>{s.activity?.title || '—'} · {new Date(s.createdAt).toLocaleDateString('nl-NL')}</p>
-                                  </div>
-                                  <span className={`badge ${s.status === 'APPROVED' ? 'badge-approved' : s.status === 'REJECTED' ? 'badge-defect' : 'badge-in-control'}`} style={{ fontSize: 11 }}>
-                                    {s.status === 'APPROVED' ? 'Goedgekeurd' : s.status === 'REJECTED' ? 'Afgekeurd' : 'In behandeling'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Storingen */}
-                            <div>
-                              <p className="section-label" style={{ marginBottom: 8 }}>Gemelde storingen ({historyData.issues.length})</p>
-                              {historyData.issues.length === 0 ? (
-                                <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Geen storingen gemeld.</p>
-                              ) : historyData.issues.map((i: any) => (
-                                <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                                  <div>
-                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{i.laptop?.merk_type || '—'}</p>
-                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)' }}>{(i.description || '').slice(0, 60)}{(i.description || '').length > 60 ? '…' : ''} · {new Date(i.createdAt).toLocaleDateString('nl-NL')}</p>
-                                  </div>
-                                  <span className={`badge ${i.resolved ? 'badge-approved' : 'badge-defect'}`} style={{ fontSize: 11 }}>
-                                    {i.resolved ? 'Opgelost' : 'Open'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Controles */}
-                            <div>
-                              <p className="section-label" style={{ marginBottom: 8 }}>Controles uitgevoerd ({historyData.checklists.length})</p>
-                              {historyData.checklists.length === 0 ? (
-                                <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>Geen controles uitgevoerd.</p>
-                              ) : historyData.checklists.map((c: any) => (
-                                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                                  <div>
-                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{c.laptop?.merk_type || '—'}</p>
-                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)' }}>{new Date(c.createdAt).toLocaleDateString('nl-NL')}</p>
-                                  </div>
-                                  <span className={`badge ${c.passed ? 'badge-approved' : 'badge-defect'}`} style={{ fontSize: 11 }}>
-                                    {c.passed ? 'Geslaagd' : 'Niet geslaagd'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-
-                          </>)}
-                        </div>
-                      )}
 
                       {isEditing && (
                         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 14 }}>
