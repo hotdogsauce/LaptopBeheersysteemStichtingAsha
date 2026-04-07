@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useToast } from '../context/ToastContext'
 
 const roleLabel: Record<string, string> = {
   ADMIN: 'Beheerder',
@@ -16,15 +17,14 @@ const roleContext: Record<string, string> = {
 
 export default function AI() {
   const { selectedUserId, selectedUser } = useUser()
+  const { toast } = useToast()
   const [vraag, setVraag] = useState('')
   const [antwoord, setAntwoord] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
 
   async function stelVraag() {
-    if (!vraag.trim()) { setBericht({ text: 'Voer een vraag in.', type: 'fout' }); return }
-    if (vraag.length > 500) { setBericht({ text: 'Vraag mag maximaal 500 tekens bevatten.', type: 'fout' }); return }
-    setBericht(null)
+    if (!vraag.trim()) { toast('Voer een vraag in.', 'error'); return }
+    if (vraag.length > 500) { toast('Vraag mag maximaal 500 tekens bevatten.', 'error'); return }
     setAntwoord(null)
     setLoading(true)
 
@@ -35,7 +35,7 @@ export default function AI() {
     )
     setLoading(false)
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
       setAntwoord(data.data?.askAI ?? '')
     }
@@ -53,12 +53,6 @@ export default function AI() {
 
       {selectedUserId && (
         <>
-          {bericht && (
-            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-              {bericht.text}
-            </div>
-          )}
-
           {selectedUser && (
             <div style={{ marginBottom: 40 }}>
               <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>

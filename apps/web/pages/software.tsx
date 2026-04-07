@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useToast } from '../context/ToastContext'
 
 interface Activity { id: string; title: string }
 interface SoftwareRequest {
@@ -29,6 +30,7 @@ const statusLabel: Record<string, string> = {
 
 export default function Software() {
   const { selectedUserId, selectedUser } = useUser()
+  const { toast } = useToast()
   const [activities, setActivities] = useState<Activity[]>([])
 
   const [titel, setTitel] = useState('')
@@ -39,8 +41,6 @@ export default function Software() {
   const [pendingRequests, setPendingRequests] = useState<SoftwareRequest[]>([])
   const [redenMap, setRedenMap] = useState<Record<string, string>>({})
 
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
-
   useEffect(() => {
     gql('{ activities { id title } }')
       .then(data => setActivities(data.data?.activities || []))
@@ -48,7 +48,6 @@ export default function Software() {
 
   useEffect(() => {
     if (!selectedUserId || !selectedUser) return
-    setBericht(null)
     if (selectedUser.role === 'OWNER') {
       gql(
         `query($userId: ID!) { mySoftwareRequests(userId: $userId) { id title beschrijving status rejectionReason createdAt requester { name } approver { name } activity { title } } }`,
@@ -64,8 +63,8 @@ export default function Software() {
   }, [selectedUserId])
 
   async function doeAanvraag() {
-    if (!titel.trim()) { setBericht({ text: 'Titel is verplicht.', type: 'fout' }); return }
-    if (!activityId) { setBericht({ text: 'Selecteer een activiteit.', type: 'fout' }); return }
+    if (!titel.trim()) { toast('Titel is verplicht.', 'error'); return }
+    if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
     const data = await gql(
       `mutation($userId: ID!, $activityId: ID!, $title: String!, $beschrijving: String) {
         requestSoftware(userId: $userId, activityId: $activityId, title: $title, beschrijving: $beschrijving) { id status }
@@ -74,9 +73,9 @@ export default function Software() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: 'Softwareaanvraag ingediend.', type: 'ok' })
+      toast('Softwareaanvraag ingediend.')
       setTitel(''); setBeschrijving(''); setActivityId('')
       gql(
         `query($userId: ID!) { mySoftwareRequests(userId: $userId) { id title beschrijving status rejectionReason createdAt requester { name } approver { name } activity { title } } }`,
@@ -87,7 +86,7 @@ export default function Software() {
 
   async function beoordeel(requestId: string, approve: boolean) {
     const reason = redenMap[requestId]
-    if (!approve && !reason) { setBericht({ text: 'Vul een reden in bij afwijzing.', type: 'fout' }); return }
+    if (!approve && !reason) { toast('Vul een reden in bij afwijzing.', 'error'); return }
     const data = await gql(
       `mutation($requestId: ID!, $adminId: ID!, $approve: Boolean!, $reason: String) {
         reviewSoftwareRequest(requestId: $requestId, adminId: $adminId, approve: $approve, reason: $reason) { id status }
@@ -96,9 +95,9 @@ export default function Software() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: approve ? 'Aanvraag goedgekeurd.' : 'Aanvraag afgewezen.', type: 'ok' })
+      toast(approve ? 'Aanvraag goedgekeurd.' : 'Aanvraag afgewezen.')
       setPendingRequests(prev => prev.filter(r => r.id !== requestId))
     }
   }
@@ -116,12 +115,6 @@ export default function Software() {
       {selectedUserId && selectedUser?.role !== 'OWNER' && selectedUser?.role !== 'ADMIN' && (
         <div className="alert alert-error">
           Deze pagina is alleen toegankelijk voor eigenaren en beheerders.
-        </div>
-      )}
-
-      {bericht && (
-        <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-          {bericht.text}
         </div>
       )}
 

@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
+import { useToast } from '../context/ToastContext'
 
 interface Activity {
   id: string
@@ -171,6 +172,7 @@ function Calendar({ reservations }: { reservations: Reservation[] }) {
 export default function Aanvragen() {
   const { selectedUserId, selectedUser } = useUser()
   const { t } = useT()
+  const { toast } = useToast()
   const statusLabel: Record<string, string> = {
     REQUESTED: t('res_requested'), APPROVED: t('res_approved'), REJECTED: t('res_rejected'),
     CANCELLED: t('cancel'), COMPLETED: t('tw_done'),
@@ -178,7 +180,6 @@ export default function Aanvragen() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [myReservations, setMyReservations] = useState<Reservation[]>([])
   const [availableCount, setAvailableCount] = useState<number | null>(null)
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
   const [view, setView] = useState<'lijst' | 'agenda'>('lijst')
 
   const [activityId, setActivityId] = useState('')
@@ -220,15 +221,15 @@ export default function Aanvragen() {
   }
 
   async function doeAanvraag() {
-    if (!activityId) { setBericht({ text: 'Selecteer een activiteit.', type: 'fout' }); return }
-    if (!startDate) { setBericht({ text: 'Vul een startdatum in.', type: 'fout' }); return }
-    if (!endDate) { setBericht({ text: 'Vul een einddatum in.', type: 'fout' }); return }
-    if (!doel.trim()) { setBericht({ text: 'Vul het doel van de aanvraag in.', type: 'fout' }); return }
-    if (!contactNaam.trim()) { setBericht({ text: 'Vul je naam in.', type: 'fout' }); return }
+    if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
+    if (!startDate) { toast('Vul een startdatum in.', 'error'); return }
+    if (!endDate) { toast('Vul een einddatum in.', 'error'); return }
+    if (!doel.trim()) { toast('Vul het doel van de aanvraag in.', 'error'); return }
+    if (!contactNaam.trim()) { toast('Vul je naam in.', 'error'); return }
     const aantal = parseInt(aantalLaptops)
-    if (!aantal || aantal < 1) { setBericht({ text: 'Aantal laptops moet minimaal 1 zijn.', type: 'fout' }); return }
+    if (!aantal || aantal < 1) { toast('Aantal laptops moet minimaal 1 zijn.', 'error'); return }
     if (availableCount !== null && aantal > availableCount) {
-      setBericht({ text: `Er zijn momenteel slechts ${availableCount} beschikbare laptop(s).`, type: 'fout' }); return
+      toast(`Er zijn momenteel slechts ${availableCount} beschikbare laptop(s).`, 'error'); return
     }
 
     const contactInfo = contactNaam.trim() + (contactPhone ? ` — ${contactPhone}` : '')
@@ -243,9 +244,9 @@ export default function Aanvragen() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: 'Aanvraag ingediend. De beheerder beoordeelt dit binnen 3 werkdagen.', type: 'ok' })
+      toast('Aanvraag ingediend. De beheerder beoordeelt dit binnen 3 werkdagen.')
       setActivityId(''); setStartDate(''); setEndDate('')
       setAantalLaptops('1'); setDoel(''); setContactPhone(''); setExtraInfo('')
       herlaadAanvragen()
@@ -261,9 +262,9 @@ export default function Aanvragen() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: 'Aanvraag geannuleerd.', type: 'ok' })
+      toast('Aanvraag geannuleerd.')
       herlaadAanvragen()
     }
   }
@@ -286,12 +287,6 @@ export default function Aanvragen() {
 
       {selectedUserId && selectedUser?.role === 'OWNER' && (
         <>
-          {bericht && (
-            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-              {bericht.text}
-            </div>
-          )}
-
           <div className="card" style={{ marginBottom: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <h2 style={{ margin: 0 }}>{t('req_new')}</h2>

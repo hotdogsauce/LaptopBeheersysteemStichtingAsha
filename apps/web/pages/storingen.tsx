@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import { useToast } from '../context/ToastContext'
 
 interface Laptop { id: string; merk_type: string; status: string; specificaties: string }
 interface Issue {
@@ -22,9 +23,9 @@ const MELDBAAR = ['AVAILABLE', 'RESERVED', 'IN_USE', 'IN_CONTROL']
 
 export default function Storingen() {
   const { selectedUserId, selectedUser } = useUser()
+  const { toast } = useToast()
   const [laptops, setLaptops] = useState<Laptop[]>([])
   const [openIssues, setOpenIssues] = useState<Issue[]>([])
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
 
   const [meldLaptopId, setMeldLaptopId] = useState('')
   const [meldOmschrijving, setMeldOmschrijving] = useState('')
@@ -49,8 +50,8 @@ export default function Storingen() {
   }
 
   async function meldStoring() {
-    if (!meldLaptopId) { setBericht({ text: 'Selecteer een laptop.', type: 'fout' }); return }
-    if (!meldOmschrijving.trim()) { setBericht({ text: 'Omschrijving is verplicht.', type: 'fout' }); return }
+    if (!meldLaptopId) { toast('Selecteer een laptop.', 'error'); return }
+    if (!meldOmschrijving.trim()) { toast('Omschrijving is verplicht.', 'error'); return }
     const data = await gql(
       `mutation($laptopId: ID!, $description: String!) {
         reportIssue(laptopId: $laptopId, description: $description) { id description laptop { merk_type status } }
@@ -59,9 +60,9 @@ export default function Storingen() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: `Storing gemeld voor ${data.data.reportIssue.laptop.merk_type}. Status → DEFECT.`, type: 'ok' })
+      toast(`Storing gemeld voor ${data.data.reportIssue.laptop.merk_type}. Status → DEFECT.`)
       setMeldLaptopId(''); setMeldOmschrijving('')
       herlaadIssues()
       gql('{ laptops { id merk_type status specificaties } }', undefined, selectedUserId)
@@ -70,7 +71,7 @@ export default function Storingen() {
   }
 
   async function losOp(issueId: string) {
-    if (!oplosOplossing.trim()) { setBericht({ text: 'Oplossing is verplicht.', type: 'fout' }); return }
+    if (!oplosOplossing.trim()) { toast('Oplossing is verplicht.', 'error'); return }
     const data = await gql(
       `mutation($issueId: ID!, $solution: String!) {
         resolveIssue(issueId: $issueId, solution: $solution) { id resolved laptop { merk_type status } }
@@ -79,9 +80,9 @@ export default function Storingen() {
       selectedUserId
     )
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
-      setBericht({ text: `Storing opgelost. ${data.data.resolveIssue.laptop.merk_type} → IN_CONTROL.`, type: 'ok' })
+      toast(`Storing opgelost. ${data.data.resolveIssue.laptop.merk_type} → IN_CONTROL.`)
       setOplosId(''); setOplosOplossing('')
       herlaadIssues()
       gql('{ laptops { id merk_type status specificaties } }', undefined, selectedUserId)
@@ -107,12 +108,6 @@ export default function Storingen() {
 
       {selectedUserId && selectedUser?.role === 'HELPDESK' && (
         <>
-          {bericht && (
-            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-              {bericht.text}
-            </div>
-          )}
-
           <div className="card" style={{ marginBottom: 32 }}>
             <h2 style={{ marginBottom: 20 }}>Storing melden</h2>
             <div style={{ display: 'grid', gap: 16 }}>

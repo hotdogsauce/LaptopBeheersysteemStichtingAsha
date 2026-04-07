@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
+import { useToast } from '../context/ToastContext'
 
 interface Laptop { id: string; merk_type: string; status: string; specificaties: string }
 interface ChecklistHistory {
@@ -88,11 +89,11 @@ const emptyForm = () => ({
 export default function Controle() {
   const { selectedUserId, selectedUser } = useUser()
   const { t } = useT()
+  const { toast } = useToast()
   const [inControlLaptops, setInControlLaptops] = useState<Laptop[]>([])
   const [selectedLaptopId, setSelectedLaptopId] = useState('')
   const [form, setForm] = useState(emptyForm())
   const [history, setHistory] = useState<ChecklistHistory[]>([])
-  const [bericht, setBericht] = useState<{ text: string; type: 'ok' | 'fout' } | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const canSubmit = form.toetsenbord_ok !== null && form.camera_ok !== null && form.microfoon_ok !== null
@@ -165,15 +166,15 @@ export default function Controle() {
     )
     setSubmitting(false)
     if (data.errors) {
-      setBericht({ text: data.errors[0].message, type: 'fout' })
+      toast(data.errors[0].message, 'error')
     } else {
       const { passed, laptop } = data.data.submitChecklist
-      setBericht({
-        text: passed
+      toast(
+        passed
           ? `Checklist geslaagd. ${laptop.merk_type} is weer beschikbaar.`
           : `Checklist niet geslaagd. ${laptop.merk_type} → DEFECT.`,
-        type: passed ? 'ok' : 'fout',
-      })
+        passed ? 'ok' : 'error'
+      )
       setSelectedLaptopId('')
       setForm(emptyForm())
       gql('{ laptopsByStatus(status: IN_CONTROL) { id merk_type status specificaties } }', undefined, selectedUserId)
@@ -197,12 +198,6 @@ export default function Controle() {
 
       {selectedUserId && selectedUser?.role === 'HELPDESK' && (
         <>
-          {bericht && (
-            <div className={bericht.type === 'ok' ? 'alert alert-ok' : 'alert alert-error'}>
-              {bericht.text}
-            </div>
-          )}
-
           <div style={{ marginBottom: 28 }}>
             <label className="label">Laptop selecteren (in controle)</label>
             {inControlLaptops.length === 0 ? (
