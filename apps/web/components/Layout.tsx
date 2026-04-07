@@ -291,6 +291,19 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           </div>
 
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {selectedUser.role === 'OWNER' && (
+              <Link href="/" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '8px 0', fontSize: 13,
+                color: router.pathname === '/' ? 'var(--black)' : 'var(--grey)',
+                fontWeight: router.pathname === '/' ? 600 : 400,
+                textDecoration: 'none',
+                transition: 'color 0.15s, letter-spacing 0.15s',
+                letterSpacing: router.pathname === '/' ? '-0.02em' : '0',
+              }}>
+                {t('nav_overview')}
+              </Link>
+            )}
             {navItems.map(item => {
               const isActive = router.pathname === item.href
               const badge = navBadge?.href === item.href ? navBadge.count : 0

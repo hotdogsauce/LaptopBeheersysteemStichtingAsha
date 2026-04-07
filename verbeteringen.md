@@ -4,6 +4,9 @@ Reserverings velden
 + datum. V
 + calender voor aantal laptops per datum en locatie. V
 
+Activiteiten
+- datum en tijd. V
+
 Styling
 + consistente foutmeldingen en styling. V
 + styling, logo en gebruikersvriendelijkheid.
@@ -19,7 +22,7 @@ Admin
 + data van andere accounts kunnen zien zoals oude reserveringen en aanvragen etc.
 
 Eigenaar
-+ eigenaar laptop overzicht scherm.
++ eigenaar laptop overzicht scherm. 
 
 HBO'er(s)
 + met jivon aan tafel.
