@@ -43,6 +43,7 @@ model User {
   username          String            @unique
   email             String?           @unique
   password          String            @default("asha2024")
+  avatar            String?
   role              UserRole
   reservations      Reservation[]     @relation("requester")
   approvals         Reservation[]     @relation("approver")

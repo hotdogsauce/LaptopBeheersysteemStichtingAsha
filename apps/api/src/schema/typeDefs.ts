@@ -35,6 +35,7 @@ export const typeDefs = `
     username: String!
     role: UserRole!
     email: String
+    avatar: String
   }
 
   type Drive {
@@ -308,6 +309,7 @@ export const typeDefs = `
     createActivity(title: String!, omschrijving: String, locatie: String, software_benodigdheden: String): Activity!
     createUser(name: String!, username: String!, email: String, password: String!, role: UserRole!, adminPassword: String): User!
     updateUser(userId: ID!, name: String, username: String, email: String): User!
+    uploadAvatar(userId: ID!, avatar: String!): User!
     adminResetPassword(userId: ID!, newPassword: String!): Boolean!
     deleteUser(userId: ID!): Boolean!
 

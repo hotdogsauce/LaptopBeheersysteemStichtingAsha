@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
+import Avatar from '../components/Avatar'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
@@ -66,7 +67,7 @@ export default function Beheer() {
   const [auditLoading, setAuditLoading] = useState(false)
 
   // Accounts
-  const [users, setUsers] = useState<{ id: string; name: string; username: string; email: string | null; role: string }[]>([])
+  const [users, setUsers] = useState<{ id: string; name: string; username: string; email: string | null; role: string; avatar?: string | null }[]>([])
   const [showUserForm, setShowUserForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newUsername, setNewUsername] = useState('')
@@ -115,7 +116,7 @@ export default function Beheer() {
   }
 
   function herlaadUsers() {
-    gql('{ users { id name username email role } }', undefined, selectedUserId)
+    gql('{ users { id name username email role avatar } }', undefined, selectedUserId)
       .then(data => setUsers(data.data?.users || []))
   }
 
@@ -474,11 +475,14 @@ export default function Beheer() {
                   return (
                     <div key={u.id} className="card-row">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{u.name}</p>
-                          <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
-                            @{u.username}{u.email ? ` · ${u.email}` : ''}
-                          </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <Avatar name={u.name} avatar={u.avatar} size={32} />
+                          <div>
+                            <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{u.name}</p>
+                            <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>
+                              @{u.username}{u.email ? ` · ${u.email}` : ''}
+                            </p>
+                          </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span className={`badge ${roleBadge[u.role] || ''}`}>{roleLabel[u.role] || u.role}</span>

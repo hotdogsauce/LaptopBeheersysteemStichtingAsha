@@ -1,17 +1,62 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Layout from '../components/Layout'
+import Avatar from '../components/Avatar'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
 
 type Section = 'naam' | 'settings' | 'manual' | null
 
+function resizeToSquare(file: File, size = 200): Promise<string> {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = size; canvas.height = size
+        const ctx = canvas.getContext('2d')!
+        const s = Math.min(img.width, img.height)
+        const sx = (img.width - s) / 2
+        const sy = (img.height - s) / 2
+        ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      }
+      img.src = e.target!.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function Account() {
-  const { loggedInUser, logout } = useUser()
+  const { loggedInUser, users } = useUser()
   const { toast } = useToast()
   const { t } = useT()
   const roleLabel: Record<string, string> = { ADMIN: t('role_admin'), OWNER: t('role_owner'), HELPDESK: t('role_helpdesk') }
   const [section, setSection] = useState<Section>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // Avatar
+  const myUser = users.find(u => u.id === loggedInUser?.userId)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast('Kies een afbeeldingsbestand.', 'error'); return }
+    if (file.size > 5 * 1024 * 1024) { toast('Bestand mag maximaal 5 MB zijn.', 'error'); return }
+    setUploadingAvatar(true)
+    const avatar = await resizeToSquare(file)
+    const data = await gql(
+      `mutation($userId: ID!, $avatar: String!) { uploadAvatar(userId: $userId, avatar: $avatar) { id avatar } }`,
+      { userId: loggedInUser!.userId, avatar },
+      loggedInUser!.userId
+    )
+    setUploadingAvatar(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Profielfoto bijgewerkt.')
+    e.target.value = ''
+  }
 
   // Name change
   const [nieuweNaam, setNieuweNaam] = useState('')
@@ -78,12 +123,24 @@ export default function Account() {
     <Layout title={t('acc_title')}>
       {/* Profile card */}
       <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-soft)',
-          border: '1px solid var(--border)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 20, flexShrink: 0,
-        }}>
-          {loggedInUser.name.charAt(0).toUpperCase()}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <Avatar name={loggedInUser.name} avatar={myUser?.avatar} size={52} />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploadingAvatar}
+            title="Profielfoto wijzigen"
+            style={{
+              position: 'absolute', bottom: -2, right: -2,
+              width: 20, height: 20, borderRadius: '50%',
+              background: 'var(--black)', color: 'var(--white)',
+              border: '2px solid var(--bg)', cursor: 'pointer',
+              fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1,
+            }}
+          >
+            {uploadingAvatar ? '…' : '+'}
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
         </div>
         <div>
           <p style={{ margin: 0, fontWeight: 600, fontSize: 15 }}>{loggedInUser.name}</p>

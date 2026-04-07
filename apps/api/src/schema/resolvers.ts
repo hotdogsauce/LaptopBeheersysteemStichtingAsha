@@ -476,6 +476,14 @@ export const resolvers = {
       return updated
     },
 
+    uploadAvatar: async (_: any, { userId, avatar }: any, { user }: any) => {
+      if (!user) throw new Error('Niet ingelogd.')
+      if (user.id !== userId && user.role !== 'ADMIN') throw new Error('Geen toegang.')
+      if (!avatar.startsWith('data:image/')) throw new Error('Ongeldig afbeeldingsformaat.')
+      if (avatar.length > 300000) throw new Error('Afbeelding is te groot (max ~200KB).')
+      return prisma.user.update({ where: { id: userId }, data: { avatar } })
+    },
+
     adminResetPassword: async (_: any, { userId, newPassword }: any, { user }: any) => {
       requireRole(user, 'ADMIN')
       if (!newPassword || newPassword.length < 6) throw new Error('Wachtwoord moet minimaal 6 tekens zijn.')

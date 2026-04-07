@@ -17,7 +17,7 @@ MBO'er(s)
 + feedback opvatten en verwerken.
 
 Admin
-+ accounts beheren admin.
++ accounts beheren admin. V
 + profile foto kunnen toevoegen.
 + data van andere accounts kunnen zien zoals oude reserveringen en aanvragen etc.
 

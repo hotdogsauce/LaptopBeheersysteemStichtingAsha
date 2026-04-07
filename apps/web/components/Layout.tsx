@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useUser, gql } from '../context/UserContext'
 import { useT, LANG_OPTIONS } from '../context/LanguageContext'
+import Avatar from './Avatar'
 
 const statusBadge: Record<string, string> = {
   AVAILABLE: 'badge-available', RESERVED: 'badge-reserved', IN_USE: 'badge-in-use',
@@ -34,7 +35,8 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, title, subtitle }: LayoutProps) {
-  const { selectedUser, theme, toggleTheme, loggedInUser, logout } = useUser()
+  const { selectedUser, theme, toggleTheme, loggedInUser, logout, users } = useUser()
+  const loggedInUserData = users.find(u => u.id === loggedInUser?.userId)
   const { t, lang, setLang } = useT()
   const router = useRouter()
 
@@ -283,11 +285,14 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
     <>
       {selectedUser ? (
         <>
-          <div style={{ marginBottom: 36 }}>
-            <p className="section-label">{roleLabel[selectedUser.role] || selectedUser.role}</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--black)', margin: 0, letterSpacing: '-0.01em' }}>
-              {selectedUser.name}
-            </p>
+          <div style={{ marginBottom: 36, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Avatar name={selectedUser.name} avatar={selectedUser.avatar} size={36} />
+            <div>
+              <p className="section-label" style={{ margin: 0 }}>{roleLabel[selectedUser.role] || selectedUser.role}</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--black)', margin: 0, letterSpacing: '-0.01em' }}>
+                {selectedUser.name}
+              </p>
+            </div>
           </div>
 
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -650,16 +655,19 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           {loggedInUser && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div
-                style={{ textAlign: 'right', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                 onClick={() => router.push('/account')}
                 title={t('nav_account')}
               >
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--black)', lineHeight: 1.2 }}>
-                  {loggedInUser.name}
-                </p>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)', lineHeight: 1.2 }}>
-                  {roleLabel[loggedInUser.role] || loggedInUser.role}
-                </p>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--black)', lineHeight: 1.2 }}>
+                    {loggedInUser.name}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)', lineHeight: 1.2 }}>
+                    {roleLabel[loggedInUser.role] || loggedInUser.role}
+                  </p>
+                </div>
+                <Avatar name={loggedInUser.name} avatar={loggedInUserData?.avatar} size={30} />
               </div>
               <button
                 onClick={() => { logout(); router.push('/login') }}

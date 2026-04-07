@@ -5,6 +5,7 @@ export interface User {
   name: string
   role: string
   email: string
+  avatar?: string | null
 }
 
 interface UserContextType {
@@ -74,7 +75,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   useEffect(() => {
-    gql('{ users { id name role email } }')
+    gql('{ users { id name role email avatar } }')
       .then(data => setUsers(data.data?.users || []))
   }, [])
 
