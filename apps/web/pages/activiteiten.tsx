@@ -9,11 +9,12 @@ interface Activity {
   start_datum_tijd: string
   eind_datum_tijd: string
   omschrijving: string | null
-  locatie: string | null
 }
 
 function formatDT(dt: string) {
-  return new Date(dt).toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const d = new Date(dt)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function minDate() {
@@ -31,7 +32,6 @@ export default function Activiteiten() {
   const [start, setStart] = useState('')
   const [eind, setEind] = useState('')
   const [omschrijving, setOmschrijving] = useState('')
-  const [locatie, setLocatie] = useState('')
   const [saving, setSaving] = useState(false)
 
   const canCreate = selectedUser?.role === 'OWNER' || selectedUser?.role === 'ADMIN'
@@ -39,7 +39,7 @@ export default function Activiteiten() {
   useEffect(() => {
     if (!selectedUserId) return
     setLoading(true)
-    gql('{ activities { id title start_datum_tijd eind_datum_tijd omschrijving locatie } }', undefined, selectedUserId)
+    gql('{ activities { id title start_datum_tijd eind_datum_tijd omschrijving } }', undefined, selectedUserId)
       .then(d => { setActivities(d.data?.activities || []); setLoading(false) })
   }, [selectedUserId])
 
@@ -49,19 +49,19 @@ export default function Activiteiten() {
     if (!eind) { toast('Einddatum is verplicht.', 'error'); return }
     setSaving(true)
     const data = await gql(
-      `mutation($title: String!, $start: String!, $eind: String!, $omschrijving: String, $locatie: String) {
-        createActivity(title: $title, start_datum_tijd: $start, eind_datum_tijd: $eind, omschrijving: $omschrijving, locatie: $locatie) {
-          id title start_datum_tijd eind_datum_tijd omschrijving locatie
+      `mutation($title: String!, $start: String!, $eind: String!, $omschrijving: String) {
+        createActivity(title: $title, start_datum_tijd: $start, eind_datum_tijd: $eind, omschrijving: $omschrijving) {
+          id title start_datum_tijd eind_datum_tijd omschrijving
         }
       }`,
-      { title, start, eind, omschrijving: omschrijving || null, locatie: locatie || null },
+      { title, start, eind, omschrijving: omschrijving || null },
       selectedUserId
     )
     setSaving(false)
     if (data.errors) { toast(data.errors[0].message, 'error'); return }
     toast(`Activiteit "${title}" aangemaakt.`)
     setActivities(prev => [data.data.createActivity, ...prev])
-    setTitle(''); setStart(''); setEind(''); setOmschrijving(''); setLocatie('')
+    setTitle(''); setStart(''); setEind(''); setOmschrijving('')
     setShowForm(false)
   }
 
@@ -100,10 +100,6 @@ export default function Activiteiten() {
                     <label className="label">Einddatum & tijd *</label>
                     <input type="datetime-local" className="input" min={start || minDate()} value={eind} onChange={e => setEind(e.target.value)} />
                   </div>
-                </div>
-                <div>
-                  <label className="label">Locatie</label>
-                  <input className="input" placeholder="bijv. Zaal A" value={locatie} onChange={e => setLocatie(e.target.value)} />
                 </div>
                 <div>
                   <label className="label">Omschrijving</label>
@@ -145,7 +141,6 @@ export default function Activiteiten() {
                   <div>
                     <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{a.title}</p>
                     {a.omschrijving && <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>{a.omschrijving}</p>}
-                    {a.locatie && <p style={{ fontSize: 12, color: 'var(--grey)', margin: '2px 0 0' }}>📍 {a.locatie}</p>}
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
                     <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>{formatDT(a.start_datum_tijd)}</p>

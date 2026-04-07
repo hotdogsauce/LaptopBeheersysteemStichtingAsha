@@ -516,7 +516,14 @@ export const resolvers = {
     },
   },
 
+  Activity: {
+    start_datum_tijd: (parent: any) => parent.start_datum_tijd instanceof Date ? parent.start_datum_tijd.toISOString() : parent.start_datum_tijd,
+    eind_datum_tijd:  (parent: any) => parent.eind_datum_tijd  instanceof Date ? parent.eind_datum_tijd.toISOString()  : parent.eind_datum_tijd,
+  },
+
   Reservation: {
+    startDate: (parent: any) => parent.startDate instanceof Date ? parent.startDate.toISOString() : parent.startDate,
+    endDate:   (parent: any) => parent.endDate   instanceof Date ? parent.endDate.toISOString()   : parent.endDate,
     activity: (parent: any) => prisma.activity.findUnique({ where: { id: parent.activityId } }),
     requester: (parent: any) => prisma.user.findUnique({ where: { id: parent.requesterId } }),
     approver: (parent: any) => parent.approverId ? prisma.user.findUnique({ where: { id: parent.approverId } }) : null,
