@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
+import TimeInput from '../components/TimeInput'
 import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
@@ -36,10 +37,6 @@ const statusColor: Record<string, string> = {
 
 function minDatum() {
   const d = new Date(); d.setDate(d.getDate() + 3)
-  return d.toISOString().split('T')[0]
-}
-function maxDatum() {
-  const d = new Date(); d.setDate(d.getDate() + 21)
   return d.toISOString().split('T')[0]
 }
 function fmtShort(d: string) {
@@ -183,8 +180,9 @@ export default function Aanvragen() {
   const [view, setView] = useState<'lijst' | 'agenda'>('lijst')
 
   const [activityId, setActivityId] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [date, setDate] = useState('')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('10:00')
   const [aantalLaptops, setAantalLaptops] = useState('1')
   const [doel, setDoel] = useState('')
   const [contactNaam, setContactNaam] = useState('')
@@ -222,17 +220,19 @@ export default function Aanvragen() {
 
   async function doeAanvraag() {
     if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
-    if (!startDate) { toast('Vul een startdatum in.', 'error'); return }
-    if (!endDate) { toast('Vul een einddatum in.', 'error'); return }
+    if (!date) { toast('Vul een datum in.', 'error'); return }
+    if (startTime >= endTime) { toast('De eindtijd moet na de starttijd liggen.', 'error'); return }
     if (!doel.trim()) { toast('Vul het doel van de aanvraag in.', 'error'); return }
     if (!contactNaam.trim()) { toast('Vul je naam in.', 'error'); return }
     const aantal = parseInt(aantalLaptops)
     if (!aantal || aantal < 1) { toast('Aantal laptops moet minimaal 1 zijn.', 'error'); return }
     if (availableCount !== null && aantal > availableCount) {
-      toast(`Er zijn momenteel slechts ${availableCount} beschikbare laptop(s).`, 'error'); return
+      toast(`Er zijn momenteel slechts ${availableCount} beschikbare laptop(s). Je vroeg om ${aantal}.`, 'error'); return
     }
 
     const contactInfo = contactNaam.trim() + (contactPhone ? ` — ${contactPhone}` : '')
+    const startDate = `${date}T${startTime}:00`
+    const endDate = `${date}T${endTime}:00`
 
     const data = await gql(
       `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
@@ -247,7 +247,7 @@ export default function Aanvragen() {
       toast(data.errors[0].message, 'error')
     } else {
       toast('Aanvraag ingediend. De beheerder beoordeelt dit binnen 3 werkdagen.')
-      setActivityId(''); setStartDate(''); setEndDate('')
+      setActivityId(''); setDate(''); setStartTime('09:00'); setEndTime('10:00')
       setAantalLaptops('1'); setDoel(''); setContactPhone(''); setExtraInfo('')
       herlaadAanvragen()
     }
@@ -317,19 +317,22 @@ export default function Aanvragen() {
                 )}
               </div>
 
+              <div>
+                <label className="label">Datum *</label>
+                <input type="date" className="input" min={minDatum()} value={date} onChange={e => setDate(e.target.value)} />
+                <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0' }}>Minimaal 3 dagen vooruit</p>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label className="label">{t('req_start')}</label>
-                  <input type="date" className="input" min={minDatum()} max={maxDatum()} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                  <label className="label">Starttijd *</label>
+                  <TimeInput value={startTime} onChange={setStartTime} />
                 </div>
                 <div>
-                  <label className="label">{t('req_end')}</label>
-                  <input type="date" className="input" min={startDate || minDatum()} max={maxDatum()} value={endDate} onChange={e => setEndDate(e.target.value)} />
+                  <label className="label">Eindtijd *</label>
+                  <TimeInput value={endTime} onChange={setEndTime} />
                 </div>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--grey)', margin: '-8px 0 0' }}>
-                Minimaal 3 dagen vooruit · maximaal 3 weken van tevoren
-              </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16 }}>
                 <div>

@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map(t => (
           <div key={t.id} className={`toast toast-${t.type}`}>
             <span className="toast-dot" />
-            <span>{t.message}</span>
+            <span className="toast-msg">{t.message}</span>
           </div>
         ))}
       </div>
