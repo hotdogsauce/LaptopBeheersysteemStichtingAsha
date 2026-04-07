@@ -84,6 +84,15 @@ export const resolvers = {
       })
     },
 
+    activeReservations: (_: any, __: any, { user }: any) => {
+      requireRole(user, 'OWNER', 'ADMIN', 'HELPDESK')
+      return prisma.reservation.findMany({
+        where: { status: { in: [ReservationStatus.REQUESTED, ReservationStatus.APPROVED] } },
+        include: { activity: true, requester: true, approver: true, laptops: true },
+        orderBy: { startDate: 'asc' },
+      })
+    },
+
     availableLaptopCount: () => prisma.laptop.count({ where: { status: 'AVAILABLE' } }),
 
     notifications: (_: any, __: any, { user }: any) => {
@@ -201,7 +210,7 @@ export const resolvers = {
       return prisma.laptop.findUnique({ where: { id: laptop.id }, include: { drives: true } })
     },
 
-    requestReservation: async (_: any, { userId, activityId, startDate, endDate, aantalLaptops, doel, contact_info, extra_info }: any, { user }: any) => {
+    requestReservation: async (_: any, { userId, activityId, startDate, endDate, aantalLaptops, doel, contact_info, extra_info, locatie }: any, { user }: any) => {
       requireRole(user, 'OWNER', 'ADMIN')
       const start = new Date(startDate)
       const now = new Date()
@@ -225,6 +234,7 @@ export const resolvers = {
           startDate: start, endDate: new Date(endDate),
           aantalLaptops, doel, contact_info,
           extra_info: extra_info ?? null,
+          locatie: locatie ?? null,
         },
         include: { activity: true, requester: true, approver: true, laptops: true }
       })

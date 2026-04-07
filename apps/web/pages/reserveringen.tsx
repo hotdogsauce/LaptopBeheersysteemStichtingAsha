@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import TimeInput from '../components/TimeInput'
+import ReservationCalendar, { CalendarReservation } from '../components/ReservationCalendar'
+import LocationPicker from '../components/LocationPicker'
 import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
@@ -67,12 +69,20 @@ export default function Reserveringen() {
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
+  const [locatie, setLocatie] = useState('')
   const [aantalLaptops, setAantalLaptops] = useState('1')
   const [doel, setDoel] = useState('')
   const [contactNaam, setContactNaam] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
   const [saving, setSaving] = useState(false)
+  const [calReservations, setCalReservations] = useState<CalendarReservation[]>([])
+
+  useEffect(() => {
+    if (!selectedUserId || selectedUser?.role !== 'ADMIN') return
+    gql('{ activeReservations { id startDate endDate aantalLaptops status locatie activity { title } } }', undefined, selectedUserId)
+      .then(d => setCalReservations(d.data?.activeReservations || []))
+  }, [selectedUserId])
 
   useEffect(() => {
     if (!selectedUserId || selectedUser?.role !== 'ADMIN') return
@@ -128,17 +138,19 @@ export default function Reserveringen() {
     const endDate = `${date}T${endTime}:00`
     setSaving(true)
     const data = await gql(
-      `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
-        requestReservation(userId: $userId, activityId: $activityId, startDate: $startDate, endDate: $endDate, aantalLaptops: $aantalLaptops, doel: $doel, contact_info: $contact_info, extra_info: $extra_info) { id status }
+      `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String, $locatie: String) {
+        requestReservation(userId: $userId, activityId: $activityId, startDate: $startDate, endDate: $endDate, aantalLaptops: $aantalLaptops, doel: $doel, contact_info: $contact_info, extra_info: $extra_info, locatie: $locatie) { id status }
       }`,
-      { userId: forUserId, activityId, startDate, endDate, aantalLaptops: aantal, doel, contact_info: contactInfo, extra_info: extraInfo.trim() || null },
+      { userId: forUserId, activityId, startDate, endDate, aantalLaptops: aantal, doel, contact_info: contactInfo, extra_info: extraInfo.trim() || null, locatie: locatie || null },
       selectedUserId
     )
     setSaving(false)
     if (data.errors) { toast(data.errors[0].message, 'error'); return }
     toast('Reservering aangemaakt.')
     setShowForm(false); setForUserId(''); setActivityId(''); setDate(''); setStartTime('09:00'); setEndTime('10:00')
-    setAantalLaptops('1'); setDoel(''); setContactNaam(''); setContactPhone(''); setExtraInfo('')
+    setLocatie(''); setAantalLaptops('1'); setDoel(''); setContactNaam(''); setContactPhone(''); setExtraInfo('')
+    gql('{ activeReservations { id startDate endDate aantalLaptops status locatie activity { title } } }', undefined, selectedUserId)
+      .then(d => setCalReservations(d.data?.activeReservations || []))
     gql('{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }', undefined, selectedUserId)
       .then(d => setReserveringen(d.data?.pendingReservations || []))
   }
@@ -182,8 +194,12 @@ export default function Reserveringen() {
                 </div>
                 <div>
                   <label className="label">Datum *</label>
-                  <input type="date" className="input" min={minDatum()} value={date} onChange={e => setDate(e.target.value)} />
-                  <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0' }}>Minimaal 3 dagen vooruit</p>
+                  <ReservationCalendar
+                    value={date}
+                    onChange={setDate}
+                    reservations={calReservations}
+                    minDate={minDatum()}
+                  />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -195,6 +211,11 @@ export default function Reserveringen() {
                     <label className="label">{t('res_form_end')}</label>
                     <TimeInput value={endTime} onChange={setEndTime} />
                   </div>
+                </div>
+
+                <div>
+                  <label className="label">Locatie</label>
+                  <LocationPicker value={locatie} onChange={setLocatie} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16 }}>
                   <div>

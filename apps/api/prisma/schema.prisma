@@ -127,6 +127,7 @@ model Reservation {
   doel            String            @default("")
   contact_info    String            @default("")
   extra_info      String?
+  locatie         String?
   requester       User              @relation("requester", fields: [requesterId], references: [id])
   requesterId     String
   approver        User?             @relation("approver", fields: [approverId], references: [id])

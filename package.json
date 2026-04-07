@@ -3,6 +3,7 @@
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "dotenv": "^17.3.1",
+    "framer-motion": "^12.38.0",
     "prisma": "^7.5.0"
   },
   "devDependencies": {

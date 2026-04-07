@@ -109,6 +109,7 @@ export const typeDefs = `
     doel: String!
     contact_info: String!
     extra_info: String
+    locatie: String
     activity: Activity!
     requester: User!
     approver: User
@@ -238,6 +239,7 @@ export const typeDefs = `
     mySoftwareRequests(userId: ID!): [SoftwareRequest!]!
 
     approvedReservations: [Reservation!]!
+    activeReservations: [Reservation!]!
     availableLaptopCount: Int!
 
     # Notificaties / audit / dashboard
@@ -263,7 +265,7 @@ export const typeDefs = `
       microfoon_werkt: Boolean!
       drives: [DriveInput!]
     ): Laptop!
-    requestReservation(userId: ID!, activityId: ID!, startDate: String!, endDate: String!, aantalLaptops: Int!, doel: String!, contact_info: String!, extra_info: String): Reservation
+    requestReservation(userId: ID!, activityId: ID!, startDate: String!, endDate: String!, aantalLaptops: Int!, doel: String!, contact_info: String!, extra_info: String, locatie: String): Reservation
     reviewReservation(reservationId: ID!, adminId: ID!, approve: Boolean!, reason: String): Reservation
     assignLaptopsToReservation(reservationId: ID!, laptopIds: [ID!]!): Reservation
     cancelReservation(reservationId: ID!, userId: ID!): Reservation

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import TimeInput from '../components/TimeInput'
+import ReservationCalendar, { CalendarReservation } from '../components/ReservationCalendar'
+import LocationPicker from '../components/LocationPicker'
 import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
@@ -183,11 +185,13 @@ export default function Aanvragen() {
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
+  const [locatie, setLocatie] = useState('')
   const [aantalLaptops, setAantalLaptops] = useState('1')
   const [doel, setDoel] = useState('')
   const [contactNaam, setContactNaam] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [extraInfo, setExtraInfo] = useState('')
+  const [calReservations, setCalReservations] = useState<CalendarReservation[]>([])
 
   useEffect(() => {
     gql('{ activities { id title locatie software_benodigdheden } availableLaptopCount }')
@@ -196,6 +200,12 @@ export default function Aanvragen() {
         setAvailableCount(data.data?.availableLaptopCount ?? null)
       })
   }, [])
+
+  useEffect(() => {
+    if (!selectedUserId) return
+    gql('{ activeReservations { id startDate endDate aantalLaptops status locatie activity { title } } }', undefined, selectedUserId)
+      .then(d => setCalReservations(d.data?.activeReservations || []))
+  }, [selectedUserId])
 
   useEffect(() => {
     if (!selectedUserId || selectedUser?.role !== 'OWNER') return
@@ -236,12 +246,12 @@ export default function Aanvragen() {
     const endDate = `${date}T${endTime}:00`
 
     const data = await gql(
-      `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String) {
-        requestReservation(userId: $userId, activityId: $activityId, startDate: $startDate, endDate: $endDate, aantalLaptops: $aantalLaptops, doel: $doel, contact_info: $contact_info, extra_info: $extra_info) {
+      `mutation($userId: ID!, $activityId: ID!, $startDate: String!, $endDate: String!, $aantalLaptops: Int!, $doel: String!, $contact_info: String!, $extra_info: String, $locatie: String) {
+        requestReservation(userId: $userId, activityId: $activityId, startDate: $startDate, endDate: $endDate, aantalLaptops: $aantalLaptops, doel: $doel, contact_info: $contact_info, extra_info: $extra_info, locatie: $locatie) {
           id status
         }
       }`,
-      { userId: selectedUserId, activityId, startDate, endDate, aantalLaptops: aantal, doel, contact_info: contactInfo, extra_info: extraInfo.trim() || null },
+      { userId: selectedUserId, activityId, startDate, endDate, aantalLaptops: aantal, doel, contact_info: contactInfo, extra_info: extraInfo.trim() || null, locatie: locatie || null },
       selectedUserId
     )
     if (data.errors) {
@@ -249,8 +259,10 @@ export default function Aanvragen() {
     } else {
       toast('Aanvraag ingediend. De beheerder beoordeelt dit binnen 3 werkdagen.')
       setActivityId(''); setDate(''); setStartTime('09:00'); setEndTime('10:00')
-      setAantalLaptops('1'); setDoel(''); setContactPhone(''); setExtraInfo('')
+      setLocatie(''); setAantalLaptops('1'); setDoel(''); setContactPhone(''); setExtraInfo('')
       herlaadAanvragen()
+      gql('{ activeReservations { id startDate endDate aantalLaptops status locatie activity { title } } }', undefined, selectedUserId)
+        .then(d => setCalReservations(d.data?.activeReservations || []))
     }
   }
 
@@ -320,8 +332,12 @@ export default function Aanvragen() {
 
               <div>
                 <label className="label">Datum *</label>
-                <input type="date" className="input" min={minDatum()} value={date} onChange={e => setDate(e.target.value)} />
-                <p style={{ fontSize: 12, color: 'var(--grey)', margin: '4px 0 0' }}>Minimaal 3 dagen vooruit</p>
+                <ReservationCalendar
+                  value={date}
+                  onChange={setDate}
+                  reservations={calReservations}
+                  minDate={minDatum()}
+                />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -333,6 +349,11 @@ export default function Aanvragen() {
                   <label className="label">Eindtijd *</label>
                   <TimeInput value={endTime} onChange={setEndTime} />
                 </div>
+              </div>
+
+              <div>
+                <label className="label">Locatie</label>
+                <LocationPicker value={locatie} onChange={setLocatie} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16 }}>
