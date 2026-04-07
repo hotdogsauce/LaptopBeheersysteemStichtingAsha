@@ -294,13 +294,13 @@ select.input:focus { border-color: var(--black); }
   align-items: flex-start;
   gap: 8px;
   padding: 10px 16px;
-  border-radius: 12px;
+  border-radius: 40px;
   font-size: 13px;
   font-weight: 500;
   border: 1px solid;
-  max-width: min(400px, calc(100vw - 48px));
+  max-width: min(360px, calc(100vw - 48px));
+  overflow-wrap: break-word;
   word-break: break-word;
-  white-space: normal;
   pointer-events: all;
   animation: toast-in 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
