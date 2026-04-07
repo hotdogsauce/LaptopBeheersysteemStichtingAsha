@@ -107,8 +107,8 @@ model Drive {
 model Activity {
   id                     String            @id @default(uuid())
   title                  String
-  start_datum_tijd       DateTime
-  eind_datum_tijd        DateTime
+  start_datum_tijd       DateTime?
+  eind_datum_tijd        DateTime?
   omschrijving           String?
   locatie                String?
   software_benodigdheden String?

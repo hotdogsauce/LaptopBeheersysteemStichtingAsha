@@ -422,14 +422,10 @@ export const resolvers = {
 
     createActivity: async (_: any, args: any, { user }: any) => {
       requireRole(user, 'OWNER', 'ADMIN')
-      const { title, start_datum_tijd, eind_datum_tijd, omschrijving, locatie, software_benodigdheden } = args
+      const { title, omschrijving, locatie, software_benodigdheden } = args
       if (!title?.trim()) throw new Error('Titel is verplicht.')
-      const start = new Date(start_datum_tijd)
-      const eind = new Date(eind_datum_tijd)
-      if (isNaN(start.getTime())) throw new Error('Ongeldige startdatum.')
-      if (eind < start) throw new Error('Einddatum mag niet voor startdatum liggen.')
       return prisma.activity.create({
-        data: { title, start_datum_tijd: start, eind_datum_tijd: eind, omschrijving: omschrijving ?? null, locatie: locatie ?? null, software_benodigdheden: software_benodigdheden ?? null }
+        data: { title, omschrijving: omschrijving ?? null, locatie: locatie ?? null, software_benodigdheden: software_benodigdheden ?? null }
       })
     },
 
@@ -516,10 +512,6 @@ export const resolvers = {
     },
   },
 
-  Activity: {
-    start_datum_tijd: (parent: any) => parent.start_datum_tijd instanceof Date ? parent.start_datum_tijd.toISOString() : parent.start_datum_tijd,
-    eind_datum_tijd:  (parent: any) => parent.eind_datum_tijd  instanceof Date ? parent.eind_datum_tijd.toISOString()  : parent.eind_datum_tijd,
-  },
 
   Reservation: {
     startDate: (parent: any) => parent.startDate instanceof Date ? parent.startDate.toISOString() : parent.startDate,
