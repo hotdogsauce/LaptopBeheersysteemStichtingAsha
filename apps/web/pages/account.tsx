@@ -7,7 +7,7 @@ import { useT } from '../context/LanguageContext'
 
 type Section = 'naam' | 'settings' | 'manual' | null
 
-function resizeToSquare(file: File, size = 200): Promise<string> {
+function resizeToSquare(file: File, size = 80): Promise<string> {
   return new Promise(resolve => {
     const reader = new FileReader()
     reader.onload = e => {
@@ -20,7 +20,7 @@ function resizeToSquare(file: File, size = 200): Promise<string> {
         const sx = (img.width - s) / 2
         const sy = (img.height - s) / 2
         ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size)
-        resolve(canvas.toDataURL('image/jpeg', 0.8))
+        resolve(canvas.toDataURL('image/jpeg', 0.7))
       }
       img.src = e.target!.result as string
     }

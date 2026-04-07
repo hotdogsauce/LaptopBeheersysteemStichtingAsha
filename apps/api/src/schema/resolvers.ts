@@ -480,7 +480,7 @@ export const resolvers = {
       if (!user) throw new Error('Niet ingelogd.')
       if (user.id !== userId && user.role !== 'ADMIN') throw new Error('Geen toegang.')
       if (!avatar.startsWith('data:image/')) throw new Error('Ongeldig afbeeldingsformaat.')
-      if (avatar.length > 300000) throw new Error('Afbeelding is te groot (max ~200KB).')
+      if (avatar.length > 50000) throw new Error('Afbeelding is te groot.')
       return prisma.user.update({ where: { id: userId }, data: { avatar } })
     },
 

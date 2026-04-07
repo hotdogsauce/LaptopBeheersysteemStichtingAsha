@@ -4,7 +4,8 @@
       "Bash(git status:*)",
       "Bash(npx prisma:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(node -e \"const {createServer} = require\\('node:http'\\); const s = createServer\\(\\); console.log\\(Object.keys\\(s\\)\\)\")"
     ]
   }
 }
