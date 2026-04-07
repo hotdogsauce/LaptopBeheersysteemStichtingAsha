@@ -7,7 +7,8 @@
     "build": "prisma generate && tsc",
     "test": "vitest run",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "db:reset": "npx tsx prisma/reset-seed.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
