@@ -221,6 +221,7 @@ export default function Aanvragen() {
   async function doeAanvraag() {
     if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
     if (!date) { toast('Vul een datum in.', 'error'); return }
+    if (date < minDatum()) { toast('De datum moet minimaal 3 dagen in de toekomst liggen.', 'error'); return }
     if (startTime >= endTime) { toast('De eindtijd moet na de starttijd liggen.', 'error'); return }
     if (!doel.trim()) { toast('Vul het doel van de aanvraag in.', 'error'); return }
     if (!contactNaam.trim()) { toast('Vul je naam in.', 'error'); return }

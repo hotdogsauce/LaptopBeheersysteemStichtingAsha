@@ -118,6 +118,7 @@ export default function Reserveringen() {
     if (!forUserId) { toast('Selecteer een eigenaar.', 'error'); return }
     if (!activityId) { toast('Selecteer een activiteit.', 'error'); return }
     if (!date) { toast('Vul een datum in.', 'error'); return }
+    if (date < minDatum()) { toast('De datum moet minimaal 3 dagen in de toekomst liggen.', 'error'); return }
     if (startTime >= endTime) { toast('De eindtijd moet na de starttijd liggen.', 'error'); return }
     if (!doel.trim()) { toast('Vul het doel in.', 'error'); return }
     if (!contactNaam.trim()) { toast('Vul de naam van de eigenaar in.', 'error'); return }
