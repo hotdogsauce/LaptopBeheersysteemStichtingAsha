@@ -18,7 +18,7 @@ MBO'er(s)
 
 Admin
 + accounts beheren admin. V
-+ profile foto kunnen toevoegen.
++ profile foto kunnen toevoegen. V
 + data van andere accounts kunnen zien zoals oude reserveringen en aanvragen etc.
 
 Eigenaar

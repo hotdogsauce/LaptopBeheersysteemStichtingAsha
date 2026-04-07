@@ -225,6 +225,8 @@ export const typeDefs = `
     # Sprint 5 – UC-02 Storing
     openIssues: [Issue!]!
     issuesByLaptop(laptopId: ID!): [Issue!]!
+    issuesByUser(userId: ID!): [Issue!]!
+    checklistsByUser(userId: ID!): [ChecklistReport!]!
 
     # Sprint 5 – UC-04 Checklist
     checklistsByLaptop(laptopId: ID!): [ChecklistReport!]!

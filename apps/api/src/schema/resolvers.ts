@@ -145,6 +145,24 @@ export const resolvers = {
         orderBy: { createdAt: 'desc' }
       }),
 
+    issuesByUser: async (_: any, { userId }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      return prisma.issue.findMany({
+        where: { reportedById: userId },
+        include: { laptop: true, reportedBy: true, resolvedBy: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    },
+
+    checklistsByUser: async (_: any, { userId }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      return prisma.checklistReport.findMany({
+        where: { submittedById: userId },
+        include: { laptop: true, submittedBy: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    },
+
     // UC-04 Checklist
     checklistsByLaptop: (_: any, { laptopId }: { laptopId: string }) =>
       prisma.checklistReport.findMany({
