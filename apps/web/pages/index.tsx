@@ -377,11 +377,12 @@ export default function Home() {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          laptopName: laptop.merk_type,
-          laptopId:   laptop.id,
-          newStatus:  nieuweStatus,
-          reportedBy: loggedInUser?.name,
-          blocked:    false,
+          laptopName:     laptop.merk_type,
+          laptopId:       laptop.id,
+          newStatus:      nieuweStatus,
+          reportedBy:     loggedInUser?.name,
+          maintenanceLog: maintenanceLog.trim(),
+          blocked:        false,
         }),
       }).catch(() => {})
     }

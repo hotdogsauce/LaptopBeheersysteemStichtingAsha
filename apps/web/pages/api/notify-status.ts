@@ -34,7 +34,7 @@ async function fetchAdminEmails(): Promise<{ name: string; email: string }[]> {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { laptopName, laptopId, newStatus, reportedBy, blocked } = req.body
+  const { laptopName, laptopId, newStatus, reportedBy, maintenanceLog, blocked } = req.body
   if (!laptopName || !newStatus) return res.status(400).json({ error: 'laptopName and newStatus required' })
 
   const recipients = await fetchAdminEmails()
@@ -80,6 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ${reportedBy ? `<tr style="border-bottom:1px solid #eee">
             <td style="padding:10px 0;color:#888">${blocked ? 'Aangevraagd door' : 'Gewijzigd door'}</td>
             <td style="padding:10px 0;color:#555">${reportedBy}</td>
+          </tr>` : ''}
+          ${maintenanceLog ? `<tr style="border-bottom:1px solid #eee">
+            <td style="padding:10px 0;color:#888;vertical-align:top">Reden</td>
+            <td style="padding:10px 0;color:#333;line-height:1.5">${maintenanceLog}</td>
           </tr>` : ''}
           ${laptopId ? `<tr style="border-bottom:1px solid #eee">
             <td style="padding:10px 0;color:#888">ID</td>
