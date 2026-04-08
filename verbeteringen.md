@@ -9,7 +9,8 @@ Activiteiten
 
 Styling
 + consistente foutmeldingen en styling. V
-+ styling, logo en gebruikersvriendelijkheid.
++ styling, en gebruikersvriendelijkheid. V
++ logo. 
 
 MBO'er(s)
 + system gereed zetten voor de MBO 2'ers. V
@@ -19,7 +20,7 @@ MBO'er(s)
 Admin
 + accounts beheren admin. V
 + profile foto kunnen toevoegen. V
-+ data van andere accounts kunnen zien zoals oude reserveringen en aanvragen etc.
++ data van andere accounts kunnen zien zoals oude reserveringen en aanvragen etc. V
 
 Eigenaar
 + eigenaar laptop overzicht scherm. V
