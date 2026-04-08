@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react'
+import dayjs from 'dayjs'
+import duration from 'dayjs/plugin/duration'
 
-function countWorkdays(from: Date, to: Date): number {
-  let count = 0
-  const cur = new Date(from)
-  while (cur < to) {
-    const day = cur.getDay()
-    if (day !== 0 && day !== 6) count++
-    cur.setDate(cur.getDate() + 1)
-  }
-  return count
-}
+dayjs.extend(duration)
 
 function addWorkdays(from: Date, days: number): Date {
   const d = new Date(from)
@@ -27,40 +20,36 @@ function addCalendarDays(from: Date, days: number): Date {
   return d
 }
 
+interface Segment { value: number; unit: string }
+
 function useDeadline(since: string, workdays?: number, calendarDays?: number) {
-  const [label, setLabel] = useState('')
-  const [urgent, setUrgent] = useState(false)
+  const [segments, setSegments] = useState<Segment[]>([])
+  const [expired, setExpired] = useState(false)
+  const [urgent, setUrgent]   = useState(false)
 
   useEffect(() => {
     function update() {
       const from = new Date(since)
+      if (isNaN(from.getTime())) return
+
       const deadline = workdays != null
         ? addWorkdays(from, workdays)
         : addCalendarDays(from, calendarDays!)
-      const now = new Date()
-      const msLeft = deadline.getTime() - now.getTime()
+      const msLeft = deadline.getTime() - Date.now()
 
-      if (msLeft <= 0) {
-        setLabel('Wordt automatisch afgekeurd…')
-        setUrgent(true)
-        return
-      }
+      if (msLeft <= 0) { setExpired(true); setUrgent(true); setSegments([]); return }
 
-      const hoursLeft = msLeft / (1000 * 60 * 60)
-      const daysLeft = workdays != null
-        ? countWorkdays(now, deadline)
-        : Math.ceil(msLeft / (1000 * 60 * 60 * 24))
+      setExpired(false)
+      const dur = dayjs.duration(msLeft)
+      const d = Math.floor(dur.asDays())
+      const h = dur.hours()
+      const m = dur.minutes()
 
-      if (hoursLeft < 24 || daysLeft === 0) {
-        setUrgent(true)
-        setLabel(hoursLeft < 1
-          ? `${Math.ceil(msLeft / 60000)} min. resterend`
-          : `${Math.ceil(hoursLeft)} uur resterend`)
-      } else {
-        setUrgent(false)
-        const unit = workdays != null ? 'werkdag' : 'dag'
-        setLabel(`${daysLeft} ${unit}${daysLeft === 1 ? '' : 'en'} resterend`)
-      }
+      setUrgent(d === 0)
+
+      if (d > 0)      setSegments([{ value: d, unit: d === 1 ? 'dag' : 'dagen' }])
+      else if (h > 0) setSegments([{ value: h, unit: h === 1 ? 'uur' : 'uur' }])
+      else            setSegments([{ value: Math.max(1, m), unit: 'min' }])
     }
 
     update()
@@ -68,18 +57,22 @@ function useDeadline(since: string, workdays?: number, calendarDays?: number) {
     return () => clearInterval(id)
   }, [since, workdays, calendarDays])
 
-  return { label, urgent }
+  return { segments, expired, urgent }
 }
 
 interface Props {
-  since: string        // ISO date string — when the request was created
-  workdays?: number    // deadline in working days
-  calendarDays?: number // deadline in calendar days
+  since:         string
+  workdays?:     number
+  calendarDays?: number
 }
 
 export default function DeadlineCountdown({ since, workdays, calendarDays }: Props) {
-  const { label, urgent } = useDeadline(since, workdays, calendarDays)
-  if (!label) return null
+  const { segments, expired, urgent } = useDeadline(since, workdays, calendarDays)
+
+  const color  = urgent ? 'var(--red)' : '#92400e'
+  const bg     = urgent ? '#fef2f2'    : '#fffbeb'
+  const border = urgent ? '#fecaca'    : '#fde68a'
+
   return (
     <span style={{
       display:      'inline-flex',
@@ -87,13 +80,25 @@ export default function DeadlineCountdown({ since, workdays, calendarDays }: Pro
       gap:          4,
       fontSize:     11,
       fontWeight:   600,
-      padding:      '2px 8px',
+      padding:      '2px 10px',
       borderRadius: 99,
-      color:         urgent ? 'var(--red)' : '#92400e',
-      background:    urgent ? '#fef2f2'    : '#fffbeb',
-      border:       `1px solid ${urgent ? '#fecaca' : '#fde68a'}`,
+      color,
+      background:   bg,
+      border:       `1px solid ${border}`,
+      whiteSpace:   'nowrap',
     }}>
-      {label}
+      {expired ? 'Vervalt binnenkort…' : (
+        <>
+          {segments.map((s, i) => (
+            <span key={i}>
+              <span style={{ fontSize: 13 }}>{s.value}</span>
+              <span style={{ opacity: 0.75, marginLeft: 2 }}>{s.unit}</span>
+              {i < segments.length - 1 && <span style={{ opacity: 0.4, margin: '0 2px' }}>·</span>}
+            </span>
+          ))}
+          <span style={{ opacity: 0.6, marginLeft: 3 }}>resterend</span>
+        </>
+      )}
     </span>
   )
 }
