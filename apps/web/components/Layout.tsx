@@ -432,7 +432,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           </div>
 
           <img
-            src="/icons/pwa-192.png"
+            src="/icons/asha-logo.png"
             alt="Stichting Asha"
             style={{ height: 28, width: 'auto', display: 'block', filter: isDark ? 'invert(1)' : 'none' }}
           />
