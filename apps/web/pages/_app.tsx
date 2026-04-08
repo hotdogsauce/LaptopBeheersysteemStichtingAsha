@@ -11,6 +11,7 @@ import { LanguageProvider } from "../context/LanguageContext";
 import { TourProvider } from "../context/TourContext";
 import PageProgressBar from "../components/PageProgressBar";
 import FirstLoginFlow from "../components/FirstLoginFlow";
+import GlassCursor from "../components/GlassCursor";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { loggedIn } = useUser()
@@ -59,6 +60,7 @@ export default function App({ Component, pageProps }: AppProps) {
           <ConfirmProvider>
             <PageProgressBar />
             <TourProvider>
+              <GlassCursor />
               <AuthGuard>
                 <OnboardingGuard>
                   <Component {...pageProps} />
