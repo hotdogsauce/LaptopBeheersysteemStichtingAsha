@@ -430,6 +430,13 @@ export const resolvers = {
       requireRole(user, 'ADMIN')
       if (!maintenanceLog?.trim()) throw new Error('Logopmerking is verplicht.')
       const laptops = await prisma.laptop.findMany({ where: { id: { in: laptopIds } } })
+      if (status === LaptopStatus.OUT_OF_SERVICE) {
+        const blocked = laptops.filter(l => decommissionBlockedStatuses.includes(l.status))
+        if (blocked.length > 0) {
+          const names = blocked.map(l => l.merk_type).join(', ')
+          throw new Error(`Kan niet uit beheer nemen: ${names} heeft status ${blocked[0].status}.`)
+        }
+      }
       const data: any = { status }
       if (status === 'MISSING') data.missingAt = new Date()
       if (status !== 'MISSING') data.missingAt = null

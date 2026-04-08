@@ -107,6 +107,22 @@ export default function Beheer() {
     ? (BULK_TARGETS[uniqueSelectedStatuses[0]] || [])
     : []
 
+  function getBulkBlockReason(): string | null {
+    if (selectedLaptops.length === 0) return null
+    if (validBulkTargets.length > 0) return null
+    if (uniqueSelectedStatuses.length > 1)
+      return `Selecteer laptops van dezelfde status. Je hebt nu: ${uniqueSelectedStatuses.map(s => statusLabel[s]).join(', ')}.`
+    const s = uniqueSelectedStatuses[0]
+    if (s === 'RESERVED')
+      return 'Gereserveerde laptops kunnen niet worden omgezet — annuleer de reservering eerst.'
+    if (s === 'IN_USE')
+      return 'Laptops in gebruik kunnen niet worden omgezet — verwerk ze eerst via Controle na gebruik.'
+    if (s === 'OUT_OF_SERVICE')
+      return 'Deze laptops zijn al buiten gebruik en kunnen niet verder worden omgezet.'
+    return 'Geen geldige statusovergang mogelijk voor de huidige selectie.'
+  }
+  const bulkBlockReason = getBulkBlockReason()
+
   useEffect(() => {
     if (!selectedUserId || selectedUser?.role !== 'ADMIN') return
     herlaadLaptops()
@@ -425,8 +441,8 @@ export default function Beheer() {
                       </button>
                     </>
                   )}
-                  {selected.length > 0 && validBulkTargets.length === 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>{tr('beh_bulk_mixed')}</span>
+                  {bulkBlockReason && (
+                    <span style={{ fontSize: 12, color: 'var(--red)' }}>{bulkBlockReason}</span>
                   )}
                   {selected.length > 0 && (
                     <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setSelected([])}>{tr('beh_bulk_deselect')}</button>
