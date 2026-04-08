@@ -103,6 +103,7 @@ export const typeDefs = `
     id: ID!
     startDate: String!
     endDate: String!
+    aanvraag_datum: String!
     status: ReservationStatus!
     aantalLaptops: Int!
     doel: String!
