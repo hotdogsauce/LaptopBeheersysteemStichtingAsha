@@ -53,6 +53,16 @@ const allowedTransitions: Record<string, string[]> = {
 
 const ALL_STATUSES = ['AVAILABLE', 'RESERVED', 'IN_USE', 'IN_CONTROL', 'DEFECT', 'MISSING', 'OUT_OF_SERVICE']
 
+const statusOptClass: Record<string, string> = {
+  AVAILABLE:      'ov-opt-available',
+  RESERVED:       'ov-opt-reserved',
+  IN_USE:         'ov-opt-in-use',
+  IN_CONTROL:     'ov-opt-in-control',
+  DEFECT:         'ov-opt-defect',
+  MISSING:        'ov-opt-missing',
+  OUT_OF_SERVICE: 'ov-opt-oos',
+}
+
 function countWorkdays(from: Date, to: Date): number {
   let count = 0
   const cur = new Date(from)
@@ -638,7 +648,7 @@ export default function Home() {
                                 {opties.map(opt => (
                                   <button
                                     key={opt}
-                                    className={`ov-status-opt${nieuweStatus === opt ? ' ov-status-opt-active' : ''}`}
+                                    className={`ov-status-opt ${statusOptClass[opt] || ''}${nieuweStatus === opt ? ' ov-status-opt-active' : ''}`}
                                     onClick={() => setNieuweStatus(opt)}
                                   >
                                     {statusLabel[opt] || opt}

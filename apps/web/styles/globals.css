@@ -1188,53 +1188,57 @@ a, button {
 .ov-status-opt {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 5px 14px;
   border-radius: 99px;
-  border: 1px solid var(--border);
-  background: transparent;
+  border: 1px solid;
   cursor: pointer;
   font-family: var(--font);
   font-size: 12px;
   font-weight: 500;
-  color: var(--black);
   transition:
     background    0.15s ease,
     border-color  0.15s ease,
     box-shadow    0.15s ease,
     transform     0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.ov-status-opt:hover {
-  background:   rgba(234, 238, 246, 0.8);
-  border-color: rgba(150,160,180,0.6);
-  box-shadow:   inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 4px rgba(0,0,0,0.07);
+.ov-status-opt::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 .ov-status-opt:active { transform: scale(0.93); }
-.ov-status-opt-active {
-  background-color: var(--black);
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.25) 0%,
-    rgba(255,255,255,0.10) 44%,
-    rgba(255,255,255,0)    50%,
-    rgba(0,0,0,0.08)       100%
-  );
-  border-color: var(--black);
-  color: var(--white);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.50),
-    inset 0 -1px 0 rgba(0,0,0,0.25),
-    0 2px 6px rgba(0,0,0,0.25);
-}
-[data-theme="dark"] .ov-status-opt-active {
-  background-color: #ededed;
-  color: #0e0e0e;
-  border-color: #ededed;
-}
-[data-theme="dark"] .ov-status-opt:hover {
-  background-color: rgb(36,38,46);
-  border-color: rgba(255,255,255,0.12);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
-}
+
+/* per-status resting colors */
+.ov-opt-available    { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+.ov-opt-reserved     { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+.ov-opt-in-use       { color: #1d4ed8; border-color: #bfdbfe; background: #eff6ff; }
+.ov-opt-in-control   { color: #555;    border-color: var(--border); background: var(--bg-soft); }
+.ov-opt-defect       { color: var(--red); border-color: #fecaca; background: #fef2f2; }
+.ov-opt-missing      { color: #ea580c; border-color: #fed7aa; background: #fff7ed; }
+.ov-opt-oos          { color: #555;    border-color: var(--border); background: var(--bg-soft); }
+
+/* hover: deepen */
+.ov-opt-available:hover    { background: #dcfce7; border-color: #86efac; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(22,163,74,0.15); }
+.ov-opt-reserved:hover     { background: #fef9c3; border-color: #fcd34d; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(146,64,14,0.12); }
+.ov-opt-in-use:hover       { background: #dbeafe; border-color: #93c5fd; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(29,78,216,0.12); }
+.ov-opt-in-control:hover   { background: var(--bg-soft); border-color: #bbb; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
+.ov-opt-defect:hover       { background: #fee2e2; border-color: #fca5a5; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(220,38,38,0.15); }
+.ov-opt-missing:hover      { background: #ffedd5; border-color: #fdba74; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(234,88,12,0.15); }
+.ov-opt-oos:hover          { background: var(--bg-soft); border-color: #bbb; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
+
+/* active/selected: solid fill with glass sheen */
+.ov-status-opt-active.ov-opt-available  { background-color: #16a34a; border-color: #15803d; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(22,163,74,0.35); background-image: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active.ov-opt-reserved   { background-color: #d97706; border-color: #b45309; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(217,119,6,0.35);  background-image: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active.ov-opt-in-use     { background-color: #1d4ed8; border-color: #1e40af; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(29,78,216,0.35);  background-image: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active.ov-opt-in-control { background-color: #555;    border-color: #444;    color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.20);       background-image: linear-gradient(to bottom, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active.ov-opt-defect     { background-color: #dc2626; border-color: #b91c1c; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(220,38,38,0.35);  background-image: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active.ov-opt-missing    { background-color: #ea580c; border-color: #c2410c; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.40), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(234,88,12,0.35);  background-image: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active.ov-opt-oos        { background-color: #555;    border-color: #444;    color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.20);       background-image: linear-gradient(to bottom, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.08) 44%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.08) 100%); }
+.ov-status-opt-active::before { opacity: 1; filter: brightness(1.4); }
 
 /* ─── Wijzig panel: glass inset card ─────────────────── */
 .ov-panel {
