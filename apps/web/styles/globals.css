@@ -778,43 +778,9 @@ a, button {
   100% { transform: translateX(240%); }
 }
 
-/* ─── Hover glass streak — transition-based, no flicker ─ */
-/* Uses transform:translateX so it never restarts mid-hover */
-
+/* ─── Card-row needs relative for the ::after sheen ─────── */
 .card-row {
   position: relative;
-  overflow: hidden;
-}
-
-/* Streak band: starts off left, sweeps right on hover */
-.btn::after,
-.card-row::after {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 0; right: 0;
-  background: linear-gradient(
-    90deg,
-    transparent            0%,
-    rgba(255,255,255,0.42) 45%,
-    rgba(255,255,255,0.55) 50%,
-    rgba(255,255,255,0.42) 55%,
-    transparent            100%
-  );
-  transform: translateX(-160%) skewX(-12deg);
-  /* Hover-out: snap back instantly */
-  transition: transform 0s;
-  pointer-events: none;
-}
-
-/* Hover-in: smooth sweep right */
-.btn:hover:not(:disabled)::after {
-  transform: translateX(160%) skewX(-12deg);
-  transition: transform 0.42s ease-out;
-}
-.card-row:hover::after {
-  transform: translateX(160%) skewX(-12deg);
-  transition: transform 0.52s ease-out;
 }
 
 /* Cards: diagonal glass highlight fades in on hover */
