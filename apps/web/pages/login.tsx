@@ -51,9 +51,9 @@ export default function Login() {
     if (!vantaEffect.current) return
     vantaEffect.current.setOptions(isDark ? {
       baseColor:      0x0c0c0c,
-      highlightColor: 0x2a2a2a, // very dark grey clouds — barely visible on black
-      midtoneColor:   0x1a1a1a,
-      lowlightColor:  0x111111,
+      highlightColor: 0x585858,
+      midtoneColor:   0x383838,
+      lowlightColor:  0x222222,
     } : {
       baseColor:      0xffffff,
       highlightColor: 0xffffff,
