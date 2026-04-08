@@ -160,24 +160,28 @@ function HoverCard({ laptop, children }: { laptop: Laptop; children: React.React
       <FloatingPortal>
         <AnimatePresence>
           {open && (
-            <motion.div
+            /* Outer div owns the floating position — keeps Framer Motion transforms separate */
+            <div
+              key="hovercard"
               ref={refs.setFloating}
               style={{ ...floatingStyles, zIndex: 9999 }}
               {...getFloatingProps()}
-              initial={{ opacity: 0, scale: 0.94, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: -4 }}
-              transition={{ duration: 0.13, ease: 'easeOut' }}
             >
-              <div style={{
-                background: 'var(--white)',
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                padding: '10px 14px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-                pointerEvents: 'none',
-                minWidth: 180,
-              }}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.94 }}
+                transition={{ duration: 0.13, ease: 'easeOut' }}
+                style={{
+                  background: 'var(--white)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                  pointerEvents: 'none',
+                  minWidth: 180,
+                }}
+              >
                 <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)', margin: '0 0 4px' }}>{laptop.merk_type}</p>
                 {laptop.specificaties && (
                   <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>{laptop.specificaties}</p>
@@ -193,8 +197,8 @@ function HoverCard({ laptop, children }: { laptop: Laptop; children: React.React
                     Vermist sinds {new Date(laptop.missingAt).toLocaleDateString('nl-NL')}
                   </p>
                 )}
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </FloatingPortal>
