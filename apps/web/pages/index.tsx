@@ -323,10 +323,10 @@ export default function Home() {
     let data: any
     if (isAdmin) {
       data = await gql(
-        `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
-          bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
+        `mutation($laptopIds: [ID!]!, $status: LaptopStatus!, $maintenanceLog: String) {
+          bulkStatusChange(laptopIds: $laptopIds, status: $status, maintenanceLog: $maintenanceLog) { id status }
         }`,
-        { laptopIds: [laptopId], status: nieuweStatus },
+        { laptopIds: [laptopId], status: nieuweStatus, maintenanceLog },
         loggedInUser!.userId   // always admin's own ID, never the selected user's
       )
     } else {
@@ -585,8 +585,10 @@ export default function Home() {
           {!loading && filteredLaptops.length > 0 && (
             <div style={{ display: 'grid', gap: 8 }}>
               {filteredLaptops.map(laptop => {
-                const opties = allowedTransitions[laptop.status] || []
-                const kanWijzigen = selectedUser?.role === 'HELPDESK' && opties.length > 0
+                const opties = loggedInUser?.role === 'ADMIN'
+                  ? ALL_STATUSES.filter(s => s !== laptop.status)
+                  : (allowedTransitions[laptop.status] || [])
+                const kanWijzigen = (loggedInUser?.role === 'ADMIN' || selectedUser?.role === 'HELPDESK') && opties.length > 0
                 const isOpen = wijzigId === laptop.id
 
                 return (

@@ -417,16 +417,17 @@ export const resolvers = {
       return prisma.laptop.update({ where: { id: laptopId }, data: { status: LaptopStatus.OUT_OF_SERVICE } })
     },
 
-    bulkStatusChange: async (_: any, { laptopIds, status }: any, { user }: any) => {
+    bulkStatusChange: async (_: any, { laptopIds, status, maintenanceLog }: any, { user }: any) => {
       requireRole(user, 'ADMIN')
+      if (!maintenanceLog?.trim()) throw new Error('Logopmerking is verplicht.')
       const laptops = await prisma.laptop.findMany({ where: { id: { in: laptopIds } } })
-      for (const laptop of laptops) {
-        checkTransition(laptop.status, status as LaptopStatus)
-      }
       const data: any = { status }
       if (status === 'MISSING') data.missingAt = new Date()
       if (status !== 'MISSING') data.missingAt = null
       await prisma.laptop.updateMany({ where: { id: { in: laptopIds } }, data })
+      for (const laptop of laptops) {
+        logAudit('laptop_status_changed', { laptopId: laptop.id, from: laptop.status, to: status, userId: user.id, maintenanceLog })
+      }
       return prisma.laptop.findMany({ where: { id: { in: laptopIds } } })
     },
 

@@ -271,7 +271,7 @@ export const typeDefs = `
     assignLaptopsToReservation(reservationId: ID!, laptopIds: [ID!]!): Reservation
     cancelReservation(reservationId: ID!, userId: ID!): Reservation
     processReturn(laptopId: ID!, status: LaptopStatus!, maintenanceLog: String): Laptop
-    bulkStatusChange(laptopIds: [ID!]!, status: LaptopStatus!): [Laptop!]!
+    bulkStatusChange(laptopIds: [ID!]!, status: LaptopStatus!, maintenanceLog: String): [Laptop!]!
 
     # Sprint 5 – UC-02 Storing melden en oplossen
     reportIssue(laptopId: ID!, description: String!): Issue!
