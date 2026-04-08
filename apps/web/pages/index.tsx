@@ -315,32 +315,77 @@ export default function Home() {
 
   async function wijzigStatus(laptopId: string) {
     if (!nieuweStatus) return
-    const laptop = laptops.find(l => l.id === laptopId)
-    const data = await gql(
-      `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
-        bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
-      }`,
-      { laptopIds: [laptopId], status: nieuweStatus },
-      selectedUserId
-    )
-    if (data.errors) {
-      toast(data.errors[0].message, 'error')
+    if (!maintenanceLog.trim()) { toast('Voeg een logopmerking toe.', 'error'); return }
+    const laptop   = laptops.find(l => l.id === laptopId)
+    const isAdmin  = selectedUser?.role === 'ADMIN'
+    // DEFECT→IN_CONTROL is blocked on processReturn — always use bulkStatusChange for that pair
+    const forceBlk = laptop?.status === 'DEFECT' && nieuweStatus === 'IN_CONTROL'
+
+    // Helpdesk uses processReturn (supports maintenanceLog); admin uses bulkStatusChange
+    let data: any
+    if (isAdmin || forceBlk) {
+      data = await gql(
+        `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
+          bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
+        }`,
+        { laptopIds: [laptopId], status: nieuweStatus },
+        selectedUserId
+      )
     } else {
-      toast(`Status gewijzigd naar ${statusLabel[nieuweStatus] || nieuweStatus}.`)
+      data = await gql(
+        `mutation($laptopId: ID!, $status: LaptopStatus!, $maintenanceLog: String) {
+          processReturn(laptopId: $laptopId, status: $status, maintenanceLog: $maintenanceLog) { id status }
+        }`,
+        { laptopId, status: nieuweStatus, maintenanceLog },
+        selectedUserId
+      )
+    }
+
+    const adminBlocked = data.errors?.some((e: any) =>
+      /admin|niet toegestaan|permission/i.test(e.message)
+    )
+
+    if (data.errors && !adminBlocked) {
+      toast(data.errors[0].message, 'error')
+      return
+    }
+
+    if (adminBlocked) {
+      // Helpdesk tried a transition that needs admin — notify admin and inform user
+      fetch('/api/notify-status', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          laptopName: laptop?.merk_type,
+          laptopId,
+          newStatus:  nieuweStatus,
+          reportedBy: selectedUser?.name,
+          blocked:    true,
+        }),
+      }).catch(() => {})
+      toast('Geen toestemming. De beheerder is geïnformeerd.', 'error')
       setWijzigId(null); setNieuweStatus(''); setMaintenanceLog('')
-      herlaadLaptops()
-      // Notify all admins + helpdesk when a laptop is marked missing
-      if (nieuweStatus === 'MISSING' && laptop) {
-        fetch('/api/notify-missing', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            laptopName: laptop.merk_type,
-            laptopId:   laptop.id,
-            reportedBy: selectedUser?.name,
-          }),
-        }).catch(() => {}) // fire-and-forget
-      }
+      return
+    }
+
+    toast(`Status gewijzigd naar ${statusLabel[nieuweStatus] || nieuweStatus}.`)
+    setWijzigId(null); setNieuweStatus(''); setMaintenanceLog('')
+    herlaadLaptops()
+
+    // Notify admins for sensitive statuses set by non-admins
+    const notifyStatuses = ['MISSING', 'OUT_OF_SERVICE']
+    if (!isAdmin && notifyStatuses.includes(nieuweStatus) && laptop) {
+      fetch('/api/notify-status', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          laptopName: laptop.merk_type,
+          laptopId:   laptop.id,
+          newStatus:  nieuweStatus,
+          reportedBy: selectedUser?.name,
+          blocked:    false,
+        }),
+      }).catch(() => {})
     }
   }
 
@@ -594,10 +639,22 @@ export default function Home() {
                               ))}
                             </div>
                           </div>
-                          {nieuweStatus === 'DEFECT' && (
+                          {nieuweStatus && (
                             <div>
-                              <label className="label">Onderhoudslog</label>
-                              <input className="input" placeholder="Beschrijf het defect..." value={maintenanceLog} onChange={e => setMaintenanceLog(e.target.value)} />
+                              <label className="label">
+                                Logopmerking <span style={{ color: 'var(--red)' }}>*</span>
+                              </label>
+                              <input
+                                className="input"
+                                placeholder={
+                                  nieuweStatus === 'DEFECT'         ? 'Beschrijf het defect…' :
+                                  nieuweStatus === 'MISSING'        ? 'Bijv. niet teruggegeven na activiteit…' :
+                                  nieuweStatus === 'OUT_OF_SERVICE' ? 'Bijv. onherstelbaar defect, ouderdom…' :
+                                  'Reden voor statuswijziging…'
+                                }
+                                value={maintenanceLog}
+                                onChange={e => setMaintenanceLog(e.target.value)}
+                              />
                             </div>
                           )}
                           <div>
