@@ -236,7 +236,7 @@ export const resolvers = {
       // Date rules only enforced for OWNER (admin can create on behalf without restriction)
       if (user.role === 'OWNER') {
         if (diffDays < 3) throw new Error('Startdatum moet minimaal 3 dagen in de toekomst liggen.')
-        if (diffDays > 21) throw new Error('Reserveringen kunnen maximaal 3 weken (21 dagen) van tevoren worden aangevraagd.')
+        if (diffDays > 42) throw new Error('Reserveringen kunnen maximaal 6 weken van tevoren worden aangevraagd.')
       }
       if (new Date(endDate) < start) throw new Error('Einddatum mag niet voor startdatum liggen.')
       if (!doel?.trim()) throw new Error('Doel van de aanvraag is verplicht.')
