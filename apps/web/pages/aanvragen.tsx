@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { nl } from 'react-day-picker/locale'
 import Layout from '../components/Layout'
+import NumberStepper from '../components/NumberStepper'
 import PhoneInput from '../components/PhoneInput'
 import TimeInput from '../components/TimeInput'
 import ReservationCalendar, { CalendarReservation } from '../components/ReservationCalendar'
@@ -301,11 +302,11 @@ export default function Aanvragen() {
               <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16 }}>
                 <div>
                   <label className="label">{t('req_count')}</label>
-                  <input
-                    type="number" className="input" min="1"
-                    max={availableCount ?? undefined}
+                  <NumberStepper
                     value={aantalLaptops}
-                    onChange={e => setAantalLaptops(e.target.value)}
+                    onChange={setAantalLaptops}
+                    min={1}
+                    max={availableCount ?? undefined}
                   />
                 </div>
               </div>

@@ -679,3 +679,87 @@ a, button {
   border: 1.5px solid var(--border);
   font-weight: 700;
 }
+
+/* ═══════════════════════════════════════════════════════
+   FRUTIGER GLASS LAYER
+   Fragile, light, surgical — no sparkle, no glitter.
+   A clean white sheen that lives inside the material.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── All buttons: top-half glass sheen ─────────────── */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.05) 46%,
+    rgba(255,255,255,0)    55%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Ghost button: frosted glass ───────────────────── */
+.btn-ghost {
+  background: rgba(255,255,255,0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+[data-theme="dark"] .btn-ghost {
+  background: rgba(28,28,28,0.52);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ─── Confirm dialog: frosted glass ─────────────────── */
+.confirm-dialog {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255,255,255,0.90);
+  border: 1px solid rgba(255,255,255,0.75);
+}
+[data-theme="dark"] .confirm-dialog {
+  background: rgba(16,16,16,0.90);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ─── Toast: glass surface ───────────────────────────── */
+.toast {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ─── Skeleton: glass light sweep ────────────────────── */
+.skeleton {
+  background: var(--border);
+  background-size: auto;
+  animation: none;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent            0%,
+    rgba(255,255,255,0.60) 50%,
+    transparent            100%
+  );
+  transform: translateX(-100%);
+  animation: glass-sweep 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes glass-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}

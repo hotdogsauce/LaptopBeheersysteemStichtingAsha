@@ -30,13 +30,13 @@ export default function Login() {
         mouseControls: true,
         touchControls: true,
         gyroControls:  false,
-        // Light mode: barely-there icy mist. Dark mode: deep cool murk.
-        highlightColor: isDark ? 0x0d1a26 : 0xffffff,
-        midtoneColor:   isDark ? 0x07111a : 0xd8eeff,
-        lowlightColor:  isDark ? 0x040c14 : 0xbcd6f0,
-        baseColor:      isDark ? 0x0e0e0e : 0xf5faff,
-        blurFactor:     0.86,
-        speed:          0.65,
+        // Dark: near-black with the faintest blush of red. Light: barely-there neutral grey.
+        highlightColor: isDark ? 0x1a0606 : 0xffffff,
+        midtoneColor:   isDark ? 0x0e0303 : 0xeeeeee,
+        lowlightColor:  isDark ? 0x080101 : 0xdedede,
+        baseColor:      isDark ? 0x0c0c0c : 0xf6f6f6,
+        blurFactor:     0.96,
+        speed:          0.30,
         zoom:           0.88,
       })
     }
@@ -73,6 +73,11 @@ export default function Login() {
     }}>
       {/* Vanta FOG canvas target */}
       <div ref={vantaRef} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />
+      {/* Veil — damps fog to near-invisible; tints dark red or neutral white */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: isDark ? 'rgba(10,4,4,0.78)' : 'rgba(250,250,250,0.80)',
+      }} />
 
       {/* Compass watermark — above fog, below form */}
       <CompassBg position="center" size={360} dark={isDark} />

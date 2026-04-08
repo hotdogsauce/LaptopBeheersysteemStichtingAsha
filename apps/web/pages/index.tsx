@@ -6,6 +6,7 @@ import {
   FloatingPortal, offset, flip, shift, autoUpdate,
 } from '@floating-ui/react'
 import Layout from '../components/Layout'
+import NumberStepper from '../components/NumberStepper'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
@@ -358,7 +359,7 @@ export default function Home() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <div>
                       <label className="label">RAM (GB)</label>
-                      <input type="number" className="input" placeholder="bijv. 8" value={nieuwRamGb} onChange={e => setNieuwRamGb(e.target.value)} min="0" />
+                      <NumberStepper value={nieuwRamGb} onChange={setNieuwRamGb} min={0} step={4} placeholder="bijv. 8" />
                     </div>
                   </div>
 

@@ -129,7 +129,10 @@ export default function AvatarCropModal({ file, onConfirm, onCancel }: Props) {
       onClick={e => { if (e.target === e.currentTarget) onCancel() }}
     >
       <div style={{
-        background: 'var(--white)',
+        background: 'rgba(255,255,255,0.90)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.75)',
         borderRadius: 20,
         padding: '28px 28px 24px',
         width: 300,

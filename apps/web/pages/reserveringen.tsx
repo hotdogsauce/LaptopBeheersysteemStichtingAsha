@@ -9,6 +9,7 @@ import { useUser, gql } from '../context/UserContext'
 import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
 import { useConfirm } from '../context/ConfirmContext'
+import NumberStepper from '../components/NumberStepper'
 
 interface Reservation {
   id: string
@@ -232,7 +233,7 @@ export default function Reserveringen() {
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16 }}>
                   <div>
                     <label className="label">{t('res_form_count')}</label>
-                    <input type="number" className="input" min="1" value={aantalLaptops} onChange={e => setAantalLaptops(e.target.value)} />
+                    <NumberStepper value={aantalLaptops} onChange={setAantalLaptops} min={1} />
                   </div>
                 </div>
                 <div>
