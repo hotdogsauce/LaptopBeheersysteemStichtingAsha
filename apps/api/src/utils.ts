@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client'
 import { Resend } from 'resend'
 
-const _resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 const _prisma = new PrismaClient()
 
@@ -83,8 +86,9 @@ export async function notifyAdminsStatusChange(opts: {
   }
 
   // Email
+  const resend = getResend()
   const recipients = admins.filter(a => a.email)
-  if (recipients.length === 0) return
+  if (!resend || recipients.length === 0) return
 
   const html = `
     <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;background:#f8f8f8;border-radius:12px;overflow:hidden;border:1px solid #e5e5e5">
@@ -137,7 +141,7 @@ export async function notifyAdminsStatusChange(opts: {
 
   await Promise.allSettled(
     recipients.map(r =>
-      _resend.emails.send({
+      resend.emails.send({
         from:    'Laptopbeheer <onboarding@resend.dev>',
         to:      r.email!,
         subject: `ℹ ${laptopName} is ingesteld op ${label}`,
