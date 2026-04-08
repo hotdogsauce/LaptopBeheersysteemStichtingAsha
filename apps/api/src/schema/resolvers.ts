@@ -703,4 +703,8 @@ export const resolvers = {
   Laptop: {
     drives: (parent: any) => prisma.drive.findMany({ where: { laptopId: parent.id }, orderBy: { letter: 'asc' } }),
   },
+
+  License: {
+    createdAt: (parent: any) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt,
+  },
 }
