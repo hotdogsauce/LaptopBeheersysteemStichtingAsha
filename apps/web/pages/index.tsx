@@ -315,6 +315,7 @@ export default function Home() {
 
   async function wijzigStatus(laptopId: string) {
     if (!nieuweStatus) return
+    const laptop = laptops.find(l => l.id === laptopId)
     const data = await gql(
       `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
         bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
@@ -328,6 +329,18 @@ export default function Home() {
       toast(`Status gewijzigd naar ${statusLabel[nieuweStatus] || nieuweStatus}.`)
       setWijzigId(null); setNieuweStatus(''); setMaintenanceLog('')
       herlaadLaptops()
+      // Notify all admins + helpdesk when a laptop is marked missing
+      if (nieuweStatus === 'MISSING' && laptop) {
+        fetch('/api/notify-missing', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            laptopName: laptop.merk_type,
+            laptopId:   laptop.id,
+            reportedBy: selectedUser?.name,
+          }),
+        }).catch(() => {}) // fire-and-forget
+      }
     }
   }
 
