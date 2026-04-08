@@ -66,6 +66,7 @@ export const typeDefs = `
     alle_toetsen_werken: Boolean!
     camera_werkt: Boolean!
     microfoon_werkt: Boolean!
+    isTestLaptop: Boolean!
     missingAt: String
     drives: [Drive!]!
   }
@@ -83,12 +84,19 @@ export const typeDefs = `
     alle_toetsen_werken: Boolean!
     camera_werkt: Boolean!
     microfoon_werkt: Boolean!
+    isTestLaptop: Boolean!
     missingAt: String
     drives: [Drive!]!
     issues: [Issue!]!
     checklists: [ChecklistReport!]!
     reservations: [Reservation!]!
     decommission: DecommissionLog
+  }
+
+  type License {
+    id: ID!
+    softwareTitle: String!
+    createdAt: String!
   }
 
   type Activity {
@@ -240,6 +248,10 @@ export const typeDefs = `
     pendingSoftwareRequests: [SoftwareRequest!]!
     mySoftwareRequests(userId: ID!): [SoftwareRequest!]!
 
+    # Licenties & testlaptops
+    licenses: [License!]!
+    testLaptops: [Laptop!]!
+
     approvedReservations: [Reservation!]!
     activeReservations: [Reservation!]!
     availableLaptopCount: Int!
@@ -319,5 +331,10 @@ export const typeDefs = `
 
     markNotificationRead(id: ID!): Boolean!
     markAllNotificationsRead: Boolean!
+
+    # Licenties & testlaptops
+    addLicense(softwareTitle: String!, testLaptopId: ID!): License!
+    removeLicense(id: ID!): Boolean!
+    setTestLaptop(laptopId: ID!, isTestLaptop: Boolean!): Laptop!
   }
 `

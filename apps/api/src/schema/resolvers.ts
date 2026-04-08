@@ -196,6 +196,16 @@ export const resolvers = {
         include: { requester: true, approver: true, activity: true },
         orderBy: { createdAt: 'desc' }
       }),
+
+    licenses: (_: any, __: any, { user }: any) => {
+      requireRole(user, 'ADMIN', 'HELPDESK', 'OWNER')
+      return (prisma as any).license.findMany({ orderBy: { softwareTitle: 'asc' } })
+    },
+
+    testLaptops: (_: any, __: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      return prisma.laptop.findMany({ where: { isTestLaptop: true } })
+    },
   },
 
   Mutation: {
@@ -558,6 +568,48 @@ export const resolvers = {
       return true
     },
 
+    // Licenties & testlaptops
+    setTestLaptop: async (_: any, { laptopId, isTestLaptop }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      return prisma.laptop.update({ where: { id: laptopId }, data: { isTestLaptop } })
+    },
+
+    addLicense: async (_: any, { softwareTitle, testLaptopId }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      if (!softwareTitle?.trim()) throw new Error('Softwaretitel is verplicht.')
+      // Validate test laptop
+      const testLaptop = await prisma.laptop.findUnique({ where: { id: testLaptopId } })
+      if (!testLaptop) throw new Error('Testlaptop niet gevonden.')
+      if (!testLaptop.isTestLaptop) throw new Error('De geselecteerde laptop is niet aangemerkt als testlaptop.')
+      // Hardwarelimiet: test laptop RAM mag niet hoger zijn dan de laagste RAM van actieve laptops
+      if (testLaptop.ram_gb != null) {
+        const activeLaptops = await prisma.laptop.findMany({
+          where: {
+            isTestLaptop: false,
+            status: { notIn: [LaptopStatus.OUT_OF_SERVICE, LaptopStatus.MISSING] },
+            ram_gb: { not: null },
+          }
+        })
+        if (activeLaptops.length > 0) {
+          const minRam = Math.min(...activeLaptops.map((l: any) => l.ram_gb as number))
+          if (testLaptop.ram_gb > minRam) {
+            throw new Error(`Testlaptop heeft ${testLaptop.ram_gb}GB RAM maar de zwakste actieve laptop heeft slechts ${minRam}GB. Kies een testlaptop met minder of gelijk RAM.`)
+          }
+        }
+      }
+      try {
+        return await (prisma as any).license.create({ data: { softwareTitle: softwareTitle.trim() } })
+      } catch {
+        throw new Error(`"${softwareTitle.trim()}" staat al in het licentieregister.`)
+      }
+    },
+
+    removeLicense: async (_: any, { id }: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      await (prisma as any).license.delete({ where: { id } })
+      return true
+    },
+
     // UC-06: AI ondersteuning
     askAI: async (_: any, { question }: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'OWNER', 'HELPDESK')
@@ -577,6 +629,11 @@ export const resolvers = {
       if (!activity) throw new Error('Activiteit niet gevonden.')
       const diffDays = (activity.start_datum_tijd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
       if (diffDays < 2) throw new Error('Softwareaanvraag moet minimaal 2 dagen voor de activiteit worden ingediend.')
+      // UC-07 Licentie-check: software moet in het licentieregister staan
+      const license = await (prisma as any).license.findFirst({
+        where: { softwareTitle: { equals: title.trim(), mode: 'insensitive' } }
+      })
+      if (!license) throw new Error(`"${title.trim()}" staat niet in het licentieregister. Neem contact op met een beheerder om de software te laten toevoegen.`)
       return prisma.softwareRequest.create({
         data: { requesterId: userId, activityId, title, beschrijving: beschrijving ?? null },
         include: { requester: true, approver: true, activity: true }

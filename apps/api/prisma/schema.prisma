@@ -87,12 +87,14 @@ model Laptop {
   alle_toetsen_werken Boolean           @default(false)
   camera_werkt        Boolean           @default(false)
   microfoon_werkt     Boolean           @default(false)
+  isTestLaptop        Boolean           @default(false)
   missingAt           DateTime?
   reservations        Reservation[]     @relation("ReservationLaptops")
   issues              Issue[]
   checklists          ChecklistReport[]
   decommission        DecommissionLog?
   drives              Drive[]
+  softwareTests       SoftwareRequest[] @relation("TestedOnLaptop")
 }
 
 model Drive {
@@ -192,16 +194,24 @@ model DecommissionLog {
 }
 
 model SoftwareRequest {
-  id              String                @id @default(uuid())
-  title           String
-  beschrijving    String?
-  status          SoftwareRequestStatus @default(REQUESTED)
-  requester       User                  @relation("SoftwareRequester", fields: [requesterId], references: [id])
-  requesterId     String
-  approver        User?                 @relation("SoftwareApprover", fields: [approverId], references: [id])
-  approverId      String?
-  activity        Activity              @relation(fields: [activityId], references: [id])
-  activityId      String
-  rejectionReason String?
-  createdAt       DateTime              @default(now())
+  id               String                @id @default(uuid())
+  title            String
+  beschrijving     String?
+  status           SoftwareRequestStatus @default(REQUESTED)
+  requester        User                  @relation("SoftwareRequester", fields: [requesterId], references: [id])
+  requesterId      String
+  approver         User?                 @relation("SoftwareApprover", fields: [approverId], references: [id])
+  approverId       String?
+  activity         Activity              @relation(fields: [activityId], references: [id])
+  activityId       String
+  rejectionReason  String?
+  testedOnLaptop   Laptop?               @relation("TestedOnLaptop", fields: [testedOnLaptopId], references: [id])
+  testedOnLaptopId String?
+  createdAt        DateTime              @default(now())
+}
+
+model License {
+  id            String   @id @default(uuid())
+  softwareTitle String   @unique
+  createdAt     DateTime @default(now())
 }

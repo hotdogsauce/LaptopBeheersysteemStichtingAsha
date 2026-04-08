@@ -33,17 +33,17 @@ async function fetchContext(userId: string, role: string): Promise<string> {
   }
 
   if (role === 'HELPDESK') {
-    const [openIssues, inControlLaptops] = await Promise.all([
+    const [openIssues, allLaptops] = await Promise.all([
       prisma.issue.findMany({
         where: { resolved: false },
         include: { laptop: true, reportedBy: true },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.laptop.findMany({ where: { status: 'IN_CONTROL' } }),
+      prisma.laptop.findMany(),
     ])
     return (
       `Open storingen:\n${JSON.stringify(openIssues, null, 2)}\n\n` +
-      `Laptops met status IN_CONTROL:\n${JSON.stringify(inControlLaptops, null, 2)}`
+      `Alle laptops (inclusief specificaties voor advies):\n${JSON.stringify(allLaptops, null, 2)}`
     )
   }
 

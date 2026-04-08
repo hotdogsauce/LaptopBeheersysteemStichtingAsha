@@ -18,6 +18,14 @@ interface Laptop {
   specificaties: string
   heeft_vga: boolean
   heeft_hdmi: boolean
+  isTestLaptop: boolean
+  ram_gb: number | null
+}
+
+interface License {
+  id: string
+  softwareTitle: string
+  createdAt: string
 }
 
 const statusLabel: Record<string, string> = {
@@ -52,7 +60,7 @@ interface AuditLogEntry {
   createdAt: string
 }
 
-type Tab = 'laptops' | 'bulk' | 'accounts' | 'audit'
+type Tab = 'laptops' | 'bulk' | 'accounts' | 'audit' | 'licenties'
 
 export default function Beheer() {
   const router = useRouter()
@@ -68,6 +76,14 @@ export default function Beheer() {
   const [selected, setSelected] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
   const [bulkFilter, setBulkFilter] = useState('')
+  const [bulkLog, setBulkLog] = useState('')
+
+  // Licenties
+  const [licenses, setLicenses] = useState<License[]>([])
+  const [testLaptops, setTestLaptops] = useState<Laptop[]>([])
+  const [licTitle, setLicTitle] = useState('')
+  const [licTestLaptopId, setLicTestLaptopId] = useState('')
+  const [savingLic, setSavingLic] = useState(false)
 
   // Audit
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([])
@@ -137,9 +153,22 @@ export default function Beheer() {
       .catch(() => setAuditLoading(false))
   }, [tab, selectedUserId])
 
+  useEffect(() => {
+    if (tab !== 'licenties' || !selectedUserId || selectedUser?.role !== 'ADMIN') return
+    herlaadLicenties()
+  }, [tab, selectedUserId])
+
   function herlaadLaptops() {
-    gql('{ laptops { id merk_type status specificaties heeft_vga heeft_hdmi } }', undefined, selectedUserId)
+    gql('{ laptops { id merk_type status specificaties heeft_vga heeft_hdmi isTestLaptop ram_gb } }', undefined, selectedUserId)
       .then(data => setLaptops(data.data?.laptops || []))
+  }
+
+  function herlaadLicenties() {
+    gql('{ licenses { id softwareTitle createdAt } testLaptops { id merk_type ram_gb specificaties } }', undefined, selectedUserId)
+      .then(data => {
+        setLicenses(data.data?.licenses || [])
+        setTestLaptops(data.data?.testLaptops || [])
+      })
   }
 
   function herlaadUsers() {
@@ -164,17 +193,56 @@ export default function Beheer() {
 
   async function bulkWijzig() {
     if (!bulkStatus || selected.length === 0) return
+    if (!bulkLog.trim()) { toast('Logopmerking is verplicht bij bulk statuswijziging.', 'error'); return }
     const data = await gql(
-      `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
-        bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
+      `mutation($laptopIds: [ID!]!, $status: LaptopStatus!, $maintenanceLog: String) {
+        bulkStatusChange(laptopIds: $laptopIds, status: $status, maintenanceLog: $maintenanceLog) { id status }
       }`,
-      { laptopIds: selected, status: bulkStatus }, selectedUserId
+      { laptopIds: selected, status: bulkStatus, maintenanceLog: bulkLog }, selectedUserId
     )
     if (data.errors) { toast(data.errors[0].message, 'error') }
     else {
       toast(`${selected.length} laptop(s) gewijzigd naar ${statusLabel[bulkStatus]}.`)
-      setSelected([]); setBulkStatus(''); herlaadLaptops()
+      setSelected([]); setBulkStatus(''); setBulkLog(''); herlaadLaptops()
     }
+  }
+
+  async function toggleTestLaptop(laptopId: string, current: boolean) {
+    const data = await gql(
+      `mutation($laptopId: ID!, $isTestLaptop: Boolean!) {
+        setTestLaptop(laptopId: $laptopId, isTestLaptop: $isTestLaptop) { id isTestLaptop }
+      }`,
+      { laptopId, isTestLaptop: !current }, selectedUserId
+    )
+    if (data.errors) { toast(data.errors[0].message, 'error') }
+    else { herlaadLaptops() }
+  }
+
+  async function voegLicenteToe() {
+    if (!licTitle.trim()) { toast('Softwaretitel is verplicht.', 'error'); return }
+    if (!licTestLaptopId) { toast('Selecteer een testlaptop.', 'error'); return }
+    setSavingLic(true)
+    const data = await gql(
+      `mutation($softwareTitle: String!, $testLaptopId: ID!) {
+        addLicense(softwareTitle: $softwareTitle, testLaptopId: $testLaptopId) { id softwareTitle }
+      }`,
+      { softwareTitle: licTitle.trim(), testLaptopId: licTestLaptopId }, selectedUserId
+    )
+    setSavingLic(false)
+    if (data.errors) { toast(data.errors[0].message, 'error') }
+    else {
+      toast(`"${licTitle.trim()}" toegevoegd aan licentieregister.`)
+      setLicTitle(''); setLicTestLaptopId(''); herlaadLicenties()
+    }
+  }
+
+  async function verwijderLicentie(id: string, title: string) {
+    const data = await gql(
+      `mutation($id: ID!) { removeLicense(id: $id) }`,
+      { id }, selectedUserId
+    )
+    if (data.errors) { toast(data.errors[0].message, 'error') }
+    else { toast(`"${title}" verwijderd uit licentieregister.`); herlaadLicenties() }
   }
 
   async function maakAccount() {
@@ -327,7 +395,7 @@ export default function Beheer() {
         <>
           {/* Tab bar */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 32, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 0 }}>
-            {(['laptops', 'bulk', 'accounts', 'audit'] as Tab[]).map(t => (
+            {(['laptops', 'bulk', 'accounts', 'audit', 'licenties'] as Tab[]).map(t => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -341,7 +409,7 @@ export default function Beheer() {
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   {t === 'accounts' && <UseAnimations animation={settings} size={14} strokeColor={tab === 'accounts' ? '#000000' : '#7d7d7d'} wrapperStyle={{ display: 'flex' }} />}
-                  {t === 'laptops' ? tr('beh_tab_retire') : t === 'bulk' ? tr('beh_tab_bulk') : t === 'accounts' ? tr('beh_tab_accounts') : tr('beh_tab_audit')}
+                  {t === 'laptops' ? tr('beh_tab_retire') : t === 'bulk' ? tr('beh_tab_bulk') : t === 'accounts' ? tr('beh_tab_accounts') : t === 'audit' ? tr('beh_tab_audit') : 'Licenties'}
                 </span>
               </button>
             ))}
@@ -364,6 +432,17 @@ export default function Beheer() {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <span className={`badge ${statusBadge[laptop.status] || ''}`}>{statusLabel[laptop.status] || laptop.status}</span>
+                            <button
+                              onClick={() => toggleTestLaptop(laptop.id, laptop.isTestLaptop)}
+                              style={{
+                                fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontFamily: 'var(--font)',
+                                background: laptop.isTestLaptop ? 'var(--black)' : 'transparent',
+                                color: laptop.isTestLaptop ? 'var(--white)' : 'var(--grey)',
+                                border: '1px solid var(--border)',
+                              }}
+                            >
+                              {laptop.isTestLaptop ? 'Testlaptop' : 'Geen testlaptop'}
+                            </button>
                             {geblokkeerd ? (
                               <span style={{ fontSize: 12, color: 'var(--grey)', padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 5 }}>{tr('beh_retire_locked')}</span>
                             ) : (
@@ -431,6 +510,9 @@ export default function Beheer() {
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   {selected.length > 0 && validBulkTargets.length > 0 && (
                     <>
+                      <input className="input" style={{ width: 200, padding: '5px 10px', fontSize: 12, height: 32 }}
+                        placeholder="Logopmerking (verplicht)"
+                        value={bulkLog} onChange={e => setBulkLog(e.target.value)} />
                       <select className="input" style={{ width: 'auto', padding: '5px 28px 5px 10px', fontSize: 12, height: 32 }}
                         value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
                         <option value="">{tr('beh_bulk_new')}</option>
@@ -648,6 +730,62 @@ export default function Beheer() {
               </div>
             </>
           )}
+          {/* ── Tab: Licenties ── */}
+          {tab === 'licenties' && (
+            <>
+              <div className="card" style={{ marginBottom: 24 }}>
+                <h3 style={{ marginBottom: 16 }}>Software toevoegen aan licentieregister</h3>
+                <p style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, marginTop: 0 }}>
+                  Alleen software in dit register kan door eigenaren worden aangevraagd. Selecteer de testlaptop die is gebruikt voor validatie — deze mag niet meer RAM hebben dan de zwakste actieve laptop.
+                </p>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <div>
+                    <label className="label">Softwaretitel *</label>
+                    <input className="input" placeholder="bijv. Scratch 3.0, Python 3.12..." value={licTitle} onChange={e => setLicTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="label">Testlaptop *</label>
+                    <select className="input" value={licTestLaptopId} onChange={e => setLicTestLaptopId(e.target.value)}>
+                      <option value="">— Selecteer testlaptop —</option>
+                      {testLaptops.map(l => (
+                        <option key={l.id} value={l.id}>{l.merk_type}{l.ram_gb ? ` · ${l.ram_gb}GB RAM` : ''}{l.specificaties ? ` · ${l.specificaties}` : ''}</option>
+                      ))}
+                    </select>
+                    {testLaptops.length === 0 && (
+                      <p style={{ fontSize: 12, color: 'var(--red)', margin: '4px 0 0' }}>
+                        Geen testlaptops beschikbaar. Markeer eerst een laptop als testlaptop via het tabblad "Uit beheer nemen".
+                      </p>
+                    )}
+                  </div>
+                  <button className="btn btn-primary" style={{ width: 'fit-content' }} disabled={savingLic} onClick={voegLicenteToe}>
+                    {savingLic ? 'Toevoegen…' : 'Toevoegen aan register'}
+                  </button>
+                </div>
+              </div>
+
+              <h3 style={{ marginBottom: 12 }}>Geregistreerde software ({licenses.length})</h3>
+              {licenses.length === 0 ? (
+                <p style={{ fontSize: 13, color: 'var(--grey)' }}>Nog geen software geregistreerd.</p>
+              ) : (
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {licenses.map(l => (
+                    <div key={l.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 14, fontWeight: 500 }}>{l.softwareTitle}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--grey)' }}>
+                          Toegevoegd {new Date(l.createdAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <button className="btn btn-danger-ghost" style={{ fontSize: 12, padding: '4px 12px' }} onClick={() => verwijderLicentie(l.id, l.softwareTitle)}>
+                        Verwijderen
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
           {/* ── Tab: Audit log ── */}
           {tab === 'audit' && (
             <>

@@ -150,7 +150,7 @@ export default function Software() {
                 </select>
               </div>
               <p style={{ fontSize: 12, color: 'var(--grey)', margin: 0 }}>
-                Aanvraag moet minimaal 2 dagen voor de activiteit worden ingediend.
+                Aanvraag moet minimaal 2 dagen voor de activiteit worden ingediend. De software moet in het licentieregister staan — neem contact op met een beheerder als dat niet het geval is.
               </p>
               <div>
                 <button className="btn btn-primary" onClick={doeAanvraag}>Aanvraag indienen</button>
