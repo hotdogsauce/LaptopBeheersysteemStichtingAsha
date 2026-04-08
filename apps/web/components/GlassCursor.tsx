@@ -55,35 +55,34 @@ export default function GlassCursor() {
       {/* Dot — snaps instantly */}
       <div ref={dotRef} style={{
         position: 'fixed', top: 0, left: 0, zIndex: 99999,
-        width: 8, height: 8, borderRadius: '50%',
+        width: 5, height: 5, borderRadius: '50%',
         background: 'var(--black)',
         pointerEvents: 'none', opacity: 0,
         transform: 'translate(-100px,-100px)',
-        marginLeft: -4, marginTop: -4,
-        transition: 'background 0.2s',
+        marginLeft: -2.5, marginTop: -2.5,
         mixBlendMode: 'difference',
       }} />
 
       {/* Outline — trails with glass blur */}
       <div ref={outlineRef} style={{
         position: 'fixed', top: 0, left: 0, zIndex: 99998,
-        width: 38, height: 38, borderRadius: '50%',
-        border: '1.5px solid rgba(120,130,160,0.55)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        background: 'rgba(255,255,255,0.08)',
+        width: 22, height: 22, borderRadius: '50%',
+        border: '1px solid rgba(120,130,160,0.40)',
+        backdropFilter: 'blur(3px)',
+        WebkitBackdropFilter: 'blur(3px)',
+        background: 'rgba(255,255,255,0.06)',
         pointerEvents: 'none', opacity: 0,
         transform: 'translate(-100px,-100px)',
-        marginLeft: -19, marginTop: -19,
-        transition: 'width 0.2s, height 0.2s, margin 0.2s',
+        marginLeft: -11, marginTop: -11,
+        transition: 'width 0.18s, height 0.18s, margin 0.18s',
       }} />
 
       <style>{`
         .glass-cursor-grow {
-          width: 56px !important;
-          height: 56px !important;
-          margin-left: -28px !important;
-          margin-top: -28px !important;
+          width: 32px !important;
+          height: 32px !important;
+          margin-left: -16px !important;
+          margin-top: -16px !important;
         }
         * { cursor: none !important; }
         @media (max-width: 1023px) { * { cursor: auto !important; } }
