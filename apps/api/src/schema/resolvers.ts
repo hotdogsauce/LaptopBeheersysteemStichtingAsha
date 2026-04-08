@@ -16,9 +16,9 @@ const allowedTransitions: Record<string, LaptopStatus[]> = {
   RESERVED:       ['IN_USE', 'AVAILABLE'],
   IN_USE:         ['IN_CONTROL'],
   IN_CONTROL:     ['AVAILABLE', 'DEFECT', 'MISSING'],
-  DEFECT:         ['OUT_OF_SERVICE'],
+  DEFECT:         ['IN_CONTROL', 'OUT_OF_SERVICE'],
   OUT_OF_SERVICE: [],
-  MISSING:        ['OUT_OF_SERVICE'],
+  MISSING:        ['IN_CONTROL', 'OUT_OF_SERVICE'],
 }
 
 // Statussen waarbij een storing NIET gemeld kan worden

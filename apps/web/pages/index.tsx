@@ -318,18 +318,16 @@ export default function Home() {
     if (!maintenanceLog.trim()) { toast('Voeg een logopmerking toe.', 'error'); return }
     const laptop   = laptops.find(l => l.id === laptopId)
     const isAdmin  = loggedInUser?.role === 'ADMIN'
-    // DEFECT→IN_CONTROL is blocked on processReturn — always use bulkStatusChange for that pair
-    const forceBlk = laptop?.status === 'DEFECT' && nieuweStatus === 'IN_CONTROL'
 
-    // Helpdesk uses processReturn (supports maintenanceLog); admin uses bulkStatusChange
+    // Admin uses bulkStatusChange (with their own credentials); helpdesk uses processReturn
     let data: any
-    if (isAdmin || forceBlk) {
+    if (isAdmin) {
       data = await gql(
         `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
           bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
         }`,
         { laptopIds: [laptopId], status: nieuweStatus },
-        selectedUserId
+        loggedInUser!.userId   // always admin's own ID, never the selected user's
       )
     } else {
       data = await gql(
