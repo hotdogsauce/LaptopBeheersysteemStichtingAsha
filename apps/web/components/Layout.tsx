@@ -444,12 +444,13 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           <div ref={searchContainerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'row-reverse', alignItems: 'center' }}>
             {/* Magnifying glass button */}
             <button
+              className="btn btn-ghost"
               onClick={() => { setSearchOpen(o => !o); if (searchOpen) setSearchQuery('') }}
               title="Zoek laptop (druk / om te openen)"
               style={{
-                width: 26, height: 26, borderRadius: '50%',
+                width: 26, height: 26, minHeight: 26, borderRadius: '50%',
                 border: `1px solid ${searchOpen ? 'var(--black)' : 'var(--border)'}`,
-                background: 'transparent', cursor: 'pointer',
+                cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, padding: 0, transition: 'border-color 0.15s',
               }}
@@ -522,12 +523,13 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           {loggedInUser && (
             <div ref={bellRef} style={{ position: 'relative' }}>
               <button
+                className="btn btn-ghost"
                 onClick={() => { setBellOpen(o => !o); if (!bellOpen && unreadCount > 0) {} }}
                 title={t('notifs')}
                 style={{
-                  width: 26, height: 26, borderRadius: '50%',
+                  width: 26, height: 26, minHeight: 26, borderRadius: '50%',
                   border: `1px solid ${bellOpen ? 'var(--black)' : 'var(--border)'}`,
-                  background: 'transparent', cursor: 'pointer',
+                  cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0, padding: 0, position: 'relative', transition: 'border-color 0.15s',
                 }}
@@ -648,11 +650,12 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
 
           {/* Theme toggle */}
           <button
+            className="btn btn-ghost"
             onClick={toggleTheme}
             title={isDark ? t('theme_to_light') : t('theme_to_dark')}
             style={{
-              width: 26, height: 26, borderRadius: '50%',
-              border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer',
+              width: 26, height: 26, minHeight: 26, borderRadius: '50%',
+              border: '1px solid var(--border)', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, padding: 0, transition: 'border-color 0.2s',
             }}
@@ -683,11 +686,12 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                 <Avatar name={loggedInUser.name} avatar={loggedInUserData?.avatar} size={30} />
               </div>
               <button
+                className="btn btn-ghost"
                 onClick={() => { logout(); router.push('/login') }}
                 title={t('nav_logout')}
                 style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer',
+                  width: 28, height: 28, minHeight: 28, borderRadius: '50%',
+                  border: '1px solid var(--border)', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: 0, flexShrink: 0, color: 'var(--grey)', fontSize: 13,
                   transition: 'border-color 0.15s, color 0.15s',

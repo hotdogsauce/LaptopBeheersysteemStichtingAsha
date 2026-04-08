@@ -70,7 +70,7 @@ export default function Activiteiten() {
             </button>
 
             {showForm && (
-              <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
+              <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16, backgroundImage: 'none', backgroundColor: 'var(--bg-soft)' }}>
                 <div>
                   <label className="label">Titel *</label>
                   <input className="input" placeholder="bijv. Workshop Programmeren" value={title} onChange={e => setTitle(e.target.value)} />
