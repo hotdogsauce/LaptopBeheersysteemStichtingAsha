@@ -219,7 +219,7 @@ function SkeletonRow() {
 }
 
 export default function Home() {
-  const { selectedUserId, selectedUser } = useUser()
+  const { selectedUserId, selectedUser, loggedInUser } = useUser()
   const { toast } = useToast()
   const { t } = useT()
   const router = useRouter()
