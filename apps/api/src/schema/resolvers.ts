@@ -1,5 +1,5 @@
 import { requireRole } from '../auth.js'
-import { checkAiRateLimit, logAudit, createNotification, getAdminIds } from '../utils.js'
+import { checkAiRateLimit, logAudit, createNotification, getAdminIds, notifyAdminsStatusChange } from '../utils.js'
 import { PrismaClient, LaptopStatus, ReservationStatus, SoftwareRequestStatus } from '@prisma/client'
 
 const prisma = new PrismaClient({
@@ -334,6 +334,15 @@ export const resolvers = {
       if (status !== 'MISSING') data.missingAt = null
       const result = await prisma.laptop.update({ where: { id: laptopId }, data })
       logAudit('laptop_status_changed', { laptopId, from: laptop.status, to: status, userId: user.id })
+      if (status === 'MISSING' || status === 'OUT_OF_SERVICE') {
+        notifyAdminsStatusChange({
+          laptopName: laptop.merk_type,
+          laptopId:   laptop.id,
+          newStatus:  status,
+          reportedBy: user.name,
+          reden:      maintenanceLog || '',
+        }).catch(() => {})
+      }
       return result
     },
 
