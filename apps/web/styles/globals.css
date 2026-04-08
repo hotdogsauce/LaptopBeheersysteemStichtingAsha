@@ -685,43 +685,55 @@ a, button {
    Fragile, light, surgical — no sparkle, no glitter.
    ═══════════════════════════════════════════════════════ */
 
-/* ─── Primary button: top-half white sheen via background-image ── */
+/* ─── Primary button: Wii-U two-tone glass bubble ─────── */
 /* Must be re-applied on :hover too — hover shorthand resets background-image */
 .btn-primary,
 .btn-primary:hover:not(:disabled) {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.38) 0%,
-    rgba(255,255,255,0.10) 48%,
-    rgba(255,255,255,0)    62%
-  );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 3px rgba(0,0,0,0.18);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.55) 0%,
+      rgba(255,255,255,0.28) 46%,
+      rgba(255,255,255,0)    50%,
+      rgba(0,0,0,0.08)       100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.70),
+    inset 0 -1px 0 rgba(255,255,255,0.10),
+    0 2px 5px rgba(0,0,0,0.28);
 }
 [data-theme="dark"] .btn-primary,
 [data-theme="dark"] .btn-primary:hover:not(:disabled) {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.50) 0%,
-    rgba(255,255,255,0.10) 50%,
-    rgba(255,255,255,0)    65%
-  );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.08);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.60) 0%,
+      rgba(255,255,255,0.22) 46%,
+      rgba(255,255,255,0)    50%,
+      rgba(0,0,0,0.12)       100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.80),
+    inset 0 -1px 0 rgba(255,255,255,0.08),
+    0 2px 5px rgba(0,0,0,0.40);
 }
 
-/* ─── Ghost button: glass gloss matching primary ─────── */
-/* Base shifts to cool-grey so the white top gradient has visible contrast */
+/* ─── Ghost button: Wii-U glass bubble (light base) ──── */
 .btn-ghost,
 .btn-ghost:hover:not(:disabled) {
-  background-color: rgb(238, 241, 246);
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.95) 0%,
-    rgba(255,255,255,0.55) 44%,
-    rgba(255,255,255,0)    62%
-  );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,1),
-              inset 0 -1px 0 rgba(0,0,0,0.07),
-              0 1px 2px rgba(0,0,0,0.06);
+  background-color: rgb(232, 236, 244);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,1.00) 0%,
+      rgba(255,255,255,0.72) 44%,
+      rgba(255,255,255,0)    50%,
+      rgba(0,0,0,0.04)       100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(0,0,0,0.08),
+    0 1px 3px rgba(0,0,0,0.10);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -793,9 +805,10 @@ a, button {
   position: relative;
 }
 
-/* Cards: diagonal glass highlight fades in on hover */
+/* Cards: diagonal glass sheen fades in on hover */
 .card {
   position: relative;
+  overflow: hidden;
 }
 .card::after {
   content: '';
@@ -803,39 +816,56 @@ a, button {
   inset: 0;
   border-radius: inherit;
   background: linear-gradient(
-    112deg,
-    transparent            0%,
-    rgba(255,255,255,0.22) 42%,
-    rgba(255,255,255,0.34) 50%,
-    rgba(255,255,255,0.22) 58%,
-    transparent            100%
+    118deg,
+    transparent            20%,
+    rgba(255,255,255,0.50) 48%,
+    rgba(255,255,255,0.60) 52%,
+    transparent            80%
   );
   opacity: 0;
-  transition: opacity 0.30s ease;
+  transition: opacity 0.25s ease;
   pointer-events: none;
 }
 .card:hover::after {
   opacity: 1;
 }
 
-/* ─── Card surface: glass top-edge + depth ───────────── */
+/* ─── Card surface: Wii-U glass bubble ───────────────── */
 .card {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.80),
-              0 1px 3px rgba(0,0,0,0.05);
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.55) 0%,
-    rgba(255,255,255,0)    40%
-  );
+  background-color: rgb(234, 238, 246);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.92) 0%,
+      rgba(255,255,255,0.60) 44%,
+      rgba(255,255,255,0)    50%,
+      rgba(0,0,0,0.025)      100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(0,0,0,0.05),
+    0 2px 8px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(180,190,210,0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 [data-theme="dark"] .card {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06),
-              0 1px 4px rgba(0,0,0,0.25);
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.04) 0%,
-    rgba(255,255,255,0)    40%
-  );
+  background-color: rgb(22, 24, 30);
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.10) 0%,
+      rgba(255,255,255,0.04) 44%,
+      rgba(255,255,255,0)    50%,
+      rgba(0,0,0,0.10)       100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -1px 0 rgba(0,0,0,0.40),
+    0 2px 8px rgba(0,0,0,0.40),
+    0 0 0 1px rgba(255,255,255,0.05);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* ─── bg-soft blocks (expand panels etc.) ────────────── */
