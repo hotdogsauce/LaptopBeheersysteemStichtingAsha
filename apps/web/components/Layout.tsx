@@ -431,12 +431,11 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             )}
           </div>
 
-          <span style={{
-            fontWeight: 700, fontSize: 13, letterSpacing: '0.12em',
-            color: 'var(--black)', textTransform: 'uppercase',
-          }}>
-            Asha
-          </span>
+          <img
+            src="/icons/pwa-192.png"
+            alt="Stichting Asha"
+            style={{ height: 28, width: 'auto', display: 'block', filter: isDark ? 'invert(1)' : 'none' }}
+          />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
