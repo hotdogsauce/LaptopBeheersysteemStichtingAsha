@@ -777,3 +777,76 @@ a, button {
   0%   { transform: translateX(-120%); }
   100% { transform: translateX(240%); }
 }
+
+/* ─── Hover glass streak ─────────────────────────────── */
+/* Buttons already have position:relative + overflow:hidden */
+/* Card-rows get the same so the streak stays contained   */
+.card-row {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The streak pseudo-element — sits behind text via pointer-events:none */
+.btn::after,
+.card-row::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -70%;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent                0%,
+    rgba(255,255,255,0.28)    40%,
+    rgba(255,255,255,0.38)    50%,
+    rgba(255,255,255,0.28)    60%,
+    transparent               100%
+  );
+  transform: skewX(-14deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* On hover: sweep once across, then fade */
+.btn:hover:not(:disabled)::after {
+  animation: glass-streak-btn 0.38s ease-out forwards;
+}
+.card-row:hover::after {
+  animation: glass-streak-row 0.50s ease-out forwards;
+}
+
+@keyframes glass-streak-btn {
+  0%   { left: -70%; opacity: 1; }
+  85%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+@keyframes glass-streak-row {
+  0%   { left: -70%; opacity: 1; }
+  80%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+
+/* Cards: static diagonal glass sheen on hover (no overflow clip needed) */
+.card {
+  position: relative;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    108deg,
+    transparent                0%,
+    rgba(255,255,255,0)       38%,
+    rgba(255,255,255,0.14)    50%,
+    rgba(255,255,255,0)       62%,
+    transparent               100%
+  );
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
+}
+.card:hover::after {
+  opacity: 1;
+}

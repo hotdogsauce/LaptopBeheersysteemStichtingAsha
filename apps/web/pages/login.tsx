@@ -35,8 +35,8 @@ export default function Login() {
         midtoneColor:   isDark ? 0xd0d0d0 : 0xcccccc,
         lowlightColor:  isDark ? 0x909090 : 0xaaaaaa,
         baseColor:      isDark ? 0x0c0c0c : 0xffffff,
-        blurFactor:     0.82,
-        speed:          0.40,
+        blurFactor:     0.68,
+        speed:          0.45,
         zoom:           0.90,
       })
     }
@@ -76,7 +76,7 @@ export default function Login() {
       {/* Veil — very light tint so form stays readable over the fog */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: isDark ? 'rgba(8,2,2,0.32)' : 'rgba(255,255,255,0.28)',
+        background: isDark ? 'rgba(8,2,2,0.10)' : 'rgba(255,255,255,0.08)',
       }} />
 
       {/* Compass watermark — above fog, below form */}
