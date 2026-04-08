@@ -139,7 +139,7 @@ export async function notifyAdminsStatusChange(opts: {
     </div>
   `
 
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     recipients.map(r =>
       resend.emails.send({
         from:    'Laptopbeheer <onboarding@resend.dev>',
@@ -149,4 +149,11 @@ export async function notifyAdminsStatusChange(opts: {
       })
     )
   )
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      console.error(`[notify] email to ${recipients[i].email} failed:`, r.reason)
+    } else {
+      console.log(`[notify] email to ${recipients[i].email}:`, JSON.stringify(r.value))
+    }
+  })
 }
