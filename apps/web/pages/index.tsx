@@ -551,7 +551,7 @@ export default function Home() {
                   <button
                     key={s}
                     onClick={() => toggleFilter(s)}
-                    className={`filter-chip${active ? ' filter-chip-active' : ''}`}
+                    className={`ov-chip${active ? ' ov-chip-active' : ''}`}
                   >
                     <span className={`badge ${statusBadge[s]}`} style={{ fontSize: 11, padding: '1px 6px' }}>
                       {statusLabel[s]}
@@ -563,7 +563,7 @@ export default function Home() {
                 )
               })}
               {activeFilters.length > 0 && (
-                <button className="filter-chip" onClick={() => setActiveFilters([])}>
+                <button className="ov-chip" onClick={() => setActiveFilters([])}>
                   <span style={{ fontSize: 11, color: 'var(--grey)' }}>✕ Wis filters</span>
                 </button>
               )}
@@ -594,7 +594,7 @@ export default function Home() {
 
                 return (
                   <HoverCard key={laptop.id} laptop={laptop}>
-                    <div className="card-row laptop-row">
+                    <div className="ov-row">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ cursor: 'pointer' }} onClick={() => router.push(`/laptops/${laptop.id}`)}>
                           <p style={{ fontWeight: 500, fontSize: 14, margin: 0 }}>{laptop.merk_type}</p>
@@ -623,48 +623,55 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {isOpen && (
-                        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 12 }}>
-                          <div>
-                            <label className="label">Nieuwe status</label>
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              {opties.map(opt => (
-                                <button
-                                  key={opt}
-                                  className={`btn ${nieuweStatus === opt ? 'btn-primary' : 'btn-ghost'}`}
-                                  style={{ fontSize: 12, padding: '4px 12px' }}
-                                  onClick={() => setNieuweStatus(opt)}
-                                >
-                                  {statusLabel[opt] || opt}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          {nieuweStatus && (
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            className="ov-panel"
+                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, height: 'auto', marginTop: 14 }}
+                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                          >
                             <div>
-                              <label className="label">
-                                Logopmerking <span style={{ color: 'var(--red)' }}>*</span>
-                              </label>
-                              <input
-                                className="input"
-                                placeholder={
-                                  nieuweStatus === 'DEFECT'         ? 'Beschrijf het defect…' :
-                                  nieuweStatus === 'MISSING'        ? 'Bijv. niet teruggegeven na activiteit…' :
-                                  nieuweStatus === 'OUT_OF_SERVICE' ? 'Bijv. onherstelbaar defect, ouderdom…' :
-                                  'Reden voor statuswijziging…'
-                                }
-                                value={maintenanceLog}
-                                onChange={e => setMaintenanceLog(e.target.value)}
-                              />
+                              <label className="label">Nieuwe status</label>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                {opties.map(opt => (
+                                  <button
+                                    key={opt}
+                                    className={`ov-status-opt${nieuweStatus === opt ? ' ov-status-opt-active' : ''}`}
+                                    onClick={() => setNieuweStatus(opt)}
+                                  >
+                                    {statusLabel[opt] || opt}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                          )}
-                          <div>
-                            <button className="btn btn-primary" disabled={!nieuweStatus} onClick={() => wijzigStatus(laptop.id)}>
-                              Status opslaan
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                            {nieuweStatus && (
+                              <div>
+                                <label className="label">
+                                  Logopmerking <span style={{ color: 'var(--red)' }}>*</span>
+                                </label>
+                                <input
+                                  className="ov-input"
+                                  placeholder={
+                                    nieuweStatus === 'DEFECT'         ? 'Beschrijf het defect…' :
+                                    nieuweStatus === 'MISSING'        ? 'Bijv. niet teruggegeven na activiteit…' :
+                                    nieuweStatus === 'OUT_OF_SERVICE' ? 'Bijv. onherstelbaar defect, ouderdom…' :
+                                    'Reden voor statuswijziging…'
+                                  }
+                                  value={maintenanceLog}
+                                  onChange={e => setMaintenanceLog(e.target.value)}
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <button className="btn btn-primary" disabled={!nieuweStatus} onClick={() => wijzigStatus(laptop.id)}>
+                                Status opslaan
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </HoverCard>
                 )
