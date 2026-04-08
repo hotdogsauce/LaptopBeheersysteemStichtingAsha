@@ -30,14 +30,14 @@ export default function Login() {
         mouseControls: true,
         touchControls: true,
         gyroControls:  false,
-        // Dark: near-black with the faintest blush of red. Light: barely-there neutral grey.
-        highlightColor: isDark ? 0x1a0606 : 0xffffff,
-        midtoneColor:   isDark ? 0x0e0303 : 0xeeeeee,
-        lowlightColor:  isDark ? 0x080101 : 0xdedede,
-        baseColor:      isDark ? 0x0c0c0c : 0xf6f6f6,
-        blurFactor:     0.96,
-        speed:          0.30,
-        zoom:           0.88,
+        // Dark: deep crimson smoke. Light: drifting silver mist.
+        highlightColor: isDark ? 0x3a0a0a : 0xffffff,
+        midtoneColor:   isDark ? 0x220404 : 0xd4d4d4,
+        lowlightColor:  isDark ? 0x140202 : 0xb8b8b8,
+        baseColor:      isDark ? 0x0d0808 : 0xeeeeee,
+        blurFactor:     0.82,
+        speed:          0.40,
+        zoom:           0.90,
       })
     }
     initVanta()
@@ -73,10 +73,10 @@ export default function Login() {
     }}>
       {/* Vanta FOG canvas target */}
       <div ref={vantaRef} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />
-      {/* Veil — damps fog to near-invisible; tints dark red or neutral white */}
+      {/* Veil — very light tint so form stays readable over the fog */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: isDark ? 'rgba(10,4,4,0.78)' : 'rgba(250,250,250,0.80)',
+        background: isDark ? 'rgba(8,2,2,0.32)' : 'rgba(255,255,255,0.28)',
       }} />
 
       {/* Compass watermark — above fog, below form */}

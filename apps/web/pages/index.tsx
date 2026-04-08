@@ -142,6 +142,7 @@ function HoverCard({ laptop, children }: { laptop: Laptop; children: React.React
     open,
     onOpenChange: setOpen,
     placement: 'right-start',
+    strategy: 'fixed',
     middleware: [offset(12), flip(), shift({ padding: 8 })],
     whileElementsMounted: autoUpdate,
   })
@@ -359,7 +360,7 @@ export default function Home() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <div>
                       <label className="label">RAM (GB)</label>
-                      <NumberStepper value={nieuwRamGb} onChange={setNieuwRamGb} min={0} step={4} placeholder="bijv. 8" />
+                      <NumberStepper value={nieuwRamGb} onChange={setNieuwRamGb} min={0} step={4} />
                     </div>
                   </div>
 
