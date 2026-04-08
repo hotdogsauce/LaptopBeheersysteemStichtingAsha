@@ -605,8 +605,9 @@ export const resolvers = {
 
 
   Reservation: {
-    startDate: (parent: any) => parent.startDate instanceof Date ? parent.startDate.toISOString() : parent.startDate,
-    endDate:   (parent: any) => parent.endDate   instanceof Date ? parent.endDate.toISOString()   : parent.endDate,
+    startDate:      (parent: any) => parent.startDate      instanceof Date ? parent.startDate.toISOString()      : parent.startDate,
+    endDate:        (parent: any) => parent.endDate        instanceof Date ? parent.endDate.toISOString()        : parent.endDate,
+    aanvraag_datum: (parent: any) => parent.aanvraag_datum instanceof Date ? parent.aanvraag_datum.toISOString() : parent.aanvraag_datum,
     activity: (parent: any) => prisma.activity.findUnique({ where: { id: parent.activityId } }),
     requester: (parent: any) => prisma.user.findUnique({ where: { id: parent.requesterId } }),
     approver: (parent: any) => parent.approverId ? prisma.user.findUnique({ where: { id: parent.approverId } }) : null,
