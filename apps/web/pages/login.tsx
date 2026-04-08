@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useUser } from '../context/UserContext'
 import CompassBg from '../components/CompassBg'
@@ -11,46 +11,6 @@ export default function Login() {
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
   const isDark = theme === 'dark'
-
-  // Vanta FOG
-  const vantaRef    = useRef<HTMLDivElement>(null)
-  const vantaEffect = useRef<any>(null)
-
-  // Vanta FOG — light mode only; destroy in dark mode
-  useEffect(() => {
-    let cancelled = false
-
-    if (isDark) {
-      if (vantaEffect.current) { vantaEffect.current.destroy(); vantaEffect.current = null }
-      return
-    }
-
-    async function initVanta() {
-      const THREE  = await import('three')
-      // @ts-ignore — vanta has no TS types
-      const { default: FOG } = await import('vanta/dist/vanta.fog.min')
-      if (cancelled || !vantaRef.current) return
-      vantaEffect.current = FOG({
-        el:            vantaRef.current,
-        THREE,
-        mouseControls: true,
-        touchControls: true,
-        gyroControls:  false,
-        highlightColor: 0xffffff,
-        midtoneColor:   0xd4d4d4,
-        lowlightColor:  0x999999,
-        baseColor:      0xffffff,
-        blurFactor:     0.68,
-        speed:          0.45,
-        zoom:           0.90,
-      })
-    }
-    initVanta()
-    return () => {
-      cancelled = true
-      if (vantaEffect.current) { vantaEffect.current.destroy(); vantaEffect.current = null }
-    }
-  }, [isDark]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (loggedIn) router.replace('/')
@@ -76,15 +36,7 @@ export default function Login() {
       padding: 24,
       position: 'relative',
     }}>
-      {/* Vanta FOG canvas target */}
-      <div ref={vantaRef} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />
-      {/* Veil — very light tint so form stays readable over the fog */}
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: isDark ? 'rgba(8,2,2,0.10)' : 'rgba(255,255,255,0.08)',
-      }} />
-
-      {/* Compass watermark — above fog, below form */}
+      {/* Compass watermark */}
       <CompassBg position="center" size={360} dark={isDark} />
 
       {/* Login card */}
