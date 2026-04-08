@@ -434,7 +434,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           <img
             src="/icons/asha-logo.png"
             alt="Stichting Asha"
-            style={{ height: 60, width: 'auto', display: 'block', filter: isDark ? 'invert(1)' : 'none' }}
+            style={{ height: 51, width: 'auto', display: 'block', filter: isDark ? 'invert(1)' : 'none' }}
           />
         </div>
 
