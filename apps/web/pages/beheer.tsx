@@ -442,7 +442,7 @@ export default function Beheer() {
                     </>
                   )}
                   {bulkBlockReason && (
-                    <span style={{ fontSize: 12, color: 'var(--red)' }}>{bulkBlockReason}</span>
+                    <span style={{ fontSize: 12, color: 'var(--grey)' }}>{bulkBlockReason}</span>
                   )}
                   {selected.length > 0 && (
                     <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setSelected([])}>{tr('beh_bulk_deselect')}</button>
