@@ -1032,6 +1032,17 @@ a, button {
   color: #000 !important;
   text-shadow: none !important;
 }
+.driver-popover-close-btn {
+  background: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  color: var(--red) !important;
+  padding: 2px 6px !important;
+}
+.driver-popover-close-btn:hover {
+  color: var(--red-dim) !important;
+  background: none !important;
+}
 .driver-popover-next-btn {
   background-color: #000 !important;
   background-image: linear-gradient(
