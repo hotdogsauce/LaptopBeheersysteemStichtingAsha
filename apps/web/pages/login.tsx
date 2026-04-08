@@ -34,7 +34,7 @@ export default function Login() {
         midtoneColor:   0xd4d4d4,
         lowlightColor:  0x999999,
         baseColor:      isDark ? 0x0c0c0c : 0xffffff,
-        blurFactor:     0.68,
+        blurFactor:     0.42,
         speed:          0.45,
         zoom:           0.90,
       })
