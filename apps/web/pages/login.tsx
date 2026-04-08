@@ -50,10 +50,10 @@ export default function Login() {
   useEffect(() => {
     if (!vantaEffect.current) return
     vantaEffect.current.setOptions(isDark ? {
-      baseColor:      0x0c0c0c,
-      highlightColor: 0x585858,
-      midtoneColor:   0x383838,
-      lowlightColor:  0x222222,
+      baseColor:      0x0c0808,
+      highlightColor: 0x8b1414,
+      midtoneColor:   0x5c0c0c,
+      lowlightColor:  0x2e0606,
     } : {
       baseColor:      0xffffff,
       highlightColor: 0xffffff,
