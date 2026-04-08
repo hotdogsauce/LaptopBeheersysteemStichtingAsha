@@ -51,7 +51,7 @@ function useDeadline(since: string, workdays?: number, calendarDays?: number) {
         ? countWorkdays(now, deadline)
         : Math.ceil(msLeft / (1000 * 60 * 60 * 24))
 
-      if (hoursLeft < 24) {
+      if (hoursLeft < 24 || daysLeft === 0) {
         setUrgent(true)
         setLabel(hoursLeft < 1
           ? `${Math.ceil(msLeft / 60000)} min. resterend`
@@ -93,7 +93,7 @@ export default function DeadlineCountdown({ since, workdays, calendarDays }: Pro
       background:    urgent ? '#fef2f2'    : '#fffbeb',
       border:       `1px solid ${urgent ? '#fecaca' : '#fde68a'}`,
     }}>
-      ⏳ {label}
+      {label}
     </span>
   )
 }
