@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser, gql } from '../context/UserContext'
+import { useTour } from '../context/TourContext'
 import { AVATAR_PRESETS } from '../constants/avatarPresets'
 import Avatar from './Avatar'
 
@@ -34,6 +35,7 @@ interface Props { onDone: () => void }
 
 export default function FirstLoginFlow({ onDone }: Props) {
   const { loggedInUser, users } = useUser()
+  const { startTour } = useTour()
   const myUser = users.find(u => u.id === loggedInUser?.userId)
 
   const [step,      setStep]      = useState<Step>('avatar')
@@ -204,14 +206,20 @@ export default function FirstLoginFlow({ onDone }: Props) {
                 <button
                   className="btn btn-primary"
                   style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => {
+                    finishTutorial()
+                    setTimeout(() => startTour(loggedInUser?.role || ''), 300)
+                  }}
+                >
+                  Ja, start de rondleiding
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  style={{ width: '100%', justifyContent: 'center' }}
                   onClick={finishTutorial}
                 >
-                  {/* Tutorial not built yet — placeholder */}
-                  Rondleiding overslaan
+                  Overslaan
                 </button>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--grey)' }}>
-                  Rondleiding is nog niet beschikbaar — binnenkort!
-                </p>
               </div>
             </div>
           </motion.div>

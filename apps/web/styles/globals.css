@@ -953,6 +953,103 @@ a, button {
     0 0 0 1px rgba(255,255,255,0.08);
 }
 
+/* ─── Driver.js tour popover — glass card style ─────── */
+.driver-popover {
+  font-family: var(--font) !important;
+  border-radius: 14px !important;
+  padding: 20px 22px !important;
+  background-color: rgb(234, 238, 246) !important;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.92) 0%,
+    rgba(255,255,255,0.60) 44%,
+    rgba(255,255,255,0)    50%,
+    rgba(0,0,0,0.02)       100%
+  ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(0,0,0,0.05),
+    0 8px 32px rgba(0,0,0,0.14),
+    0 0 0 1px rgba(180,190,210,0.35) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  max-width: 300px !important;
+  color: #000 !important;
+}
+[data-theme="dark"] .driver-popover {
+  background-color: rgb(22, 24, 30) !important;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.10) 0%,
+    rgba(255,255,255,0.04) 44%,
+    rgba(255,255,255,0)    50%,
+    rgba(0,0,0,0.10)       100%
+  ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -1px 0 rgba(0,0,0,0.40),
+    0 8px 32px rgba(0,0,0,0.50),
+    0 0 0 1px rgba(255,255,255,0.06) !important;
+  color: #ededed !important;
+}
+.driver-popover-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.2px !important;
+  margin-bottom: 6px !important;
+  color: inherit !important;
+}
+.driver-popover-description {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: var(--grey) !important;
+}
+[data-theme="dark"] .driver-popover-description { color: #888 !important; }
+.driver-popover-progress-text {
+  font-size: 11px !important;
+  color: var(--grey) !important;
+}
+.driver-popover-footer { margin-top: 16px !important; gap: 8px !important; }
+.driver-popover-prev-btn,
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+  font-family: var(--font) !important;
+  font-size: 12px !important;
+  border-radius: 99px !important;
+  padding: 5px 14px !important;
+  border: 1px solid var(--border) !important;
+  cursor: pointer !important;
+  transition: box-shadow 0.15s !important;
+  background-color: rgb(232, 236, 244) !important;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255,255,255,1.00) 0%,
+    rgba(255,255,255,0.72) 44%,
+    rgba(255,255,255,0)    50%,
+    rgba(0,0,0,0.04)       100%
+  ) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,1), inset 0 -1px 0 rgba(0,0,0,0.08) !important;
+  color: #000 !important;
+  text-shadow: none !important;
+}
+.driver-popover-next-btn {
+  background-color: #000 !important;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.30) 0%,
+    rgba(255,255,255,0.12) 44%,
+    rgba(255,255,255,0)    50%,
+    rgba(0,0,0,0.06)       100%
+  ) !important;
+  color: #fff !important;
+  border-color: #000 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.60), inset 0 -1px 0 rgba(0,0,0,0.22) !important;
+}
+.driver-popover-arrow-side-left.driver-popover-arrow  { border-right-color: rgb(234,238,246) !important; }
+.driver-popover-arrow-side-right.driver-popover-arrow { border-left-color:  rgb(234,238,246) !important; }
+.driver-popover-arrow-side-top.driver-popover-arrow   { border-bottom-color: rgb(234,238,246) !important; }
+.driver-popover-arrow-side-bottom.driver-popover-arrow{ border-top-color:   rgb(234,238,246) !important; }
+
 /* ─── bg-soft blocks (expand panels etc.) ────────────── */
 .section-enter > .card,
 [style*="background: var(--bg-soft)"],

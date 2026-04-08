@@ -1,5 +1,6 @@
 import "@/styles/globals.css";
 import "react-day-picker/style.css";
+import "driver.js/dist/driver.css";
 import type { AppProps } from "next/app";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -7,6 +8,7 @@ import { UserProvider, useUser } from "../context/UserContext";
 import { ToastProvider } from "../context/ToastContext";
 import { ConfirmProvider } from "../context/ConfirmContext";
 import { LanguageProvider } from "../context/LanguageContext";
+import { TourProvider } from "../context/TourContext";
 import PageProgressBar from "../components/PageProgressBar";
 import FirstLoginFlow from "../components/FirstLoginFlow";
 
@@ -56,11 +58,13 @@ export default function App({ Component, pageProps }: AppProps) {
         <ToastProvider>
           <ConfirmProvider>
             <PageProgressBar />
-            <AuthGuard>
-              <OnboardingGuard>
-                <Component {...pageProps} />
-              </OnboardingGuard>
-            </AuthGuard>
+            <TourProvider>
+              <AuthGuard>
+                <OnboardingGuard>
+                  <Component {...pageProps} />
+                </OnboardingGuard>
+              </AuthGuard>
+            </TourProvider>
           </ConfirmProvider>
         </ToastProvider>
       </UserProvider>

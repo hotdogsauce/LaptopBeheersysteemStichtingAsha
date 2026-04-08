@@ -7,6 +7,7 @@ import AvatarPresetPicker from '../components/AvatarPresetPicker'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
+import { useTour } from '../context/TourContext'
 
 type Section = 'naam' | 'settings' | 'manual' | null
 
@@ -14,6 +15,7 @@ export default function Account() {
   const { loggedInUser, users } = useUser()
   const { toast } = useToast()
   const { t } = useT()
+  const { startTour } = useTour()
   const roleLabel: Record<string, string> = { ADMIN: t('role_admin'), OWNER: t('role_owner'), HELPDESK: t('role_helpdesk') }
   const [section, setSection] = useState<Section>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -276,6 +278,23 @@ export default function Account() {
       {/* ── Handleiding ── */}
       {section === 'manual' && (
         <div className="section-enter" style={{ display: 'grid', gap: 12, marginBottom: 32 }}>
+
+          {/* Rondleiding */}
+          <div className="card" style={{ padding: '20px 24px', backgroundImage: 'none', backgroundColor: 'var(--bg-soft)' }}>
+            <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 6px', color: 'var(--black)' }}>
+              Rondleiding
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--grey)', margin: '0 0 14px', lineHeight: 1.5 }}>
+              Een korte rondleiding door het systeem, afgestemd op jouw rol.
+            </p>
+            <button
+              className="btn btn-primary"
+              style={{ width: 'fit-content' }}
+              onClick={() => startTour(loggedInUser!.role)}
+            >
+              Rondleiding starten
+            </button>
+          </div>
 
           {/* App toevoegen aan beginscherm */}
           <div className="card" style={{ padding: '20px 24px' }}>

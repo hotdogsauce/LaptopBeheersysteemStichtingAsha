@@ -301,7 +301,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
 
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {selectedUser.role === 'OWNER' && (
-              <Link href="/" style={{
+              <Link id="tour-nav-overzicht" href="/" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '8px 0', fontSize: 13,
                 color: router.pathname === '/' ? 'var(--black)' : 'var(--grey)',
@@ -316,8 +316,9 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
             {navItems.map(item => {
               const isActive = router.pathname === item.href
               const badge = navBadge?.href === item.href ? navBadge.count : 0
+              const tourId = 'tour-nav-' + (item.href === '/' ? 'overzicht' : item.href.replace('/', ''))
               return (
-                <Link key={item.href} href={item.href} style={{
+                <Link key={item.href} id={tourId} href={item.href} style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -671,6 +672,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
           {loggedInUser && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div
+                id="tour-nav-account"
                 style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                 onClick={() => router.push('/account')}
                 title={t('nav_account')}
