@@ -8,6 +8,7 @@ import TimeInput from '../components/TimeInput'
 import ReservationCalendar, { CalendarReservation } from '../components/ReservationCalendar'
 import LocationPicker from '../components/LocationPicker'
 import { useUser, gql } from '../context/UserContext'
+import DeadlineCountdown from '../components/DeadlineCountdown'
 import { useT } from '../context/LanguageContext'
 import { useToast } from '../context/ToastContext'
 
@@ -23,6 +24,7 @@ interface Reservation {
   status: string
   startDate: string
   endDate: string
+  aanvraag_datum: string
   aantalLaptops: number
   doel: string
   rejectionReason: string | null
@@ -162,7 +164,7 @@ export default function Aanvragen() {
   function herlaadAanvragen() {
     gql(
       `query($userId: ID!) { myReservations(userId: $userId) {
-        id status startDate endDate aantalLaptops doel rejectionReason
+        id status startDate endDate aanvraag_datum aantalLaptops doel rejectionReason
         activity { title }
         laptops { id merk_type }
       } }`,
@@ -407,6 +409,9 @@ export default function Aanvragen() {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                       <span className={`badge ${statusBadge[r.status] || ''}`}>{statusLabel[r.status] || r.status}</span>
+                      {r.status === 'REQUESTED' && (
+                        <DeadlineCountdown since={r.aanvraag_datum} workdays={3} />
+                      )}
                       {(r.status === 'REQUESTED' || r.status === 'APPROVED') && (
                         <button className="btn btn-danger-ghost" style={{ fontSize: 12, padding: '3px 10px' }} onClick={() => annuleer(r.id)}>
                           Annuleren

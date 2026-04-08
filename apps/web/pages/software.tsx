@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
+import DeadlineCountdown from '../components/DeadlineCountdown'
 import { useToast } from '../context/ToastContext'
 
 interface Activity { id: string; title: string }
@@ -180,9 +181,14 @@ export default function Software() {
                       <p style={{ fontSize: 12, color: 'var(--red)', margin: '4px 0 0' }}>Reden: {r.rejectionReason}</p>
                     )}
                   </div>
-                  <span className={`badge ${statusBadge[r.status] || ''}`}>
-                    {statusLabel[r.status] || r.status}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <span className={`badge ${statusBadge[r.status] || ''}`}>
+                      {statusLabel[r.status] || r.status}
+                    </span>
+                    {r.status === 'REQUESTED' && (
+                      <DeadlineCountdown since={r.createdAt} calendarDays={6} />
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
