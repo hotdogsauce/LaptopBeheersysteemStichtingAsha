@@ -312,6 +312,7 @@ export const typeDefs = `
     createUser(name: String!, username: String!, email: String, password: String!, role: UserRole!, adminPassword: String): User!
     updateUser(userId: ID!, name: String, username: String, email: String): User!
     uploadAvatar(userId: ID!, avatar: String!): User!
+    deleteAvatar(userId: ID!): User!
     adminResetPassword(userId: ID!, newPassword: String!): Boolean!
     deleteUser(userId: ID!): Boolean!
 

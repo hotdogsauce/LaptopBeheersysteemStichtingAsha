@@ -1,15 +1,51 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useUser } from '../context/UserContext'
+import CompassBg from '../components/CompassBg'
 
 export default function Login() {
   const { loginWithCredentials, loggedIn, theme, toggleTheme } = useUser()
   const router = useRouter()
-  const [login, setLogin] = useState('')
+  const [login,    setLogin]    = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
   const isDark = theme === 'dark'
+
+  // Vanta FOG
+  const vantaRef    = useRef<HTMLDivElement>(null)
+  const vantaEffect = useRef<any>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function initVanta() {
+      const THREE  = await import('three')
+      // @ts-ignore — vanta has no TS types
+      const { default: FOG } = await import('vanta/dist/vanta.fog.min')
+      if (cancelled || !vantaRef.current) return
+      if (vantaEffect.current) { vantaEffect.current.destroy(); vantaEffect.current = null }
+      vantaEffect.current = FOG({
+        el:            vantaRef.current,
+        THREE,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls:  false,
+        // Light mode: barely-there icy mist. Dark mode: deep cool murk.
+        highlightColor: isDark ? 0x0d1a26 : 0xffffff,
+        midtoneColor:   isDark ? 0x07111a : 0xd8eeff,
+        lowlightColor:  isDark ? 0x040c14 : 0xbcd6f0,
+        baseColor:      isDark ? 0x0e0e0e : 0xf5faff,
+        blurFactor:     0.86,
+        speed:          0.65,
+        zoom:           0.88,
+      })
+    }
+    initVanta()
+    return () => {
+      cancelled = true
+      if (vantaEffect.current) { vantaEffect.current.destroy(); vantaEffect.current = null }
+    }
+  }, [isDark])
 
   useEffect(() => {
     if (loggedIn) router.replace('/')
@@ -28,35 +64,20 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'var(--white)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       fontFamily: 'var(--font)',
       padding: 24,
+      position: 'relative',
     }}>
-      {/* Compass watermark */}
-      <svg aria-hidden viewBox="0 0 120 120" fill="none"
-        style={{
-          position: 'fixed', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 360, opacity: isDark ? 0.016 : 0.02,
-          pointerEvents: 'none', userSelect: 'none', zIndex: 0,
-          color: isDark ? '#fff' : '#000',
-        }}>
-        <circle cx="60" cy="60" r="54" stroke="currentColor" strokeWidth="3" />
-        <circle cx="60" cy="60" r="44" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
-        <circle cx="60" cy="60" r="3.5" fill="currentColor" />
-        <polygon points="60,8 54,60 66,60" fill="currentColor" />
-        <polygon points="60,112 54,60 66,60" stroke="currentColor" strokeWidth="2" fill="none" />
-        <polygon points="112,60 60,54 60,66" stroke="currentColor" strokeWidth="2" fill="none" />
-        <polygon points="8,60 60,54 60,66" stroke="currentColor" strokeWidth="2" fill="none" />
-        <line x1="21.5" y1="21.5" x2="27.5" y2="27.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="98.5" y1="21.5" x2="92.5" y2="27.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="21.5" y1="98.5" x2="27.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="98.5" y1="98.5" x2="92.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      {/* Vanta FOG canvas target */}
+      <div ref={vantaRef} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />
 
+      {/* Compass watermark — above fog, below form */}
+      <CompassBg position="center" size={360} dark={isDark} />
+
+      {/* Login card */}
       <div style={{ width: '100%', maxWidth: 340, position: 'relative', zIndex: 1 }}>
         {/* Logo / wordmark */}
         <div style={{ marginBottom: 40, textAlign: 'center' }}>
@@ -108,7 +129,7 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Theme toggle bottom */}
+        {/* Theme toggle */}
         <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
           <button
             onClick={toggleTheme}

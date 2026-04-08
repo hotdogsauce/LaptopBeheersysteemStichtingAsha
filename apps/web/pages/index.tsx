@@ -1,5 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  useFloating, useHover, useInteractions,
+  FloatingPortal, offset, flip, shift, autoUpdate,
+} from '@floating-ui/react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
@@ -130,57 +135,68 @@ function MissingCountdown({ missingAt }: { missingAt: string | null }) {
 }
 
 function HoverCard({ laptop, children }: { laptop: Laptop; children: React.ReactNode }) {
-  const [visible, setVisible] = useState(false)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
 
-  function handleEnter() { setVisible(true) }
-  function handleLeave() { setVisible(false) }
-  function handleMove(e: React.MouseEvent) {
-    if (!ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
-  }
+  const { refs, floatingStyles, context } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: 'right-start',
+    middleware: [offset(12), flip(), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  })
+
+  const hover = useHover(context, { delay: { open: 0, close: 80 } })
+  const { getReferenceProps, getFloatingProps } = useInteractions([hover])
 
   const ports = [laptop.heeft_vga && 'VGA', laptop.heeft_hdmi && 'HDMI'].filter(Boolean).join(' · ')
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}
-      onMouseEnter={handleEnter} onMouseLeave={handleLeave} onMouseMove={handleMove}>
-      {children}
-      {visible && (
-        <div style={{
-          position: 'absolute',
-          left: Math.min(pos.x + 12, 260),
-          top: pos.y - 10,
-          zIndex: 50,
-          background: 'var(--white)',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          padding: '10px 14px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-          pointerEvents: 'none',
-          minWidth: 180,
-          animation: 'tooltip-in 0.12s ease',
-        }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)', margin: '0 0 4px' }}>{laptop.merk_type}</p>
-          {laptop.specificaties && (
-            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>{laptop.specificaties}</p>
+    <>
+      <div ref={refs.setReference} {...getReferenceProps()}>
+        {children}
+      </div>
+      <FloatingPortal>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              ref={refs.setFloating}
+              style={{ ...floatingStyles, zIndex: 9999 }}
+              {...getFloatingProps()}
+              initial={{ opacity: 0, scale: 0.94, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: -4 }}
+              transition={{ duration: 0.13, ease: 'easeOut' }}
+            >
+              <div style={{
+                background: 'var(--white)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                padding: '10px 14px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                pointerEvents: 'none',
+                minWidth: 180,
+              }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--black)', margin: '0 0 4px' }}>{laptop.merk_type}</p>
+                {laptop.specificaties && (
+                  <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>{laptop.specificaties}</p>
+                )}
+                {ports && (
+                  <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>Poorten: {ports}</p>
+                )}
+                <span className={`badge ${statusBadge[laptop.status] || ''}`} style={{ fontSize: 11 }}>
+                  {statusLabel[laptop.status] || laptop.status}
+                </span>
+                {laptop.status === 'MISSING' && laptop.missingAt && (
+                  <p style={{ fontSize: 11, color: 'var(--grey)', margin: '6px 0 0' }}>
+                    Vermist sinds {new Date(laptop.missingAt).toLocaleDateString('nl-NL')}
+                  </p>
+                )}
+              </div>
+            </motion.div>
           )}
-          {ports && (
-            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '0 0 4px' }}>Poorten: {ports}</p>
-          )}
-          <span className={`badge ${statusBadge[laptop.status] || ''}`} style={{ fontSize: 11 }}>
-            {statusLabel[laptop.status] || laptop.status}
-          </span>
-          {laptop.status === 'MISSING' && laptop.missingAt && (
-            <p style={{ fontSize: 11, color: 'var(--grey)', margin: '6px 0 0' }}>
-              Vermist sinds {new Date(laptop.missingAt).toLocaleDateString('nl-NL')}
-            </p>
-          )}
-        </div>
-      )}
-    </div>
+        </AnimatePresence>
+      </FloatingPortal>
+    </>
   )
 }
 

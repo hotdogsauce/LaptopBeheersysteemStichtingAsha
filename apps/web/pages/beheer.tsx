@@ -1,7 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
+import AvatarCropModal from '../components/AvatarCropModal'
+import UseAnimations from 'react-useanimations'
+import trash2 from 'react-useanimations/lib/trash2'
+import download from 'react-useanimations/lib/download'
+import settings from 'react-useanimations/lib/settings'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
@@ -86,6 +91,10 @@ export default function Beheer() {
   const [editResetPw, setEditResetPw] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [uploadingEditAvatar, setUploadingEditAvatar] = useState(false)
+  const [deletingEditAvatar,  setDeletingEditAvatar]  = useState(false)
+  const [editCropFile,        setEditCropFile]        = useState<File | null>(null)
+  const editAvatarRef = useRef<HTMLInputElement>(null)
 
   const actiefLaptops = laptops.filter(l => l.status !== 'OUT_OF_SERVICE')
   const uitBeheerLaptops = laptops.filter(l => l.status === 'OUT_OF_SERVICE')
@@ -174,6 +183,44 @@ export default function Beheer() {
       setNewName(''); setNewUsername(''); setNewEmail(''); setNewPassword(''); setAdminPass(''); setNewRole('OWNER')
       setShowUserForm(false); herlaadUsers()
     }
+  }
+
+  function handleEditAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !editId) return
+    if (!file.type.startsWith('image/')) { toast('Kies een afbeeldingsbestand.', 'error'); return }
+    if (file.size > 5 * 1024 * 1024) { toast('Bestand mag maximaal 5 MB zijn.', 'error'); return }
+    setEditCropFile(file)
+    e.target.value = ''
+  }
+
+  async function handleEditCropConfirm(avatar: string) {
+    if (!editId) return
+    setEditCropFile(null)
+    setUploadingEditAvatar(true)
+    const data = await gql(
+      `mutation($userId: ID!, $avatar: String!) { uploadAvatar(userId: $userId, avatar: $avatar) { id avatar } }`,
+      { userId: editId, avatar },
+      selectedUserId
+    )
+    setUploadingEditAvatar(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Profielfoto bijgewerkt.')
+    herlaadUsers()
+  }
+
+  async function handleEditAvatarDelete() {
+    if (!editId) return
+    setDeletingEditAvatar(true)
+    const data = await gql(
+      `mutation($userId: ID!) { deleteAvatar(userId: $userId) { id avatar } }`,
+      { userId: editId },
+      selectedUserId
+    )
+    setDeletingEditAvatar(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Profielfoto verwijderd.')
+    herlaadUsers()
   }
 
   function openEdit(u: { id: string; name: string; username: string; email: string | null }) {
@@ -276,7 +323,10 @@ export default function Beheer() {
                   marginBottom: -1, fontFamily: 'var(--font)',
                 }}
               >
-                {t === 'laptops' ? tr('beh_tab_retire') : t === 'bulk' ? tr('beh_tab_bulk') : t === 'accounts' ? tr('beh_tab_accounts') : tr('beh_tab_audit')}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {t === 'accounts' && <UseAnimations animation={settings} size={14} strokeColor={tab === 'accounts' ? '#000000' : '#7d7d7d'} wrapperStyle={{ display: 'flex' }} />}
+                  {t === 'laptops' ? tr('beh_tab_retire') : t === 'bulk' ? tr('beh_tab_bulk') : t === 'accounts' ? tr('beh_tab_accounts') : tr('beh_tab_audit')}
+                </span>
               </button>
             ))}
           </div>
@@ -501,6 +551,32 @@ export default function Beheer() {
 
                       {isEditing && (
                         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', display: 'grid', gap: 14 }}>
+                          {/* Avatar */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <Avatar name={u.name} avatar={u.avatar} size={40} />
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                className="btn btn-ghost"
+                                style={{ fontSize: 12, padding: '3px 10px' }}
+                                disabled={uploadingEditAvatar || deletingEditAvatar}
+                                onClick={() => editAvatarRef.current?.click()}
+                              >
+                                {uploadingEditAvatar ? 'Uploaden…' : 'Foto wijzigen'}
+                              </button>
+                              {u.avatar && (
+                                <button
+                                  className="btn btn-ghost"
+                                  style={{ fontSize: 12, padding: '3px 10px', color: 'var(--grey)' }}
+                                  disabled={deletingEditAvatar || uploadingEditAvatar}
+                                  onClick={handleEditAvatarDelete}
+                                >
+                                  {deletingEditAvatar ? 'Verwijderen…' : 'Foto verwijderen'}
+                                </button>
+                              )}
+                            </div>
+                            <input ref={editAvatarRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleEditAvatarChange} />
+                          </div>
+
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div>
                               <label className="label">Naam</label>
@@ -534,8 +610,9 @@ export default function Beheer() {
                           {u.id !== selectedUserId && (
                             <div style={{ paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
                               {!isConfirmDelete ? (
-                                <button className="btn btn-danger-ghost" style={{ fontSize: 12 }}
+                                <button className="btn btn-danger-ghost" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
                                   onClick={() => setDeleteConfirmId(u.id)}>
+                                  <UseAnimations animation={trash2} size={16} strokeColor="#8b0000" wrapperStyle={{ display: 'flex' }} />
                                   Account verwijderen
                                 </button>
                               ) : (
@@ -560,7 +637,8 @@ export default function Beheer() {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--grey)' }}>{tr('beh_audit_title')}</p>
-                <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={exportAuditCSV} disabled={auditLogs.length === 0}>
+                <button className="btn btn-ghost" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }} onClick={exportAuditCSV} disabled={auditLogs.length === 0}>
+                  <UseAnimations animation={download} size={16} strokeColor="#7d7d7d" wrapperStyle={{ display: 'flex' }} />
                   {tr('beh_audit_export')}
                 </button>
               </div>
@@ -612,6 +690,14 @@ export default function Beheer() {
             </>
           )}
         </>
+      )}
+
+      {editCropFile && (
+        <AvatarCropModal
+          file={editCropFile}
+          onConfirm={handleEditCropConfirm}
+          onCancel={() => setEditCropFile(null)}
+        />
       )}
     </Layout>
   )

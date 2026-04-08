@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import confetti from 'canvas-confetti'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import TimeInput from '../components/TimeInput'
@@ -120,6 +121,17 @@ export default function Reserveringen() {
       toast(data.errors[0].message, 'error')
     } else {
       toast(approve ? 'Reservering goedgekeurd.' : 'Reservering afgewezen.')
+      if (approve) {
+        confetti({
+          particleCount: 72,
+          spread: 55,
+          origin: { y: 0.55 },
+          colors: ['#ffffff', '#e0e8f0', '#b0c8e0', '#000000'],
+          scalar: 0.9,
+          gravity: 1.1,
+          ticks: 180,
+        })
+      }
       setReserveringen(prev => prev.filter(r => r.id !== reservationId))
     }
   }

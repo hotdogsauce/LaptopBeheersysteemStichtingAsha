@@ -30,3 +30,6 @@ HBO'er(s)
 + Database uitleggen(wat er wordt opgeslagen en hoe).
 + AI laten zien, Welke data de ai aan toegang to heeft en wie wat wordt weergegeven (volgens de nieuwe AVG regeling).
 + jivon data maatregelen bespreken en (proberen te)implementeren.
+
+Explenation
+- a kindoff demo that we make that guides a new / first time logging in user and asks them for a tutorial and then it explains 

@@ -502,6 +502,12 @@ export const resolvers = {
       return prisma.user.update({ where: { id: userId }, data: { avatar } })
     },
 
+    deleteAvatar: async (_: any, { userId }: any, { user }: any) => {
+      if (!user) throw new Error('Niet ingelogd.')
+      if (user.id !== userId && user.role !== 'ADMIN') throw new Error('Geen toegang.')
+      return prisma.user.update({ where: { id: userId }, data: { avatar: null } })
+    },
+
     adminResetPassword: async (_: any, { userId, newPassword }: any, { user }: any) => {
       requireRole(user, 'ADMIN')
       if (!newPassword || newPassword.length < 6) throw new Error('Wachtwoord moet minimaal 6 tekens zijn.')

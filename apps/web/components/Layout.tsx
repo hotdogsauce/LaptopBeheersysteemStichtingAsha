@@ -4,6 +4,10 @@ import { useRouter } from 'next/router'
 import { useUser, gql } from '../context/UserContext'
 import { useT, LANG_OPTIONS } from '../context/LanguageContext'
 import Avatar from './Avatar'
+import CompassBg from './CompassBg'
+import UseAnimations from 'react-useanimations'
+import notification2 from 'react-useanimations/lib/notification2'
+import menu4 from 'react-useanimations/lib/menu4'
 
 const statusBadge: Record<string, string> = {
   AVAILABLE: 'badge-available', RESERVED: 'badge-reserved', IN_USE: 'badge-in-use',
@@ -405,21 +409,26 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
       }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button
-            className="hamburger"
-            onClick={() => setMenuOpen(o => !o)}
-            aria-label={menuOpen ? t('menu_close') : t('menu_open')}
-          >
-            <span className={`ham-line${menuOpen ? ' open-top' : ''}`} />
-            <span className={`ham-line${menuOpen ? ' open-mid' : ''}`} />
-            <span className={`ham-line${menuOpen ? ' open-bot' : ''}`} />
+          <div style={{ position: 'relative' }}>
+            <UseAnimations
+              animation={menu4}
+              size={34}
+              strokeColor={isDark ? '#EDEDED' : '#000000'}
+              onClick={() => setMenuOpen(o => !o)}
+              wrapperStyle={{
+                cursor: 'pointer',
+                display: 'none', // shown by CSS .hamburger display:flex at ≤768px
+              }}
+              className="hamburger"
+            />
             {navBadge && !menuOpen && (
               <span style={{
                 position: 'absolute', top: 6, right: 6,
                 width: 6, height: 6, borderRadius: '50%', background: 'var(--red)',
+                pointerEvents: 'none',
               }} />
             )}
-          </button>
+          </div>
 
           <span style={{
             fontWeight: 700, fontSize: 13, letterSpacing: '0.12em',
@@ -523,10 +532,14 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
                   flexShrink: 0, padding: 0, position: 'relative', transition: 'border-color 0.15s',
                 }}
               >
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1.5A4 4 0 0 0 3 5.5v3l-1 1.5h10l-1-1.5v-3A4 4 0 0 0 7 1.5z" stroke="var(--grey)" strokeWidth="1.3" fill="none" strokeLinejoin="round" />
-                  <path d="M5.5 10.5a1.5 1.5 0 0 0 3 0" stroke="var(--grey)" strokeWidth="1.3" fill="none" />
-                </svg>
+                <UseAnimations
+                  animation={notification2}
+                  size={20}
+                  strokeColor={isDark ? '#888888' : '#7d7d7d'}
+                  loop={unreadCount > 0}
+                  autoplay={unreadCount > 0}
+                  wrapperStyle={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                />
                 {unreadCount > 0 && (
                   <span style={{
                     position: 'absolute', top: -2, right: -2,
@@ -716,45 +729,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
         </main>
       </div>
 
-      {/* Compass watermark — centred */}
-      <svg
-        aria-hidden
-        viewBox="0 0 120 120"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 360,
-          opacity: isDark ? 0.016 : 0.02,
-          pointerEvents: 'none',
-          userSelect: 'none',
-          zIndex: 0,
-          color: isDark ? '#fff' : '#000',
-        }}
-      >
-        {/* Outer ring */}
-        <circle cx="60" cy="60" r="54" stroke="currentColor" strokeWidth="3" />
-        {/* Inner ring */}
-        <circle cx="60" cy="60" r="44" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
-        {/* Centre dot */}
-        <circle cx="60" cy="60" r="3.5" fill="currentColor" />
-        {/* N point (filled) */}
-        <polygon points="60,8 54,60 66,60" fill="currentColor" />
-        {/* S point (outline) */}
-        <polygon points="60,112 54,60 66,60" stroke="currentColor" strokeWidth="2" fill="none" />
-        {/* E point (outline) */}
-        <polygon points="112,60 60,54 60,66" stroke="currentColor" strokeWidth="2" fill="none" />
-        {/* W point (outline) */}
-        <polygon points="8,60 60,54 60,66" stroke="currentColor" strokeWidth="2" fill="none" />
-        {/* Diagonal tick marks */}
-        <line x1="21.5" y1="21.5" x2="27.5" y2="27.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="98.5" y1="21.5" x2="92.5" y2="27.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="21.5" y1="98.5" x2="27.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <line x1="98.5" y1="98.5" x2="92.5" y2="92.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      <CompassBg position="right" size={520} dark={isDark} />
     </div>
   )
 }

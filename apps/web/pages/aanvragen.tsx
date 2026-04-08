@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { DayPicker } from 'react-day-picker'
+import { nl } from 'react-day-picker/locale'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
 import TimeInput from '../components/TimeInput'
@@ -45,125 +47,65 @@ function fmtShort(d: string) {
   return new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 }
 
-const WEEKDAYS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
-const MONTHS = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
-
 function Calendar({ reservations }: { reservations: Reservation[] }) {
   const { t } = useT()
   const statusLabel: Record<string, string> = {
     REQUESTED: t('res_requested'), APPROVED: t('res_approved'), REJECTED: t('res_rejected'),
   }
-  const [cur, setCur] = useState(() => {
-    const d = new Date(); d.setDate(1); return d
-  })
+  const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); return d })
 
-  const year = cur.getFullYear()
-  const month = cur.getMonth()
-  const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7 // 0=Mon
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const today = new Date()
-
-  const cells: (number | null)[] = [
-    ...Array(firstWeekday).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ]
-  // pad to full weeks
-  while (cells.length % 7 !== 0) cells.push(null)
-
-  function getForDay(day: number) {
-    const date = new Date(year, month, day)
-    date.setHours(12)
-    return reservations.filter(r => {
-      const s = new Date(r.startDate); s.setHours(0)
-      const e = new Date(r.endDate); e.setHours(23, 59)
-      return date >= s && date <= e
-    })
+  function datesForStatus(status: string): Date[] {
+    const out: Date[] = []
+    for (const r of reservations) {
+      if (r.status !== status) continue
+      const start = new Date(r.startDate); start.setHours(12)
+      const end = new Date(r.endDate); end.setHours(12)
+      const cur = new Date(start)
+      while (cur <= end) { out.push(new Date(cur)); cur.setDate(cur.getDate() + 1) }
+    }
+    return out
   }
 
-  const isToday = (day: number) =>
-    day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <button
-          className="btn btn-ghost"
-          style={{ padding: '4px 10px', fontSize: 13 }}
-          onClick={() => setCur(new Date(year, month - 1, 1))}
-        >←</button>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--black)' }}>
-          {MONTHS[month]} {year}
-        </p>
-        <button
-          className="btn btn-ghost"
-          style={{ padding: '4px 10px', fontSize: 13 }}
-          onClick={() => setCur(new Date(year, month + 1, 1))}
-        >→</button>
-      </div>
-
-      {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
-        {WEEKDAYS.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 11, color: 'var(--grey)', padding: '4px 0', fontWeight: 600 }}>
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* Day cells */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-        {cells.map((day, i) => {
-          if (!day) return <div key={i} />
-          const dayRes = getForDay(day)
-          return (
-            <div
-              key={i}
-              style={{
-                minHeight: 52, padding: '4px 6px', borderRadius: 6,
-                background: isToday(day) ? 'var(--bg-soft)' : 'transparent',
-                border: isToday(day) ? '1px solid var(--border)' : '1px solid transparent',
-                position: 'relative',
-              }}
-            >
-              <p style={{
-                margin: 0, fontSize: 12, fontWeight: isToday(day) ? 700 : 400,
-                color: isToday(day) ? 'var(--black)' : 'var(--grey)',
-                lineHeight: 1,
-              }}>{day}</p>
-              <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {dayRes.slice(0, 2).map(r => (
-                  <div
-                    key={r.id}
-                    title={`${r.activity.title} — ${statusLabel[r.status]}`}
-                    style={{
-                      height: 5, borderRadius: 3,
-                      background: statusColor[r.status] || 'var(--grey)',
-                    }}
-                  />
-                ))}
-                {dayRes.length > 2 && (
-                  <p style={{ margin: 0, fontSize: 9, color: 'var(--grey)', lineHeight: 1 }}>
-                    +{dayRes.length - 2}
-                  </p>
+    <div className="rdp-asha">
+      <DayPicker
+        locale={nl}
+        month={month}
+        onMonthChange={setMonth}
+        modifiers={{
+          approved: datesForStatus('APPROVED'),
+          pending: datesForStatus('REQUESTED'),
+        }}
+        components={{
+          DayButton: ({ day, modifiers, ...btnProps }) => {
+            const hasApproved = Boolean(modifiers.approved)
+            const hasPending = Boolean(modifiers.pending)
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <button {...btnProps} />
+                {(hasApproved || hasPending) && (
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    {hasApproved && <div style={{ width: 4, height: 4, borderRadius: '50%', background: statusColor.APPROVED }} />}
+                    {hasPending  && <div style={{ width: 4, height: 4, borderRadius: '50%', background: statusColor.REQUESTED }} />}
+                  </div>
                 )}
               </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: 'wrap' }}>
-        {Object.entries(statusLabel)
-          .filter(([k]) => reservations.some(r => r.status === k))
-          .map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 10, height: 5, borderRadius: 3, background: statusColor[k] }} />
-              <span style={{ fontSize: 11, color: 'var(--grey)' }}>{v}</span>
-            </div>
-          ))}
-      </div>
+            )
+          },
+        }}
+        footer={
+          <div style={{ display: 'flex', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
+            {(['APPROVED', 'REQUESTED'] as const).map(k =>
+              reservations.some(r => r.status === k) ? (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 10, height: 5, borderRadius: 3, background: statusColor[k] }} />
+                  <span style={{ fontSize: 11, color: 'var(--grey)' }}>{statusLabel[k]}</span>
+                </div>
+              ) : null
+            )}
+          </div>
+        }
+      />
     </div>
   )
 }

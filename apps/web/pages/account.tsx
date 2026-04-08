@@ -1,32 +1,14 @@
 import { useState, useRef } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import Layout from '../components/Layout'
 import Avatar from '../components/Avatar'
+import AvatarCropModal from '../components/AvatarCropModal'
+import AvatarPresetPicker from '../components/AvatarPresetPicker'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
 import { useT } from '../context/LanguageContext'
 
 type Section = 'naam' | 'settings' | 'manual' | null
-
-function resizeToSquare(file: File, size = 80): Promise<string> {
-  return new Promise(resolve => {
-    const reader = new FileReader()
-    reader.onload = e => {
-      const img = new Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        canvas.width = size; canvas.height = size
-        const ctx = canvas.getContext('2d')!
-        const s = Math.min(img.width, img.height)
-        const sx = (img.width - s) / 2
-        const sy = (img.height - s) / 2
-        ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size)
-        resolve(canvas.toDataURL('image/jpeg', 0.7))
-      }
-      img.src = e.target!.result as string
-    }
-    reader.readAsDataURL(file)
-  })
-}
 
 export default function Account() {
   const { loggedInUser, users } = useUser()
@@ -38,15 +20,23 @@ export default function Account() {
 
   // Avatar
   const myUser = users.find(u => u.id === loggedInUser?.userId)
+  const [cropFile,        setCropFile]        = useState<File | null>(null)
+  const [showPresets,     setShowPresets]     = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [deletingAvatar,  setDeletingAvatar]  = useState(false)
 
-  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { toast('Kies een afbeeldingsbestand.', 'error'); return }
     if (file.size > 5 * 1024 * 1024) { toast('Bestand mag maximaal 5 MB zijn.', 'error'); return }
+    setCropFile(file)
+    e.target.value = ''
+  }
+
+  async function handleCropConfirm(avatar: string) {
+    setCropFile(null)
     setUploadingAvatar(true)
-    const avatar = await resizeToSquare(file)
     const data = await gql(
       `mutation($userId: ID!, $avatar: String!) { uploadAvatar(userId: $userId, avatar: $avatar) { id avatar } }`,
       { userId: loggedInUser!.userId, avatar },
@@ -55,7 +45,42 @@ export default function Account() {
     setUploadingAvatar(false)
     if (data.errors) { toast(data.errors[0].message, 'error'); return }
     toast('Profielfoto bijgewerkt.')
-    e.target.value = ''
+  }
+
+  async function handlePresetSelect(url: string) {
+    setUploadingAvatar(true)
+    try {
+      const resp   = await fetch(url)
+      const blob   = await resp.blob()
+      const bitmap = await createImageBitmap(blob)
+      const canvas = document.createElement('canvas')
+      canvas.width = 80; canvas.height = 80
+      const ctx = canvas.getContext('2d')!
+      const s   = Math.min(bitmap.width, bitmap.height)
+      ctx.beginPath(); ctx.arc(40, 40, 40, 0, Math.PI * 2); ctx.clip()
+      ctx.drawImage(bitmap, (bitmap.width - s) / 2, (bitmap.height - s) / 2, s, s, 0, 0, 80, 80)
+      const avatar = canvas.toDataURL('image/jpeg', 0.85)
+      const data = await gql(
+        `mutation($userId: ID!, $avatar: String!) { uploadAvatar(userId: $userId, avatar: $avatar) { id avatar } }`,
+        { userId: loggedInUser!.userId, avatar },
+        loggedInUser!.userId
+      )
+      if (data.errors) { toast(data.errors[0].message, 'error') }
+      else { toast('Profielfoto bijgewerkt.'); setShowPresets(false) }
+    } catch { toast('Kon afbeelding niet laden.', 'error') }
+    setUploadingAvatar(false)
+  }
+
+  async function handleAvatarDelete() {
+    setDeletingAvatar(true)
+    const data = await gql(
+      `mutation($userId: ID!) { deleteAvatar(userId: $userId) { id avatar } }`,
+      { userId: loggedInUser!.userId },
+      loggedInUser!.userId
+    )
+    setDeletingAvatar(false)
+    if (data.errors) { toast(data.errors[0].message, 'error'); return }
+    toast('Profielfoto verwijderd.')
   }
 
   // Name change
@@ -127,7 +152,7 @@ export default function Account() {
           <Avatar name={loggedInUser.name} avatar={myUser?.avatar} size={52} />
           <button
             onClick={() => fileRef.current?.click()}
-            disabled={uploadingAvatar}
+            disabled={uploadingAvatar || deletingAvatar}
             title="Profielfoto wijzigen"
             style={{
               position: 'absolute', bottom: -2, right: -2,
@@ -147,6 +172,27 @@ export default function Account() {
           <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--grey)' }}>
             @{loggedInUser.username} · {roleLabel[loggedInUser.role] || loggedInUser.role}
           </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setShowPresets(v => !v)}
+              disabled={uploadingAvatar || deletingAvatar}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--grey)', padding: 0, fontFamily: 'var(--font)', textDecoration: 'underline' }}
+            >
+              {uploadingAvatar ? 'Uploaden…' : 'Kies preset'}
+            </button>
+            {myUser?.avatar && (
+              <>
+                <span style={{ fontSize: 11, color: 'var(--border)' }}>·</span>
+                <button
+                  onClick={handleAvatarDelete}
+                  disabled={deletingAvatar || uploadingAvatar}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--grey)', padding: 0, fontFamily: 'var(--font)', textDecoration: 'underline' }}
+                >
+                  {deletingAvatar ? 'Verwijderen…' : 'Foto verwijderen'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -321,6 +367,32 @@ export default function Account() {
           </div>
         </div>
       )}
+
+      {cropFile && (
+        <AvatarCropModal
+          file={cropFile}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
+
+      <AnimatePresence>
+        {showPresets && (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setShowPresets(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 399 }}
+            />
+            <AvatarPresetPicker
+              currentAvatar={myUser?.avatar}
+              onSelect={handlePresetSelect}
+              onClose={() => setShowPresets(false)}
+              uploading={uploadingAvatar}
+            />
+          </>
+        )}
+      </AnimatePresence>
     </Layout>
   )
 }
