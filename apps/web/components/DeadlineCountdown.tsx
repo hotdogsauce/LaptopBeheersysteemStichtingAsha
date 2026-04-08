@@ -4,6 +4,17 @@ import duration from 'dayjs/plugin/duration'
 
 dayjs.extend(duration)
 
+function countWorkdays(from: Date, to: Date): number {
+  let count = 0
+  const cur = new Date(from)
+  while (cur < to) {
+    const day = cur.getDay()
+    if (day !== 0 && day !== 6) count++
+    cur.setDate(cur.getDate() + 1)
+  }
+  return count
+}
+
 function addWorkdays(from: Date, days: number): Date {
   const d = new Date(from)
   let added = 0
@@ -43,14 +54,17 @@ function useDeadline(since: string | undefined, workdays?: number, calendarDays?
         return
       }
 
-      const dur  = dayjs.duration(msLeft)
-      const d    = Math.floor(dur.asDays())
-      const h    = dur.hours()
-      const m    = dur.minutes()
+      const dur      = dayjs.duration(msLeft)
+      const now      = new Date()
+      const daysLeft = workdays != null
+        ? countWorkdays(now, deadline)
+        : Math.ceil(msLeft / (1000 * 60 * 60 * 24))
+      const h = dur.hours()
+      const m = dur.minutes()
 
-      if (d > 0)      setState({ text: `Nog ${d} ${d === 1 ? 'dag' : 'dagen'}`,  urgent: false })
-      else if (h > 0) setState({ text: `Nog ${h} uur`,                            urgent: true  })
-      else            setState({ text: `Nog ${Math.max(1, m)} min.`,              urgent: true  })
+      if (daysLeft > 0) setState({ text: `Nog ${daysLeft} ${workdays != null ? (daysLeft === 1 ? 'werkdag' : 'werkdagen') : (daysLeft === 1 ? 'dag' : 'dagen')}`, urgent: false })
+      else if (h > 0)   setState({ text: `Nog ${h} uur`,             urgent: true })
+      else              setState({ text: `Nog ${Math.max(1, m)} min.`, urgent: true })
     }
 
     update()
