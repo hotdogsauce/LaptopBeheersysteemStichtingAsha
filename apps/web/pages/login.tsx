@@ -46,10 +46,20 @@ export default function Login() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Live-update baseColor when theme toggles — no destroy/recreate, no flash
+  // Live-update fog colours when theme toggles — no destroy/recreate, no flash
   useEffect(() => {
     if (!vantaEffect.current) return
-    vantaEffect.current.setOptions({ baseColor: isDark ? 0x0c0c0c : 0xffffff })
+    vantaEffect.current.setOptions(isDark ? {
+      baseColor:      0x0c0c0c,
+      highlightColor: 0x2a2a2a, // very dark grey clouds — barely visible on black
+      midtoneColor:   0x1a1a1a,
+      lowlightColor:  0x111111,
+    } : {
+      baseColor:      0xffffff,
+      highlightColor: 0xffffff,
+      midtoneColor:   0xd4d4d4,
+      lowlightColor:  0x999999,
+    })
   }, [isDark])
 
   useEffect(() => {
