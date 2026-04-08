@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import DeadlineCountdown from '../components/DeadlineCountdown'
 import confetti from 'canvas-confetti'
 import Layout from '../components/Layout'
 import PhoneInput from '../components/PhoneInput'
@@ -16,6 +17,7 @@ interface Reservation {
   status: string
   startDate: string
   endDate: string
+  aanvraag_datum: string
   aantalLaptops: number
   doel: string
   contact_info: string
@@ -90,7 +92,7 @@ export default function Reserveringen() {
     if (!selectedUserId || selectedUser?.role !== 'ADMIN') return
     setLoading(true)
     gql(
-      '{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }',
+      '{ pendingReservations { id status startDate endDate aanvraag_datum aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }',
       undefined, selectedUserId
     ).then(data => { setReserveringen(data.data?.pendingReservations || []); setLoading(false) })
   }, [selectedUserId])
@@ -309,7 +311,10 @@ export default function Reserveringen() {
                         )}
                       </div>
                     </div>
-                    <span className="badge badge-pending" style={{ flexShrink: 0, marginLeft: 16 }}>In afwachting</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, marginLeft: 16 }}>
+                      <span className="badge badge-pending">In afwachting</span>
+                      <DeadlineCountdown since={r.aanvraag_datum} workdays={3} />
+                    </div>
                   </div>
 
                   <div style={{ marginBottom: 12 }}>
