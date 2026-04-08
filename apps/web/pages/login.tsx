@@ -30,11 +30,11 @@ export default function Login() {
         mouseControls: true,
         touchControls: true,
         gyroControls:  false,
-        // Dark: deep crimson smoke. Light: drifting silver mist.
-        highlightColor: isDark ? 0x3a0a0a : 0xffffff,
-        midtoneColor:   isDark ? 0x220404 : 0xd4d4d4,
-        lowlightColor:  isDark ? 0x140202 : 0xb8b8b8,
-        baseColor:      isDark ? 0x0d0808 : 0xeeeeee,
+        // Dark: white/silver fog on near-black. Light: soft grey mist on white.
+        highlightColor: isDark ? 0xffffff : 0xffffff,
+        midtoneColor:   isDark ? 0xd0d0d0 : 0xcccccc,
+        lowlightColor:  isDark ? 0x909090 : 0xaaaaaa,
+        baseColor:      isDark ? 0x0c0c0c : 0xffffff,
         blurFactor:     0.82,
         speed:          0.40,
         zoom:           0.90,
