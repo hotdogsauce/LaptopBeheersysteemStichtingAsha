@@ -166,7 +166,7 @@ export default function Reserveringen() {
     setLocatie(''); setAantalLaptops('1'); setDoel(''); setContactNaam(''); setContactPhone(''); setExtraInfo('')
     gql('{ activeReservations { id startDate endDate aantalLaptops status locatie activity { title } } }', undefined, selectedUserId)
       .then(d => setCalReservations(d.data?.activeReservations || []))
-    gql('{ pendingReservations { id status startDate endDate aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }', undefined, selectedUserId)
+    gql('{ pendingReservations { id status startDate endDate aanvraag_datum aantalLaptops doel contact_info extra_info rejectionReason requester { name } activity { title locatie } } }', undefined, selectedUserId)
       .then(d => setReserveringen(d.data?.pendingReservations || []))
   }
 
