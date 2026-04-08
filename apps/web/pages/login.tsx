@@ -16,9 +16,15 @@ export default function Login() {
   const vantaRef    = useRef<HTMLDivElement>(null)
   const vantaEffect = useRef<any>(null)
 
-  // Init once — no re-init on theme change to avoid flash
+  // Vanta FOG — light mode only; destroy in dark mode
   useEffect(() => {
     let cancelled = false
+
+    if (isDark) {
+      if (vantaEffect.current) { vantaEffect.current.destroy(); vantaEffect.current = null }
+      return
+    }
+
     async function initVanta() {
       const THREE  = await import('three')
       // @ts-ignore — vanta has no TS types
@@ -33,7 +39,7 @@ export default function Login() {
         highlightColor: 0xffffff,
         midtoneColor:   0xd4d4d4,
         lowlightColor:  0x999999,
-        baseColor:      isDark ? 0x0c0c0c : 0xffffff,
+        baseColor:      0xffffff,
         blurFactor:     0.68,
         speed:          0.45,
         zoom:           0.90,
@@ -44,23 +50,7 @@ export default function Login() {
       cancelled = true
       if (vantaEffect.current) { vantaEffect.current.destroy(); vantaEffect.current = null }
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Live-update fog colours when theme toggles — no destroy/recreate, no flash
-  useEffect(() => {
-    if (!vantaEffect.current) return
-    vantaEffect.current.setOptions(isDark ? {
-      baseColor:      0x0c0c0c,
-      highlightColor: 0xffffff,
-      midtoneColor:   0xd0d0d0,
-      lowlightColor:  0x888888,
-    } : {
-      baseColor:      0xffffff,
-      highlightColor: 0xffffff,
-      midtoneColor:   0xd4d4d4,
-      lowlightColor:  0x999999,
-    })
-  }, [isDark])
+  }, [isDark]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (loggedIn) router.replace('/')
