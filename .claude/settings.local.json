@@ -6,7 +6,14 @@
       "Bash(npx tsc:*)",
       "Bash(npm run:*)",
       "Bash(node -e \"const {createServer} = require\\('node:http'\\); const s = createServer\\(\\); console.log\\(Object.keys\\(s\\)\\)\")",
-      "WebFetch(domain:brains.volmit.com)"
+      "WebFetch(domain:brains.volmit.com)",
+      "WebFetch(domain:www.mintlify.com)",
+      "WebFetch(domain:pub.dev)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); d.data.__schema.mutationType.fields.forEach\\(f=>console.log\\(f.name, '-', f.args.map\\(a=>a.name\\).join\\(', '\\)\\)\\)\")",
+      "Bash(curl -s -X POST https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __schema { mutationType { fields { name } } } }\"}')",
+      "Bash(curl -s -X POST https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __type\\(name: \\\\\"User\\\\\"\\) { fields { name } } }\"}')",
+      "Bash(curl -s -X POST https://laptopbeheersysteemstichtingasha-production.up.railway.app/graphql -H 'Content-Type: application/json' -d '{\"query\":\"{ __schema { mutationType { fields { name args { name type { name kind ofType { name kind } } } } } } }\"}')",
+      "Bash(node -e ':*)"
     ]
   }
 }

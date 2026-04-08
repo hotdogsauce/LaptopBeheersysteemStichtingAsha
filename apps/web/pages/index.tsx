@@ -48,7 +48,7 @@ const allowedTransitions: Record<string, string[]> = {
   IN_CONTROL:     ['AVAILABLE', 'DEFECT', 'MISSING'],
   DEFECT:         ['IN_CONTROL', 'OUT_OF_SERVICE'],
   OUT_OF_SERVICE: [],
-  MISSING:        ['OUT_OF_SERVICE'],
+  MISSING:        ['OUT_OF_SERVICE', 'IN_CONTROL'],
 }
 
 const ALL_STATUSES = ['AVAILABLE', 'RESERVED', 'IN_USE', 'IN_CONTROL', 'DEFECT', 'MISSING', 'OUT_OF_SERVICE']
@@ -317,7 +317,7 @@ export default function Home() {
     if (!nieuweStatus) return
     if (!maintenanceLog.trim()) { toast('Voeg een logopmerking toe.', 'error'); return }
     const laptop   = laptops.find(l => l.id === laptopId)
-    const isAdmin  = selectedUser?.role === 'ADMIN'
+    const isAdmin  = loggedInUser?.role === 'ADMIN'
     // DEFECT→IN_CONTROL is blocked on processReturn — always use bulkStatusChange for that pair
     const forceBlk = laptop?.status === 'DEFECT' && nieuweStatus === 'IN_CONTROL'
 
@@ -359,7 +359,7 @@ export default function Home() {
           laptopName: laptop?.merk_type,
           laptopId,
           newStatus:  nieuweStatus,
-          reportedBy: selectedUser?.name,
+          reportedBy: loggedInUser?.name,
           blocked:    true,
         }),
       }).catch(() => {})
@@ -382,7 +382,7 @@ export default function Home() {
           laptopName: laptop.merk_type,
           laptopId:   laptop.id,
           newStatus:  nieuweStatus,
-          reportedBy: selectedUser?.name,
+          reportedBy: loggedInUser?.name,
           blocked:    false,
         }),
       }).catch(() => {})
