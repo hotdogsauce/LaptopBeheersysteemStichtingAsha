@@ -1,6 +1,22 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
+/* ─── Text selection ─────────────────────────────────── */
+::selection {
+  background: rgba(180, 200, 240, 0.45);
+  color: inherit;
+}
+::-moz-selection {
+  background: rgba(180, 200, 240, 0.45);
+  color: inherit;
+}
+[data-theme="dark"] ::selection {
+  background: rgba(120, 150, 210, 0.35);
+}
+[data-theme="dark"] ::-moz-selection {
+  background: rgba(120, 150, 210, 0.35);
+}
+
 /* ─── Typed custom properties (enables CSS var transitions) ── */
 @property --white        { syntax: '<color>'; inherits: true; initial-value: #FFFFFF; }
 @property --black        { syntax: '<color>'; inherits: true; initial-value: #000000; }

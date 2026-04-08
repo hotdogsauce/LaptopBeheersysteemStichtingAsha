@@ -316,10 +316,10 @@ export default function Home() {
   async function wijzigStatus(laptopId: string) {
     if (!nieuweStatus) return
     const data = await gql(
-      `mutation($laptopId: ID!, $status: LaptopStatus!, $maintenanceLog: String) {
-        processReturn(laptopId: $laptopId, status: $status, maintenanceLog: $maintenanceLog) { id status }
+      `mutation($laptopIds: [ID!]!, $status: LaptopStatus!) {
+        bulkStatusChange(laptopIds: $laptopIds, status: $status) { id status }
       }`,
-      { laptopId, status: nieuweStatus, maintenanceLog: maintenanceLog || null },
+      { laptopIds: [laptopId], status: nieuweStatus },
       selectedUserId
     )
     if (data.errors) {
