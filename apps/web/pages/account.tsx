@@ -147,7 +147,7 @@ export default function Account() {
   return (
     <Layout title={t('acc_title')}>
       {/* Profile card */}
-      <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
+      <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20, borderLeft: '3px solid var(--border)' }}>
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <Avatar name={loggedInUser.name} avatar={myUser?.avatar} size={52} />
           <button

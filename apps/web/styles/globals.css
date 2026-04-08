@@ -708,25 +708,34 @@ a, button {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.08);
 }
 
-/* ─── Ghost button: subtle top edge + frosted glass ─── */
-.btn-ghost {
+/* ─── Ghost button: glass gloss matching primary ─────── */
+/* Base shifts to cool-grey so the white top gradient has visible contrast */
+.btn-ghost,
+.btn-ghost:hover:not(:disabled) {
+  background-color: rgb(238, 241, 246);
   background-image: linear-gradient(
     to bottom,
-    rgba(255,255,255,0.90) 0%,
-    rgba(255,255,255,0.55) 100%
+    rgba(255,255,255,0.95) 0%,
+    rgba(255,255,255,0.55) 44%,
+    rgba(255,255,255,0)    62%
   );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,1),
+              inset 0 -1px 0 rgba(0,0,0,0.07),
+              0 1px 2px rgba(0,0,0,0.06);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-[data-theme="dark"] .btn-ghost {
-  background: rgba(40,40,40,0.55);
+[data-theme="dark"] .btn-ghost,
+[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+  background-color: rgb(36,36,40);
   background-image: linear-gradient(
     to bottom,
-    rgba(255,255,255,0.10) 0%,
-    rgba(255,255,255,0)    55%
+    rgba(255,255,255,0.12) 0%,
+    rgba(255,255,255,0.03) 48%,
+    rgba(255,255,255,0)    62%
   );
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18),
+              inset 0 -1px 0 rgba(0,0,0,0.3);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -807,4 +816,31 @@ a, button {
 }
 .card:hover::after {
   opacity: 1;
+}
+
+/* ─── Card surface: glass top-edge + depth ───────────── */
+.card {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.80),
+              0 1px 3px rgba(0,0,0,0.05);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.55) 0%,
+    rgba(255,255,255,0)    40%
+  );
+}
+[data-theme="dark"] .card {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06),
+              0 1px 4px rgba(0,0,0,0.25);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0)    40%
+  );
+}
+
+/* ─── bg-soft blocks (expand panels etc.) ────────────── */
+.section-enter > .card,
+[style*="background: var(--bg-soft)"],
+[style*="background:'var(--bg-soft)'"] {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
 }
