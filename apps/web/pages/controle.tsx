@@ -202,6 +202,7 @@ export default function Controle() {
             <label className="label">Laptop selecteren (in controle)</label>
             {inControlLaptops.length === 0 ? (
               <div className="empty" style={{ padding: '32px 0' }}>
+                <div className="empty-icon">✓</div>
                 <p className="empty-text">Geen laptops in controlestatus.</p>
               </div>
             ) : (
@@ -375,7 +376,7 @@ export default function Controle() {
 
           {history.length > 0 && (
             <div>
-              <p className="section-label" style={{ marginBottom: 10 }}>{t('ctrl_history')}</p>
+              <p className="section-label">{t('ctrl_history')}</p>
               <div style={{ display: 'grid', gap: 6 }}>
                 {history.map(r => (
                   <div key={r.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

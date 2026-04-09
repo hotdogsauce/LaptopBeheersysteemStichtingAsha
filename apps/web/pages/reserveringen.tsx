@@ -278,7 +278,7 @@ export default function Reserveringen() {
           {!loading && reserveringen.length > 0 && (
             <div style={{ display: 'grid', gap: 16 }}>
               {reserveringen.map(r => (
-                <div key={r.id} className="card" style={{ backgroundImage: 'none', backgroundColor: 'var(--bg-soft)' }}>
+                <div key={r.id} className="card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                     <div style={{ flex: 1 }}>
                       <h3 style={{ marginBottom: 8 }}>{r.activity.title}</h3>

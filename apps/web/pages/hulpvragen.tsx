@@ -286,7 +286,7 @@ export default function Hulpvragen() {
           {/* Upcoming follow-ups */}
           {metVervolg.length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <p className="section-label" style={{ marginBottom: 10, color: 'var(--red)' }}>
+              <p className="section-label" style={{ color: 'var(--red)' }}>
                 Aankomende vervolgafspraken ({metVervolg.length})
               </p>
               <div style={{ display: 'grid', gap: 8 }}>
@@ -302,6 +302,7 @@ export default function Hulpvragen() {
           {/* Rest */}
           {overige.length === 0 ? (
             <div className="empty" style={{ padding: '40px 0' }}>
+              <div className="empty-icon">💬</div>
               <p className="empty-text">Geen hulpvragen gevonden.</p>
             </div>
           ) : (

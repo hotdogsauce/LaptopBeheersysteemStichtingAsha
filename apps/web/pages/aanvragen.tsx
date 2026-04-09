@@ -367,6 +367,7 @@ export default function Aanvragen() {
 
           {myReservations.length === 0 && (
             <div className="empty" style={{ padding: '40px 0' }}>
+              <div className="empty-icon">📋</div>
               <p className="empty-text">{t('req_empty')}</p>
             </div>
           )}

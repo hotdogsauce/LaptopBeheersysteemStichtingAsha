@@ -128,7 +128,7 @@ export default function Toewijzen() {
               {/* Nog toe te wijzen */}
               {pending.length > 0 && (
                 <div style={{ marginBottom: 40 }}>
-                  <p className="section-label" style={{ marginBottom: 12 }}>
+                  <p className="section-label">
                     {t('tw_pending')} ({pending.length})
                   </p>
                   <div style={{ display: 'grid', gap: 12 }}>
@@ -241,7 +241,7 @@ export default function Toewijzen() {
               {/* Al toegewezen */}
               {assigned.length > 0 && (
                 <div>
-                  <p className="section-label" style={{ marginBottom: 12 }}>{t('tw_assigned')} ({assigned.length})</p>
+                  <p className="section-label">{t('tw_assigned')} ({assigned.length})</p>
                   <div style={{ display: 'grid', gap: 6 }}>
                     {assigned.map(r => (
                       <div key={r.id} className="card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

@@ -242,7 +242,7 @@ export default function Account() {
 
       {/* ── Naam wijzigen ── */}
       {section === 'naam' && (
-        <div className="card section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
+        <div className="card card-form section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
           <div>
             <label className="label">Nieuwe naam</label>
             <input className="input" placeholder={loggedInUser.name} value={nieuweNaam} onChange={e => setNieuweNaam(e.target.value)} />
@@ -255,7 +255,7 @@ export default function Account() {
 
       {/* ── Wachtwoord veranderen ── */}
       {section === 'settings' && (
-        <div className="card section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
+        <div className="card card-form section-enter" style={{ marginBottom: 32, display: 'grid', gap: 16 }}>
           <h2 style={{ marginBottom: 4 }}>{t('acc_save_pw')}</h2>
           <div>
             <label className="label">{t('acc_curr_pw')}</label>

@@ -153,6 +153,7 @@ export default function Storingen() {
 
           {openIssues.length === 0 && (
             <div className="empty" style={{ padding: '40px 0' }}>
+              <div className="empty-icon">✓</div>
               <p className="empty-text">Geen open storingen.</p>
             </div>
           )}

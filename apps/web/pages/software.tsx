@@ -165,6 +165,7 @@ export default function Software() {
 
           {myRequests.length === 0 && (
             <div className="empty" style={{ padding: '40px 0' }}>
+              <div className="empty-icon">📦</div>
               <p className="empty-text">Nog geen aanvragen ingediend.</p>
             </div>
           )}

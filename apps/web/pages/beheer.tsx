@@ -471,7 +471,7 @@ export default function Beheer() {
 
               {uitBeheerLaptops.length > 0 && (
                 <div>
-                  <p className="section-label" style={{ marginBottom: 10 }}>Uit beheer genomen ({uitBeheerLaptops.length})</p>
+                  <p className="section-label">Uit beheer genomen ({uitBeheerLaptops.length})</p>
                   <div style={{ display: 'grid', gap: 6 }}>
                     {uitBeheerLaptops.map(laptop => (
                       <div key={laptop.id} className="card-row" style={{ opacity: 0.45, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
