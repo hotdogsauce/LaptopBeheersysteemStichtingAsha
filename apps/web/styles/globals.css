@@ -38,7 +38,7 @@
   --border:  #EBEBEB;
   --border-subtle: #F3F3F3;
   --bg-soft: #F8F8F8;
-  --bg-card: linear-gradient(155deg, #FFFFFF 0%, #F7F7F7 100%);
+  --bg-card: #FFFFFF;
   --shadow-card: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.03);
   --radius: 7px;
   --font: 'DM Sans', system-ui, sans-serif;
@@ -54,7 +54,7 @@
   --border:        #2a2a2a;
   --border-subtle: #1c1c1c;
   --bg-soft:       #161616;
-  --bg-card:       linear-gradient(155deg, #161616 0%, #111111 100%);
+  --bg-card:       #141414;
   --shadow-card:   0 1px 4px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
 }
 
@@ -162,7 +162,7 @@ h3 { font-size: 15px; font-weight: 600; margin: 0; }
   padding: 9px 12px;
   font-family: var(--font);
   font-size: 14px;
-  background: var(--white);
+  background: transparent;
   border: none;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
