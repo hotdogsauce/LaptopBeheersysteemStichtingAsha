@@ -197,9 +197,10 @@ export const resolvers = {
         orderBy: { createdAt: 'desc' }
       }),
 
-    licenses: (_: any, __: any, { user }: any) => {
+    licenses: async (_: any, __: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'HELPDESK', 'OWNER')
-      return (prisma as any).license.findMany({ orderBy: { softwareTitle: 'asc' } })
+      const rows = await (prisma as any).license.findMany({ orderBy: { softwareTitle: 'asc' } })
+      return rows.map((l: any) => ({ ...l, createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : String(l.createdAt) }))
     },
 
     testLaptops: (_: any, __: any, { user }: any) => {
