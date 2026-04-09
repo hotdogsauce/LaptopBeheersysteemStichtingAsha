@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Layout from '../components/Layout'
 import { useUser, gql } from '../context/UserContext'
 import { useToast } from '../context/ToastContext'
@@ -236,8 +236,8 @@ export default function Hulpvragen() {
                 >Wel escalatie</button>
               </div>
 
-              {escalatie && (
-                <div style={{ marginTop: 14, display: 'grid', gap: 14 }}>
+              <EscalatieSlide open={escalatie}>
+                <div style={{ display: 'grid', gap: 14 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                     <div>
                       <label className="label">Datum vervolgafspraak *</label>
@@ -257,7 +257,7 @@ export default function Hulpvragen() {
                     <textarea className="input" rows={2} placeholder="Context voor de volgende keer..." value={vervolgNotitie} onChange={e => setVervolgNotitie(e.target.value)} style={{ resize: 'vertical' }} />
                   </div>
                 </div>
-              )}
+              </EscalatieSlide>
             </div>
 
             <div style={{ marginTop: 20 }}>
@@ -338,6 +338,35 @@ export default function Hulpvragen() {
         </div>
       )}
     </Layout>
+  )
+}
+
+function EscalatieSlide({ open, children }: { open: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    if (!ref.current) return
+    if (open) {
+      setHeight(ref.current.scrollHeight)
+    } else {
+      setHeight(0)
+    }
+  }, [open])
+
+  return (
+    <div
+      style={{
+        overflow: 'hidden',
+        height,
+        marginTop: open ? 14 : 0,
+        transition: 'height 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.28s ease',
+      }}
+    >
+      <div ref={ref}>
+        {children}
+      </div>
+    </div>
   )
 }
 
