@@ -91,6 +91,7 @@ export default function Layout({ children, title, subtitle }: LayoutProps) {
       { href: '/toewijzen', label: t('nav_assign') },
       { href: '/storingen', label: t('nav_issues') },
       { href: '/controle', label: t('nav_control') },
+      { href: '/hulpvragen', label: 'Hulpvragen' },
       { href: '/ai', label: t('nav_ai') },
     ],
   }

@@ -34,6 +34,14 @@ const decommissionBlockedStatuses: LaptopStatus[] = [
   LaptopStatus.IN_USE,
 ]
 
+function serializeHulpVraag(h: any) {
+  return {
+    ...h,
+    createdAt:        h.createdAt        instanceof Date ? h.createdAt.toISOString()        : h.createdAt,
+    vervolgAfspraak:  h.vervolgAfspraak  instanceof Date ? h.vervolgAfspraak.toISOString()  : h.vervolgAfspraak,
+  }
+}
+
 function checkTransition(current: LaptopStatus, next: LaptopStatus) {
   if (!allowedTransitions[current].includes(next)) {
     throw new Error(`Statusovergang van ${current} naar ${next} is niet toegestaan.`)
@@ -196,6 +204,23 @@ export const resolvers = {
         include: { requester: true, approver: true, activity: true },
         orderBy: { createdAt: 'desc' }
       }),
+
+    mijnHulpVragen: async (_: any, __: any, { user }: any) => {
+      requireRole(user, 'HELPDESK', 'ADMIN')
+      const rows = await (prisma as any).hulpVraag.findMany({
+        where: { helperById: user.id },
+        orderBy: { createdAt: 'desc' },
+      })
+      return rows.map((h: any) => serializeHulpVraag(h))
+    },
+
+    alleHulpVragen: async (_: any, __: any, { user }: any) => {
+      requireRole(user, 'ADMIN')
+      const rows = await (prisma as any).hulpVraag.findMany({
+        orderBy: { createdAt: 'desc' },
+      })
+      return rows.map((h: any) => serializeHulpVraag(h))
+    },
 
     licenses: async (_: any, __: any, { user }: any) => {
       requireRole(user, 'ADMIN', 'HELPDESK', 'OWNER')
@@ -569,6 +594,42 @@ export const resolvers = {
       return true
     },
 
+    // Hulpvragen
+    registreerHulpVraag: async (_: any, args: any, { user }: any) => {
+      requireRole(user, 'HELPDESK', 'ADMIN')
+      const { voornaamKlant, achternaamKlant, categorie, apparaatType, status, vraag, oplossing, escalatie, vervolgAfspraak, vervolgMetWie, vervolgNotitie } = args
+      if (!voornaamKlant?.trim()) throw new Error('Voornaam klant is verplicht.')
+      if (!vraag?.trim()) throw new Error('Vraag/probleem is verplicht.')
+      if (!oplossing?.trim()) throw new Error('Oplossing is verplicht.')
+      if (escalatie && !vervolgAfspraak) throw new Error('Vervolgafspraak is verplicht bij escalatie.')
+      const row = await (prisma as any).hulpVraag.create({
+        data: {
+          helperById: user.id,
+          voornaamKlant: voornaamKlant.trim(),
+          achternaamKlant: achternaamKlant?.trim() || null,
+          categorie,
+          apparaatType: apparaatType?.trim() || null,
+          status,
+          vraag: vraag.trim(),
+          oplossing: oplossing.trim(),
+          escalatie,
+          vervolgAfspraak: vervolgAfspraak ? new Date(vervolgAfspraak) : null,
+          vervolgMetWie: vervolgMetWie?.trim() || null,
+          vervolgNotitie: vervolgNotitie?.trim() || null,
+        },
+      })
+      return serializeHulpVraag(row)
+    },
+
+    sluitHulpVraag: async (_: any, { id }: any, { user }: any) => {
+      requireRole(user, 'HELPDESK', 'ADMIN')
+      const existing = await (prisma as any).hulpVraag.findUnique({ where: { id } })
+      if (!existing) throw new Error('Hulpvraag niet gevonden.')
+      if (existing.helperById !== user.id && user.role !== 'ADMIN') throw new Error('Je kunt alleen jouw eigen hulpvragen sluiten.')
+      const row = await (prisma as any).hulpVraag.update({ where: { id }, data: { status: 'AFGEROND' } })
+      return serializeHulpVraag(row)
+    },
+
     // Licenties & testlaptops
     setTestLaptop: async (_: any, { laptopId, isTestLaptop }: any, { user }: any) => {
       requireRole(user, 'ADMIN')
@@ -707,5 +768,9 @@ export const resolvers = {
 
   License: {
     createdAt: (parent: any) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt,
+  },
+
+  HulpVraag: {
+    helperBy: (parent: any) => prisma.user.findUnique({ where: { id: parent.helperById } }),
   },
 }

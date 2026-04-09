@@ -54,6 +54,7 @@ model User {
   softwareRequests  SoftwareRequest[] @relation("SoftwareRequester")
   softwareApprovals SoftwareRequest[] @relation("SoftwareApprover")
   notifications     Notification[]
+  hulpVragen        HulpVraag[]       @relation("HulpVraagHelper")
 }
 
 model AuditLog {
@@ -214,4 +215,36 @@ model License {
   id            String   @id @default(uuid())
   softwareTitle String   @unique
   createdAt     DateTime @default(now())
+}
+
+enum HulpVraagStatus {
+  OPEN
+  AFGEROND
+}
+
+enum HulpVraagCategorie {
+  MOBIEL
+  TABLET
+  LAPTOP
+  INTERNET_WIFI
+  ACCOUNT
+  OVERIG
+}
+
+model HulpVraag {
+  id                  String             @id @default(uuid())
+  helperBy            User               @relation("HulpVraagHelper", fields: [helperById], references: [id])
+  helperById          String
+  voornaamKlant       String
+  achternaamKlant     String?
+  categorie           HulpVraagCategorie @default(OVERIG)
+  apparaatType        String?
+  status              HulpVraagStatus    @default(OPEN)
+  vraag               String
+  oplossing           String
+  escalatie           Boolean            @default(false)
+  vervolgAfspraak     DateTime?
+  vervolgMetWie       String?
+  vervolgNotitie      String?
+  createdAt           DateTime           @default(now())
 }

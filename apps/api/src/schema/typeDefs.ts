@@ -99,6 +99,37 @@ export const typeDefs = `
     createdAt: String!
   }
 
+  enum HulpVraagStatus {
+    OPEN
+    AFGEROND
+  }
+
+  enum HulpVraagCategorie {
+    MOBIEL
+    TABLET
+    LAPTOP
+    INTERNET_WIFI
+    ACCOUNT
+    OVERIG
+  }
+
+  type HulpVraag {
+    id: ID!
+    helperBy: User!
+    voornaamKlant: String!
+    achternaamKlant: String
+    categorie: HulpVraagCategorie!
+    apparaatType: String
+    status: HulpVraagStatus!
+    vraag: String!
+    oplossing: String!
+    escalatie: Boolean!
+    vervolgAfspraak: String
+    vervolgMetWie: String
+    vervolgNotitie: String
+    createdAt: String!
+  }
+
   type Activity {
     id: ID!
     title: String!
@@ -252,6 +283,10 @@ export const typeDefs = `
     licenses: [License!]!
     testLaptops: [Laptop!]!
 
+    # Hulpvragen
+    mijnHulpVragen: [HulpVraag!]!
+    alleHulpVragen: [HulpVraag!]!
+
     approvedReservations: [Reservation!]!
     activeReservations: [Reservation!]!
     availableLaptopCount: Int!
@@ -331,6 +366,22 @@ export const typeDefs = `
 
     markNotificationRead(id: ID!): Boolean!
     markAllNotificationsRead: Boolean!
+
+    # Hulpvragen
+    registreerHulpVraag(
+      voornaamKlant: String!
+      achternaamKlant: String
+      categorie: HulpVraagCategorie!
+      apparaatType: String
+      status: HulpVraagStatus!
+      vraag: String!
+      oplossing: String!
+      escalatie: Boolean!
+      vervolgAfspraak: String
+      vervolgMetWie: String
+      vervolgNotitie: String
+    ): HulpVraag!
+    sluitHulpVraag(id: ID!): HulpVraag!
 
     # Licenties & testlaptops
     addLicense(softwareTitle: String!, testLaptopId: ID!): License!
