@@ -147,6 +147,13 @@ h3 { font-size: 15px; font-weight: 600; margin: 0; }
   padding: 28px 32px;
 }
 
+.card-form {
+  background: #FAFAFA;
+}
+[data-theme="dark"] .card-form {
+  background: #1a1a1a;
+}
+
 .card-row {
   background: transparent;
   border: none;

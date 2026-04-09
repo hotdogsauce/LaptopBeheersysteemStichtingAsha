@@ -121,7 +121,7 @@ export default function Software() {
 
       {selectedUserId && selectedUser?.role === 'OWNER' && (
         <>
-          <div className="card" style={{ marginBottom: 32 }}>
+          <div className="card card-form" style={{ marginBottom: 32 }}>
             <h2 style={{ marginBottom: 20 }}>Nieuwe softwareaanvraag</h2>
             <div style={{ display: 'grid', gap: 16 }}>
               <div>

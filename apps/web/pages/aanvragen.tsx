@@ -245,7 +245,7 @@ export default function Aanvragen() {
 
       {selectedUserId && selectedUser?.role === 'OWNER' && (
         <>
-          <div className="card" style={{ marginBottom: 32 }}>
+          <div className="card card-form" style={{ marginBottom: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <h2 style={{ margin: 0 }}>{t('req_new')}</h2>
               {availableCount !== null && (

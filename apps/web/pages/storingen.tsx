@@ -108,7 +108,7 @@ export default function Storingen() {
 
       {selectedUserId && selectedUser?.role === 'HELPDESK' && (
         <>
-          <div className="card" style={{ marginBottom: 32 }}>
+          <div className="card card-form" style={{ marginBottom: 32 }}>
             <h2 style={{ marginBottom: 20 }}>Storing melden</h2>
             <div style={{ display: 'grid', gap: 16 }}>
               <div>

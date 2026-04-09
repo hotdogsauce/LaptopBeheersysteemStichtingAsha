@@ -733,7 +733,7 @@ export default function Beheer() {
           {/* ── Tab: Licenties ── */}
           {tab === 'licenties' && (
             <>
-              <div className="card" style={{ marginBottom: 24 }}>
+              <div className="card card-form" style={{ marginBottom: 24 }}>
                 <h3 style={{ marginBottom: 16 }}>Software toevoegen aan licentieregister</h3>
                 <p style={{ fontSize: 12, color: 'var(--grey)', marginBottom: 16, marginTop: 0 }}>
                   Alleen software in dit register kan door eigenaren worden aangevraagd. Selecteer de testlaptop die is gebruikt voor validatie — deze mag niet meer RAM hebben dan de zwakste actieve laptop.

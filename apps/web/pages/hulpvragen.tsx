@@ -165,7 +165,7 @@ export default function Hulpvragen() {
       {selectedUserId && (
         <>
           {/* ── Registratieformulier ── */}
-          <div className="card" style={{ marginBottom: 40 }}>
+          <div className="card card-form" style={{ marginBottom: 40 }}>
             <h2 style={{ marginBottom: 4 }}>Nieuwe hulpvraag</h2>
             <p style={{ fontSize: 13, color: 'var(--grey)', margin: '0 0 20px' }}>
               Noteer kort de vraag, jouw oplossing en of er een vervolgafspraak nodig is.
