@@ -162,7 +162,7 @@ h3 { font-size: 15px; font-weight: 600; margin: 0; }
   padding: 9px 12px;
   font-family: var(--font);
   font-size: 14px;
-  background: transparent;
+  background: var(--white);
   border: none;
   border-bottom: 1px solid var(--border);
   border-radius: 0;
