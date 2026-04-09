@@ -232,7 +232,7 @@ export default function Controle() {
           </div>
 
           {selectedLaptopId && (
-            <div className="card" style={{ marginBottom: 32 }}>
+            <div className="card card-form" style={{ marginBottom: 32 }}>
               <h2 style={{ marginBottom: 24, fontSize: 16 }}>Controlelijst</h2>
 
               {/* Deel 1 – Hardware */}

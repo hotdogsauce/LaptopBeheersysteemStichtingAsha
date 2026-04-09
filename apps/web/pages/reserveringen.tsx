@@ -192,7 +192,7 @@ export default function Reserveringen() {
             </button>
 
             {showForm && (
-              <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16, backgroundImage: 'none', backgroundColor: 'var(--bg-soft)' }}>
+              <div className="card card-form" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
                 <div>
                   <label className="label">{t('res_form_owner')}</label>
                   <select className="input" value={forUserId} onChange={e => setForUserId(e.target.value)}>

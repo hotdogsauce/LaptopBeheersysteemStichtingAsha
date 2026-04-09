@@ -416,7 +416,7 @@ export default function Home() {
                 {showCreateForm ? t('ov_cancel') : t('ov_add')}
               </button>
               {showCreateForm && (
-                <div className="card" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
+                <div className="card card-form" style={{ marginTop: 16, display: 'grid', gap: 16 }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <div>
                       <label className="label">Merk / type *</label>

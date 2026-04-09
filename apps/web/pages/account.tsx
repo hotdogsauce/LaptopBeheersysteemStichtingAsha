@@ -280,7 +280,7 @@ export default function Account() {
         <div className="section-enter" style={{ display: 'grid', gap: 12, marginBottom: 32 }}>
 
           {/* Rondleiding */}
-          <div className="card" style={{ padding: '20px 24px', backgroundImage: 'none', backgroundColor: 'var(--bg-soft)' }}>
+          <div className="card card-form" style={{ padding: '20px 24px' }}>
             <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 6px', color: 'var(--black)' }}>
               Rondleiding
             </p>
