@@ -39,16 +39,46 @@ export default function Login() {
       {/* Compass watermark */}
       <CompassBg position="center" size={360} dark={isDark} />
 
+      {/* Bottom corner attribution */}
+      <p style={{
+        position: 'fixed', bottom: 16, right: 20,
+        fontSize: 10, color: 'var(--grey)', margin: 0,
+        letterSpacing: '0.08em', textTransform: 'uppercase',
+      }}>
+        Stichting Asha
+      </p>
+
       {/* Login card */}
       <div style={{ width: '100%', maxWidth: 340, position: 'relative', zIndex: 1 }}>
         {/* Logo / wordmark */}
         <div style={{ marginBottom: 40, textAlign: 'center' }}>
-          <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--grey)', margin: 0 }}>
-            Stichting Asha
-          </p>
-          <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.5px', margin: '4px 0 0' }}>
-            AshaOS
+          {/* Status dot */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#22c55e',
+              boxShadow: '0 0 6px rgba(34,197,94,0.7)',
+              display: 'inline-block',
+            }} />
+          </div>
+
+          {/* Wordmark */}
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span>Asha</span>
+            <span style={{
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: '0.05em',
+              background: 'var(--black)',
+              color: 'var(--white)',
+              padding: '3px 8px',
+              borderRadius: 5,
+              fontFamily: 'monospace',
+              marginTop: 2,
+            }}>OS</span>
           </h1>
+
+          <p style={{ fontSize: 10, color: 'var(--grey)', margin: '6px 0 0', letterSpacing: '0.08em' }}>v1.0</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
