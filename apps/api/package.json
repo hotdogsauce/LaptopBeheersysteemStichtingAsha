@@ -23,6 +23,7 @@
     "@prisma/client": "^5.22.0",
     "@types/node": "^20",
     "canvas-confetti": "^1.9.4",
+    "dayjs": "^1.11.20",
     "framer-motion": "^12.38.0",
     "graphql-yoga": "^5.18.1",
     "groq-sdk": "^1.1.2",

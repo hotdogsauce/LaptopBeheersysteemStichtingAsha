@@ -36,6 +36,13 @@ export default function Login() {
       padding: 24,
       position: 'relative',
     }}>
+      <style>{`
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(34,197,94,0.7); }
+          50%       { opacity: 0.5; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
+        }
+      `}</style>
+
       {/* Compass watermark */}
       <CompassBg position="center" size={360} dark={isDark} />
 
@@ -55,30 +62,33 @@ export default function Login() {
           {/* Status dot */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
             <span style={{
-              width: 6, height: 6, borderRadius: '50%',
+              width: 7, height: 7, borderRadius: '50%',
               background: '#22c55e',
               boxShadow: '0 0 6px rgba(34,197,94,0.7)',
               display: 'inline-block',
+              animation: 'pulse-dot 2s ease-in-out infinite',
             }} />
           </div>
 
           {/* Wordmark */}
-          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <span>Asha</span>
             <span style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              background: 'var(--black)',
-              color: 'var(--white)',
-              padding: '3px 8px',
-              borderRadius: 5,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              color: 'var(--black)',
+              border: '1.5px solid var(--black)',
+              padding: '2px 6px',
+              borderRadius: 4,
               fontFamily: 'monospace',
-              marginTop: 2,
+              lineHeight: 1,
+              alignSelf: 'center',
+              marginTop: 3,
             }}>OS</span>
           </h1>
 
-          <p style={{ fontSize: 10, color: 'var(--grey)', margin: '6px 0 0', letterSpacing: '0.08em' }}>v1.0</p>
+          <p style={{ fontSize: 10, color: 'var(--grey)', margin: '6px 0 0', letterSpacing: '0.08em' }}>v3.6.9</p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>

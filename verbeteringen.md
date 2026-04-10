@@ -10,7 +10,7 @@ Activiteiten
 Styling
 + consistente foutmeldingen en styling. V
 + styling, en gebruikersvriendelijkheid. V
-+ logo. 
++ logo. V
 
 MBO'er(s)
 + system gereed zetten voor de MBO 2'ers. V
@@ -33,4 +33,4 @@ HBO'er(s)
 + jivon data maatregelen bespreken en (proberen te)implementeren.
 
 Explenation
-- a kindoff demo that we make that guides a new / first time logging in user and asks them for a tutorial and then it explains 
++ a kindoff demo that we make that guides a new / first time logging in user and asks them for a tutorial and then it explains V
