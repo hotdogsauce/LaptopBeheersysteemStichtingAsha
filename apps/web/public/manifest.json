@@ -1,7 +1,7 @@
 {
-  "name": "Asha Laptopbeheer",
-  "short_name": "Laptopbeheer",
-  "description": "Laptopbeheersysteem Stichting Asha",
+  "name": "AshaOS",
+  "short_name": "AshaOS",
+  "description": "AshaOS — Beheersysteem Stichting Asha",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -47,7 +47,7 @@ export default function Login() {
             Stichting Asha
           </p>
           <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.5px', margin: '4px 0 0' }}>
-            Laptopbeheer
+            AshaOS
           </h1>
         </div>
 
