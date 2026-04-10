@@ -73,19 +73,9 @@ export default function Login() {
           {/* Wordmark */}
           <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <span>Asha</span>
-            <span style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.12em',
-              color: 'var(--black)',
-              border: '1.5px solid var(--black)',
-              padding: '2px 6px',
-              borderRadius: 4,
-              fontFamily: 'monospace',
-              lineHeight: 1,
-              alignSelf: 'center',
-              marginTop: 3,
-            }}>OS</span>
+            <span style={{ alignSelf: 'flex-end', marginBottom: 6, lineHeight: 1 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px' }}>O</span><span style={{ fontSize: 13, fontWeight: 600 }}>s</span>
+            </span>
           </h1>
 
           <p style={{ fontSize: 10, color: 'var(--grey)', margin: '6px 0 0', letterSpacing: '0.08em' }}>v3.6.9</p>
