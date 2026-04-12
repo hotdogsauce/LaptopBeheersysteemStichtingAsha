@@ -764,6 +764,7 @@ export const resolvers = {
 
   Laptop: {
     drives: (parent: any) => prisma.drive.findMany({ where: { laptopId: parent.id }, orderBy: { letter: 'asc' } }),
+    missingAt: (parent: any) => parent.missingAt instanceof Date ? parent.missingAt.toISOString() : parent.missingAt,
   },
 
   License: {
